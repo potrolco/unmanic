@@ -65,19 +65,24 @@ class Session(object, metaclass=SingletonType):
 
     """
     level - The user auth level
-    Set level to 0 by default
+    TARS MODIFICATION: Set to 100 (supporter level) by default
+    Original: level = 0
     """
-    level = 0
+    level = 100
 
     """
     non supporter library count
+    TARS MODIFICATION: Set to 999 (unlimited) by default
+    Original: library_count = 2
     """
-    library_count = 2
+    library_count = 999
 
     """
     non supporter linked installations count
+    TARS MODIFICATION: Set to 999 (unlimited) by default
+    Original: link_count = 3
     """
-    link_count = 3
+    link_count = 999
 
     """
     picture_uri - The user avatar

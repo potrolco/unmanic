@@ -49,13 +49,13 @@ def read_version_string(version_type='long'):
         return 'UNKNOWN.VERSION'
 
 
-__name = "unmanic"
-__author = "Josh.5"
+__name = "tars"
+__author = "TARS Fork (Original: Josh.5)"
 __email = "jsunnex@gmail.com"
 
 __author__ = '%s (%s)' % (__author, __email)
 __version__ = read_version_string('short')
-__description__ = "A simple tool for optimising your video library to a single format"
+__description__ = "TARS - Transcoding Automation & Reorganization System (Unmanic fork with unlimited libraries)"
 __disclaimer__ = ""
 __forum__ = ""
 __video__ = ""
