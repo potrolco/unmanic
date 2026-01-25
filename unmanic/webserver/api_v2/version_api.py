@@ -46,9 +46,9 @@ class ApiVersionHandler(BaseApiHandler):
 
     routes = [
         {
-            "path_pattern":      r"/version/read",
+            "path_pattern": r"/version/read",
             "supported_methods": ["GET"],
-            "call_method":       "get_unmanic_version",
+            "call_method": "get_unmanic_version",
         },
     ]
 
@@ -102,12 +102,12 @@ class ApiVersionHandler(BaseApiHandler):
                 VersionReadSuccessSchema(),
                 {
                     "version": version,
-                }
+                },
             )
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))

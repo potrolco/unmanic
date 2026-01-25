@@ -40,6 +40,7 @@ class BaseSchema(Schema):
 # RESPONSES
 # =========
 
+
 class BaseSuccessSchema(BaseSchema):
     success = fields.Boolean(
         required=True,
@@ -65,13 +66,14 @@ class BaseErrorSchema(BaseSchema):
         example=[
             "Traceback (most recent call last):\n",
             "...",
-            "json.decoder.JSONDecodeError: Expecting value: line 3 column 14 (char 45)\n"
+            "json.decoder.JSONDecodeError: Expecting value: line 3 column 14 (char 45)\n",
         ],
     )
 
 
 class BadRequestSchema(BaseErrorSchema):
     """STATUS_ERROR_EXTERNAL = 400"""
+
     error = fields.Str(
         required=True,
         description="Return status code and reason",
@@ -81,6 +83,7 @@ class BadRequestSchema(BaseErrorSchema):
 
 class BadEndpointSchema(BaseSchema):
     """STATUS_ERROR_ENDPOINT_NOT_FOUND = 404"""
+
     error = fields.Str(
         required=True,
         description="Return status code and reason",
@@ -90,6 +93,7 @@ class BadEndpointSchema(BaseSchema):
 
 class BadMethodSchema(BaseSchema):
     """STATUS_ERROR_METHOD_NOT_ALLOWED = 405"""
+
     error = fields.Str(
         required=True,
         description="Return status code and reason",
@@ -99,6 +103,7 @@ class BadMethodSchema(BaseSchema):
 
 class InternalErrorSchema(BaseErrorSchema):
     """STATUS_ERROR_INTERNAL = 500"""
+
     error = fields.Str(
         required=True,
         description="Return status code and reason",
@@ -108,6 +113,7 @@ class InternalErrorSchema(BaseErrorSchema):
 
 # GENERIC
 # =======
+
 
 class RequestTableDataSchema(BaseSchema):
     """Table request schema"""
@@ -221,6 +227,7 @@ class RequestDatabaseItemByIdSchema(BaseSchema):
 # DOCS
 # ====
 
+
 class DocumentContentSuccessSchema(BaseSchema):
     """Schema for updating tables by ID"""
 
@@ -239,6 +246,7 @@ class DocumentContentSuccessSchema(BaseSchema):
 
 # FILEBROWSER
 # ===========
+
 
 class RequestDirectoryListingDataSchema(BaseSchema):
     """Schema for requesting a directory content listing"""
@@ -262,12 +270,12 @@ class DirectoryListingResultsSchema(BaseSchema):
         description="A list of directories in the given path",
         example=[
             {
-                'value': "home",
-                'label': "/home",
+                "value": "home",
+                "label": "/home",
             },
             {
-                'value': "tmp",
-                'label': "/tmp",
+                "value": "tmp",
+                "label": "/tmp",
             },
         ],
         validate=validate.Length(min=0),
@@ -278,12 +286,12 @@ class DirectoryListingResultsSchema(BaseSchema):
         description="A list of files in the given path",
         example=[
             {
-                'value': "file1.txt",
-                'label': "/file1.txt",
+                "value": "file1.txt",
+                "label": "/file1.txt",
             },
             {
-                'value': "file2.txt",
-                'label': "/file2.txt",
+                "value": "file2.txt",
+                "label": "/file2.txt",
             },
         ],
         validate=validate.Length(min=0),
@@ -292,6 +300,7 @@ class DirectoryListingResultsSchema(BaseSchema):
 
 # HISTORY
 # =======
+
 
 class RequestHistoryTableDataSchema(RequestTableDataSchema):
     """Schema for requesting completed tasks from the table"""
@@ -365,7 +374,7 @@ class CompletedTasksLogSchema(BaseSchema):
     command_log = fields.Str(
         required=True,
         description="Long string...",
-        example='Long string...',
+        example="Long string...",
     )
     command_log_lines = fields.List(
         cls_or_instance=fields.Str,
@@ -395,6 +404,7 @@ class RequestAddCompletedToPendingTasksSchema(RequestTableUpdateByIdList):
 
 # NOTIFICATIONS
 # =============
+
 
 class NotificationDataSchema(BaseSchema):
     """Schema for notification data"""
@@ -427,7 +437,7 @@ class NotificationDataSchema(BaseSchema):
     navigation = fields.Dict(
         required=True,
         description="The navigation links of the notification",
-        example={'url': "https://docs.unmanic.app"},
+        example={"url": "https://docs.unmanic.app"},
     )
 
 
@@ -445,6 +455,7 @@ class RequestNotificationsDataSchema(BaseSchema):
 
 # PENDING
 # =======
+
 
 class RequestPendingTableDataSchema(RequestTableDataSchema):
     """Schema for requesting pending tasks from the table"""
@@ -539,12 +550,12 @@ class RequestPendingTaskCreateSchema(BaseSchema):
     library_name = fields.Str(
         required=False,
         description="The name of the library to append this task to",
-        example='Default',
+        example="Default",
     )
     type = fields.Str(
         required=False,
         description="The type of pending task to create (local/remote)",
-        example='local',
+        example="local",
     )
     priority_score = fields.Int(
         required=False,
@@ -568,12 +579,13 @@ class RequestPendingTasksLibraryUpdateSchema(RequestTableUpdateByIdList):
 
     library_name = fields.Str(
         required=True,
-        example='Default',
+        example="Default",
     )
 
 
 # PLUGINS
 # =======
+
 
 class RequestPluginsTableDataSchema(RequestTableDataSchema):
     """Schema for requesting plugins from the table"""
@@ -612,7 +624,7 @@ class RequestPluginsByIdSchema(BaseSchema):
 
 
 class PluginsMetadataResultsSchema(BaseSchema):
-    """Schema for plugin metadata that will be returned by various requests """
+    """Schema for plugin metadata that will be returned by various requests"""
 
     plugin_id = fields.Str(
         required=True,
@@ -749,23 +761,19 @@ class PluginsConfigInputItemSchema(BaseSchema):
         description="Additional options if the input_type is set to 'select'",
         example=[
             {
-                'value': "first",
-                'label': "First Option",
+                "value": "first",
+                "label": "First Option",
             },
             {
-                'value': "second",
-                'label': "Second Option",
+                "value": "second",
+                "label": "Second Option",
             },
         ],
     )
     slider_options = fields.Dict(
         required=True,
         description="Additional options if the input_type is set to 'slider'",
-        example={
-            "min":    1,
-            "max":    8,
-            "suffix": "M"
-        },
+        example={"min": 1, "max": 8, "suffix": "M"},
     )
     display = fields.Str(
         required=True,
@@ -825,7 +833,7 @@ class RequestPluginsSettingsResetSchema(BaseSchema):
 
 
 class PluginsMetadataInstallableResultsSchema(PluginsMetadataResultsSchema):
-    """Schema for plugin metadata that will be returned when fetching installable plugins """
+    """Schema for plugin metadata that will be returned when fetching installable plugins"""
 
     package_url = fields.Str(
         required=False,
@@ -868,12 +876,7 @@ class PluginTypesResultsSchema(BaseSchema):
         cls_or_instance=fields.Str,
         required=True,
         description="List of Plugin Type IDs supported by this installation",
-        example=[
-            "library_management.file_test",
-            "postprocessor.file_move",
-            "postprocessor.task_result",
-            "worker.process"
-        ],
+        example=["library_management.file_test", "postprocessor.file_move", "postprocessor.task_result", "worker.process"],
     )
 
 
@@ -988,7 +991,7 @@ class RequestUpdatePluginReposListSchema(BaseSchema):
         required=True,
         description="A list of repost to save",
         example=[
-            'https://raw.githubusercontent.com/Josh5/unmanic-plugins/repo/repo.json',
+            "https://raw.githubusercontent.com/Josh5/unmanic-plugins/repo/repo.json",
         ],
         validate=validate.Length(min=0),
     )
@@ -1020,6 +1023,7 @@ class PluginsDataPanelTypesDataSchema(BaseSchema):
 
 # SESSION
 # =======
+
 
 class SessionStateSuccessSchema(BaseSchema):
     """Schema for returning session data"""
@@ -1089,6 +1093,7 @@ class SessionAuthCodeSchema(BaseSchema):
 # SETTINGS
 # ========
 
+
 class SettingsReadAndWriteSchema(BaseSchema):
     """Schema to request the current settings"""
 
@@ -1096,15 +1101,15 @@ class SettingsReadAndWriteSchema(BaseSchema):
         required=True,
         description="The current settings",
         example={
-            "ui_port":                    8888,
-            "debugging":                  False,
-            "log_buffer_retention":       0,
-            "library_path":               "/library",
-            "enable_library_scanner":     False,
+            "ui_port": 8888,
+            "debugging": False,
+            "log_buffer_retention": 0,
+            "library_path": "/library",
+            "enable_library_scanner": False,
             "schedule_full_scan_minutes": 1440,
-            "follow_symlinks":            True,
-            "run_full_scan_on_start":     False,
-            "cache_path":                 "/tmp/unmanic"
+            "follow_symlinks": True,
+            "run_full_scan_on_start": False,
+            "cache_path": "/tmp/unmanic",
         },
     )
 
@@ -1179,7 +1184,7 @@ class SettingsWorkerGroupConfigSchema(BaseSchema):
         cls_or_instance=fields.Str,
         required=True,
         description="A list of tags associated with this worker",
-        example=['GPU', 'priority'],
+        example=["GPU", "priority"],
     )
 
 
@@ -1250,20 +1255,20 @@ class SettingsRemoteInstallationLinkConfigSchema(BaseSchema):
         required=True,
         description="The configuration for the remote installation link",
         example={
-            "address":                         "10.0.0.2:8888",
-            "auth":                            "None",
-            "username":                        "",
-            "password":                        "",
-            "available":                       True,
-            "name":                            "API schema generated",
-            "version":                         "0.1.3",
-            "last_updated":                    1636166593.013826,
-            "enable_receiving_tasks":          False,
-            "enable_sending_tasks":            False,
-            "enable_task_preloading":          True,
+            "address": "10.0.0.2:8888",
+            "auth": "None",
+            "username": "",
+            "password": "",
+            "available": True,
+            "name": "API schema generated",
+            "version": "0.1.3",
+            "last_updated": 1636166593.013826,
+            "enable_receiving_tasks": False,
+            "enable_sending_tasks": False,
+            "enable_task_preloading": True,
             "enable_distributed_worker_count": False,
-            "preloading_count":                2,
-            "enable_checksum_validation":      False,
+            "preloading_count": 2,
+            "enable_checksum_validation": False,
             "enable_config_missing_libraries": False,
         },
     )
@@ -1316,7 +1321,7 @@ class LibraryResultsSchema(BaseSchema):
         cls_or_instance=fields.Str,
         required=True,
         description="A list of tags associated with this library",
-        example=['GPU', 'priority'],
+        example=["GPU", "priority"],
     )
 
 
@@ -1349,13 +1354,13 @@ class SettingsLibraryConfigReadAndWriteSchema(BaseSchema):
         required=True,
         description="The library configuration",
         example={
-            "id":             1,
-            "name":           "Default",
-            "path":           "/library",
+            "id": 1,
+            "name": "Default",
+            "path": "/library",
             "enable_scanner": False,
             "enable_inotify": False,
             "priority_score": 0,
-            "tags":           [],
+            "tags": [],
         },
     )
 
@@ -1365,11 +1370,11 @@ class SettingsLibraryConfigReadAndWriteSchema(BaseSchema):
         example={
             "enabled_plugins": [
                 {
-                    "library_id":  1,
-                    "plugin_id":   "notify_plex",
-                    "name":        "Notify Plex",
+                    "library_id": 1,
+                    "plugin_id": "notify_plex",
+                    "name": "Notify Plex",
                     "description": "Notify Plex on completion of a task.",
-                    "icon":        "https://raw.githubusercontent.com/Josh5/unmanic.plugin.notify_plex/master/icon.png"
+                    "icon": "https://raw.githubusercontent.com/Josh5/unmanic.plugin.notify_plex/master/icon.png",
                 }
             ]
         },
@@ -1385,37 +1390,37 @@ class SettingsLibraryPluginConfigExportSchema(BaseSchema):
         example={
             "enabled_plugins": [
                 {
-                    "library_id":  1,
-                    "plugin_id":   "encoder_audio_ac3",
-                    "name":        "Audio Encoder AC3",
+                    "library_id": 1,
+                    "plugin_id": "encoder_audio_ac3",
+                    "name": "Audio Encoder AC3",
                     "description": "Ensure all audio streams are encoded with the AC3 codec using the native FFmpeg ac3 encoder.",
-                    "icon":        "https://raw.githubusercontent.com/Josh5/unmanic.plugin.encoder_audio_ac3/master/icon.png"
+                    "icon": "https://raw.githubusercontent.com/Josh5/unmanic.plugin.encoder_audio_ac3/master/icon.png",
                 }
             ],
-            "plugin_flow":     {
+            "plugin_flow": {
                 "library_management.file_test": [
                     {
-                        "plugin_id":   "encoder_audio_ac3",
-                        "name":        "Audio Encoder AC3",
-                        "author":      "Josh.5",
+                        "plugin_id": "encoder_audio_ac3",
+                        "name": "Audio Encoder AC3",
+                        "author": "Josh.5",
                         "description": "Ensure all audio streams are encoded with the AC3 codec using the native FFmpeg ac3 encoder.",
-                        "version":     "0.0.2",
-                        "icon":        "https://raw.githubusercontent.com/Josh5/unmanic.plugin.encoder_audio_ac3/master/icon.png"
+                        "version": "0.0.2",
+                        "icon": "https://raw.githubusercontent.com/Josh5/unmanic.plugin.encoder_audio_ac3/master/icon.png",
                     }
                 ],
-                "worker.process":               [
+                "worker.process": [
                     {
-                        "plugin_id":   "encoder_audio_ac3",
-                        "name":        "Audio Encoder AC3",
-                        "author":      "Josh.5",
+                        "plugin_id": "encoder_audio_ac3",
+                        "name": "Audio Encoder AC3",
+                        "author": "Josh.5",
                         "description": "Ensure all audio streams are encoded with the AC3 codec using the native FFmpeg ac3 encoder.",
-                        "version":     "0.0.2",
-                        "icon":        "https://raw.githubusercontent.com/Josh5/unmanic.plugin.encoder_audio_ac3/master/icon.png"
+                        "version": "0.0.2",
+                        "icon": "https://raw.githubusercontent.com/Josh5/unmanic.plugin.encoder_audio_ac3/master/icon.png",
                     }
                 ],
-                "postprocessor.file_move":      [],
-                "postprocessor.task_result":    []
-            }
+                "postprocessor.file_move": [],
+                "postprocessor.task_result": [],
+            },
         },
     )
 
@@ -1423,13 +1428,13 @@ class SettingsLibraryPluginConfigExportSchema(BaseSchema):
         required=False,
         description="The library configuration",
         example={
-            "id":             1,
-            "name":           "Default",
-            "path":           "/library",
+            "id": 1,
+            "name": "Default",
+            "path": "/library",
             "enable_scanner": False,
             "enable_inotify": False,
             "priority_score": 0,
-            "tags":           [],
+            "tags": [],
         },
     )
 
@@ -1446,6 +1451,7 @@ class SettingsLibraryPluginConfigImportSchema(SettingsLibraryPluginConfigExportS
 # VERSION
 # =======
 
+
 class VersionReadSuccessSchema(BaseSchema):
     """Schema for returning the application version"""
 
@@ -1458,6 +1464,7 @@ class VersionReadSuccessSchema(BaseSchema):
 
 # WORKERS
 # =======
+
 
 class RequestWorkerByIdSchema(BaseSchema):
     """Schema to request a worker by the worker's ID"""
@@ -1522,7 +1529,7 @@ class WorkerStatusResultsSchema(BaseSchema):
             "\n\nRUNNER: \nRemux Video Files [Pass #1]\n\n",
             "\nExecuting plugin runner... Please wait",
             "\nRunner did not request to execute a command",
-            "\n\nNo Plugin requested to run commands for this file '/tmp/unmanic/unmanic_remote_pending_library-1635746225.3336523/file.mp4'"
+            "\n\nNo Plugin requested to run commands for this file '/tmp/unmanic/unmanic_remote_pending_library-1635746225.3336523/file.mp4'",
         ],
         validate=validate.Length(min=0),
     )
@@ -1531,25 +1538,21 @@ class WorkerStatusResultsSchema(BaseSchema):
         description="The status of the plugin runner currently processing the file",
         example={
             "video_remuxer": {
-                "plugin_id":   "video_remuxer",
-                "status":      "complete",
-                "name":        "Remux Video Files",
-                "author":      "Josh.5",
-                "version":     "0.0.5",
-                "icon":        "https://raw.githubusercontent.com/Josh5/unmanic.plugin.video_remuxer/master/icon.png",
+                "plugin_id": "video_remuxer",
+                "status": "complete",
+                "name": "Remux Video Files",
+                "author": "Josh.5",
+                "version": "0.0.5",
+                "icon": "https://raw.githubusercontent.com/Josh5/unmanic.plugin.video_remuxer/master/icon.png",
                 "description": "Remux a video file to the configured container",
-                "success":     True
+                "success": True,
             }
         },
     )
     subprocess = fields.Dict(
         required=True,
         description="The status of the process currently being executed",
-        example={
-            "pid":     140408939493120,
-            "percent": "None",
-            "elapsed": "None"
-        },
+        example={"pid": 140408939493120, "percent": "None", "elapsed": "None"},
     )
 
 

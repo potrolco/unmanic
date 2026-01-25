@@ -50,9 +50,9 @@ class ProcessItem(PluginType):
         original_file_path      - String, the absolute path to the original file.
         repeat                  - Boolean, should this runner be executed again once completed with the same variables.
 
-    **Shared task & runner state**  
+    **Shared task & runner state**
     Plugins can store shared, cross‐plugin and even cross‐process state via `TaskDataStore`:
-    
+
         from unmanic.libs.task import TaskDataStore
 
         # Store mutable per‐task values:
@@ -64,7 +64,7 @@ class ProcessItem(PluginType):
         TaskDataStore.set_runner_value("probe_info", {...})
         val = TaskDataStore.get_runner_value("probe_info")
 
-    **Spawning your own child process**  
+    **Spawning your own child process**
     Instead of setting `exec_command`, you can perform complex or Python‐only work in a separate process while still reporting logs & progress:
 
         from unmanic.libs.unplugins.child_process import PluginChildProcess
@@ -84,61 +84,58 @@ class ProcessItem(PluginType):
         success = proc.run(child_work)
 
     In this mode the `PluginChildProcess` helper:
-      1. Spawns the child via `multiprocessing.Process`.  
-      2. Registers its PID & start‐time with the worker’s `default_progress_parser`.  
-      3. Drains `log_queue` → `data["worker_log"]` for UI tail.  
-      4. Drains `prog_queue` → `command_progress_parser(line_text)` to update the progress bar.  
+      1. Spawns the child via `multiprocessing.Process`.
+      2. Registers its PID & start‐time with the worker’s `default_progress_parser`.
+      3. Drains `log_queue` → `data["worker_log"]` for UI tail.
+      4. Drains `prog_queue` → `command_progress_parser(line_text)` to update the progress bar.
       5. Will unset the child process PID on exit to reset all tracked subprocess metrics in the Unmanic Worker (CPU, memory, progress, etc.).
 
     :param data:
     :return:
     """
     data_schema = {
-        "library_id":              {
+        "library_id": {
             "required": True,
-            "type":     int,
+            "type": int,
         },
-        "task_id":                 {
-            "required": False,
-            "type":     int
-        },
-        "worker_log":              {
+        "task_id": {"required": False, "type": int},
+        "worker_log": {
             "required": True,
-            "type":     list,
+            "type": list,
         },
-        "exec_command":            {
+        "exec_command": {
             "required": True,
-            "type":     [list, str],
+            "type": [list, str],
         },
         "command_progress_parser": {
             "required": True,
-            "type":     ['callable', None],
+            "type": ["callable", None],
         },
-        "file_in":                 {
+        "file_in": {
             "required": True,
-            "type":     str,
+            "type": str,
         },
-        "file_out":                {
+        "file_out": {
             "required": True,
-            "type":     str,
+            "type": str,
         },
-        "original_file_path":      {
+        "original_file_path": {
             "required": False,
-            "type":     str,
+            "type": str,
         },
-        "repeat":                  {
+        "repeat": {
             "required": False,
-            "type":     bool,
+            "type": bool,
         },
     }
     test_data = {
-        'library_id':              1,
-        "task_id":                 4321,
-        'worker_log':              [],
-        'exec_command':            [],
-        'command_progress_parser': None,
-        'file_in':                 '{library_path}/{test_file_in}',
-        'file_out':                '{cache_path}/{test_file_out}',
-        'original_file_path':      '{library_path}/{test_file_in}',
-        'repeat':                  False,
+        "library_id": 1,
+        "task_id": 4321,
+        "worker_log": [],
+        "exec_command": [],
+        "command_progress_parser": None,
+        "file_in": "{library_path}/{test_file_in}",
+        "file_out": "{cache_path}/{test_file_out}",
+        "original_file_path": "{library_path}/{test_file_in}",
+        "repeat": False,
     }

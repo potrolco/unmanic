@@ -36,10 +36,14 @@ from unmanic import config
 from unmanic.libs import session
 from unmanic.libs.uiserver import UnmanicDataQueues
 from unmanic.webserver.api_v2.base_api_handler import BaseApiError, BaseApiHandler
-from unmanic.webserver.api_v2.schema.schemas import CompletedTasksLogRequestSchema, CompletedTasksLogSchema, \
-    CompletedTasksSchema, \
-    RequestHistoryTableDataSchema, \
-    RequestAddCompletedToPendingTasksSchema, RequestTableUpdateByIdList
+from unmanic.webserver.api_v2.schema.schemas import (
+    CompletedTasksLogRequestSchema,
+    CompletedTasksLogSchema,
+    CompletedTasksSchema,
+    RequestHistoryTableDataSchema,
+    RequestAddCompletedToPendingTasksSchema,
+    RequestTableUpdateByIdList,
+)
 from unmanic.webserver.helpers import completed_tasks
 
 
@@ -51,25 +55,25 @@ class ApiHistoryHandler(BaseApiHandler):
 
     routes = [
         {
-            "path_pattern":      r"/history/tasks",
+            "path_pattern": r"/history/tasks",
             "supported_methods": ["POST"],
-            "call_method":       "get_completed_tasks",
+            "call_method": "get_completed_tasks",
         },
         {
-            "path_pattern":      r"/history/tasks",
+            "path_pattern": r"/history/tasks",
             "supported_methods": ["DELETE"],
-            "call_method":       "delete_completed_tasks",
+            "call_method": "delete_completed_tasks",
         },
         {
-            "path_pattern":      r"/history/reprocess",
+            "path_pattern": r"/history/reprocess",
             "supported_methods": ["POST"],
-            "call_method":       "add_completed_tasks_to_pending_list",
+            "call_method": "add_completed_tasks_to_pending_list",
         },
         {
-            "path_pattern":      r"/history/task/log",
+            "path_pattern": r"/history/task/log",
             "supported_methods": ["POST"],
-            "call_method":       "get_completed_task_log",
-        }
+            "call_method": "get_completed_task_log",
+        },
     ]
 
     def initialize(self, **kwargs):
@@ -127,33 +131,33 @@ class ApiHistoryHandler(BaseApiHandler):
             json_request = self.read_json_request(RequestHistoryTableDataSchema())
 
             params = {
-                'start':        json_request.get('start'),
-                'length':       json_request.get('length'),
-                'search_value': json_request.get('search_value'),
-                'status':       json_request.get('status'),
-                'after':        json_request.get('after'),
-                'before':       json_request.get('before'),
-                'order':        {
-                    "column": json_request.get('order_by', 'finish_time'),
-                    "dir":    json_request.get('order_direction', 'desc'),
-                }
+                "start": json_request.get("start"),
+                "length": json_request.get("length"),
+                "search_value": json_request.get("search_value"),
+                "status": json_request.get("status"),
+                "after": json_request.get("after"),
+                "before": json_request.get("before"),
+                "order": {
+                    "column": json_request.get("order_by", "finish_time"),
+                    "dir": json_request.get("order_direction", "desc"),
+                },
             }
             task_list = completed_tasks.prepare_filtered_completed_tasks(params)
 
             response = self.build_response(
                 CompletedTasksSchema(),
                 {
-                    "recordsTotal":    task_list.get('recordsTotal'),
-                    "recordsFiltered": task_list.get('recordsFiltered'),
-                    "successCount":    task_list.get('successCount'),
-                    "failedCount":     task_list.get('failedCount'),
-                    "results":         task_list.get('results'),
-                }
+                    "recordsTotal": task_list.get("recordsTotal"),
+                    "recordsFiltered": task_list.get("recordsFiltered"),
+                    "successCount": task_list.get("successCount"),
+                    "failedCount": task_list.get("failedCount"),
+                    "results": task_list.get("results"),
+                },
             )
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -206,7 +210,7 @@ class ApiHistoryHandler(BaseApiHandler):
         try:
             json_request = self.read_json_request(RequestTableUpdateByIdList())
 
-            if not completed_tasks.remove_completed_tasks(json_request.get('id_list', [])):
+            if not completed_tasks.remove_completed_tasks(json_request.get("id_list", [])):
                 self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to delete the completed tasks by their IDs")
                 self.write_error()
                 return
@@ -214,7 +218,7 @@ class ApiHistoryHandler(BaseApiHandler):
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -266,26 +270,28 @@ class ApiHistoryHandler(BaseApiHandler):
         """
         try:
             json_request = self.read_json_request(RequestAddCompletedToPendingTasksSchema())
-            id_list = json_request.get('id_list', [])
-            library_id = json_request.get('library_id')
+            id_list = json_request.get("id_list", [])
+            library_id = json_request.get("library_id")
 
             errors = completed_tasks.add_historic_tasks_to_pending_tasks_list(id_list, library_id=library_id)
             if errors:
-                failed_ids = ''
+                failed_ids = ""
                 for task_id in errors:
                     failed_ids += " {}".format(task_id)
                     tornado.log.app_log.error(
-                        "ApiHistoryHandler.{}: {}".format(self.route.get('call_method'), errors.get(task_id)))
-                self.set_status(self.STATUS_ERROR_INTERNAL,
-                                reason="Failed to add the provided completed tasks to the pending task list: '{}'".format(
-                                    failed_ids))
+                        "ApiHistoryHandler.{}: {}".format(self.route.get("call_method"), errors.get(task_id))
+                    )
+                self.set_status(
+                    self.STATUS_ERROR_INTERNAL,
+                    reason="Failed to add the provided completed tasks to the pending task list: '{}'".format(failed_ids),
+                )
                 self.write_error()
                 return
 
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -338,19 +344,19 @@ class ApiHistoryHandler(BaseApiHandler):
         try:
             json_request = self.read_json_request(CompletedTasksLogRequestSchema())
 
-            command_log = completed_tasks.read_command_log_for_task(json_request.get('task_id'))
+            command_log = completed_tasks.read_command_log_for_task(json_request.get("task_id"))
 
             response = self.build_response(
                 CompletedTasksLogSchema(),
                 {
-                    'command_log':       command_log.get('command_log', ''),
-                    'command_log_lines': command_log.get('command_log_lines', []),
-                }
+                    "command_log": command_log.get("command_log", ""),
+                    "command_log_lines": command_log.get("command_log_lines", []),
+                },
             )
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))

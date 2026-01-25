@@ -54,7 +54,7 @@ class DownloadsLinks(object, metaclass=SingletonType):
         with lock:
             for k in keys:
                 if k in self._download_links:
-                    if self._download_links[k].get('expires', 0) < time_now:
+                    if self._download_links[k].get("expires", 0) < time_now:
                         # Item has expired. Remove this item
                         del self._download_links[k]
 
@@ -63,7 +63,7 @@ class DownloadsLinks(object, metaclass=SingletonType):
         lock = threading.RLock()
         with lock:
             # Expire in 1 min
-            link_data['expires'] = (time.time() + 60)
+            link_data["expires"] = time.time() + 60
             self._download_links[link_id] = link_data
         return link_id
 
@@ -81,19 +81,19 @@ class DownloadsHandler(web.RequestHandler):
         download_links = DownloadsLinks()
         link_data = download_links.get_download_link(link_id)
         # Set file details
-        abspath = link_data.get('abspath', '')
-        basename = link_data.get('basename', '')
+        abspath = link_data.get("abspath", "")
+        basename = link_data.get("basename", "")
         # Return 404 on file not found
         if not os.path.exists(abspath):
             # Link ID must not be valid
             self.write_error(404)
             return
 
-        self.set_header('Content-Type', 'application/octet-stream')
-        self.set_header('Content-Disposition', 'attachment; filename={}'.format(basename))
+        self.set_header("Content-Type", "application/octet-stream")
+        self.set_header("Content-Disposition", "attachment; filename={}".format(basename))
 
         # Serve file download in 1MB chunks
-        with open(abspath, 'rb') as f:
+        with open(abspath, "rb") as f:
             while True:
                 data = f.read(1024 * 1024)
                 if not data:

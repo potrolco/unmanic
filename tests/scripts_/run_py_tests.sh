@@ -85,4 +85,3 @@ docker run -ti --rm \
     -e SCHEDULE_FULL_SCAN_MINUTES=${SCHEDULE_FULL_SCAN_MINUTES} \
     -e RUN_FULL_SCAN_ON_START=${RUN_FULL_SCAN_ON_START} \
     josh5/unmanic bash
-

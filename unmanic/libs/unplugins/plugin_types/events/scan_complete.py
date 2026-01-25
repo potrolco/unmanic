@@ -52,41 +52,20 @@ class ScanComplete(PluginType):
     :return:
     """
     data_schema = {
-        "library_id":          {
-            "required": False,
-            "type":     int
-        },
-        "library_name":        {
-            "required": False,
-            "type":     str
-        },
-        "library_path":        {
-            "required": False,
-            "type":     str
-        },
-        "scan_start_time":     {
-            "required": False,
-            "type":     float
-        },
-        "scan_end_time":       {
-            "required": False,
-            "type":     float
-        },
-        "scan_duration":       {
-            "required": False,
-            "type":     float
-        },
-        "files_scanned_count": {
-            "required": False,
-            "type":     int
-        },
+        "library_id": {"required": False, "type": int},
+        "library_name": {"required": False, "type": str},
+        "library_path": {"required": False, "type": str},
+        "scan_start_time": {"required": False, "type": float},
+        "scan_end_time": {"required": False, "type": float},
+        "scan_duration": {"required": False, "type": float},
+        "files_scanned_count": {"required": False, "type": int},
     }
     test_data = {
-        "library_id":          1,
-        "library_name":        "MyLibrary",
-        "library_path":        "/path/to/mylibrary",
-        "scan_start_time":     1625078400.0,
-        "scan_end_time":       1625078460.0,
-        "scan_duration":       60.0,
+        "library_id": 1,
+        "library_name": "MyLibrary",
+        "library_path": "/path/to/mylibrary",
+        "scan_start_time": 1625078400.0,
+        "scan_end_time": 1625078460.0,
+        "scan_duration": 60.0,
         "files_scanned_count": 123,
     }

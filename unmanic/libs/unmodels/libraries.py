@@ -40,6 +40,7 @@ class Libraries(BaseModel):
     """
     Libraries
     """
+
     name = TextField(null=False, unique=True)
     path = TextField(null=False)
     locked = BooleanField(null=False, default=False)
@@ -48,7 +49,7 @@ class Libraries(BaseModel):
     enable_inotify = BooleanField(null=False, default=False)
     priority_score = BigIntegerField(null=False, default=0)
     # ManyToMany Linking field. Does not create a column in the DB. See linking table below
-    tags = ManyToManyField(Tags, backref='tags')
+    tags = ManyToManyField(Tags, backref="tags")
 
 
 # Generate linking table for the 'tags' field above

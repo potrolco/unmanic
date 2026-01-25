@@ -32,7 +32,7 @@
 import queue
 
 data_queues = {
-    "scheduledtasks":   queue.Queue(),
-    "inotifytasks":     queue.Queue(),
+    "scheduledtasks": queue.Queue(),
+    "inotifytasks": queue.Queue(),
     "progress_reports": queue.Queue(),
 }

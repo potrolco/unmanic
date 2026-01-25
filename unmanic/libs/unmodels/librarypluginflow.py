@@ -41,8 +41,9 @@ class LibraryPluginFlow(BaseModel):
     """
     LibraryPluginFlow
     """
-    plugin_id = ForeignKeyField(Plugins, backref='flow', on_delete='CASCADE', on_update='CASCADE')
-    library_id = ForeignKeyField(Libraries, backref='plugin_flow', on_delete='CASCADE', on_update='CASCADE')
+
+    plugin_id = ForeignKeyField(Plugins, backref="flow", on_delete="CASCADE", on_update="CASCADE")
+    library_id = ForeignKeyField(Libraries, backref="plugin_flow", on_delete="CASCADE", on_update="CASCADE")
     plugin_name = TextField(null=False)
     plugin_type = TextField(null=False)
     position = IntegerField(null=False, default=9999)

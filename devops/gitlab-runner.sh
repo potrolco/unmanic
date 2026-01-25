@@ -10,4 +10,3 @@ CMD="gitlab-runner exec docker \
 
 echo "${CMD}"
 bash -c "${CMD}"
-

@@ -45,20 +45,20 @@ from .upload_api import ApiUploadHandler
 from .version_api import ApiVersionHandler
 from .workers_api import ApiWorkersHandler
 
-__author__ = 'Josh.5 (jsunnex@gmail.com)'
+__author__ = "Josh.5 (jsunnex@gmail.com)"
 
 __all__ = (
-    'ApiDocsHandler',
-    'ApiFilebrowserHandler',
-    'ApiHistoryHandler',
-    'ApiNotificationsHandler',
-    'ApiPendingHandler',
-    'ApiPluginsHandler',
-    'ApiSessionHandler',
-    'ApiSettingsHandler',
-    'ApiUploadHandler',
-    'ApiVersionHandler',
-    'ApiWorkersHandler'
+    "ApiDocsHandler",
+    "ApiFilebrowserHandler",
+    "ApiHistoryHandler",
+    "ApiNotificationsHandler",
+    "ApiPendingHandler",
+    "ApiPluginsHandler",
+    "ApiSessionHandler",
+    "ApiSettingsHandler",
+    "ApiUploadHandler",
+    "ApiVersionHandler",
+    "ApiWorkersHandler",
 )
 
 

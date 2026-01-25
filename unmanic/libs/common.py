@@ -3,23 +3,23 @@
 
 """
     unmanic.common.py
- 
+
     Written by:               Josh.5 <jsunnex@gmail.com>
     Date:                     06 Dec 2018, (7:21 AM)
- 
+
     Copyright:
            Copyright (C) Josh Sunnex - All Rights Reserved
- 
+
            Permission is hereby granted, free of charge, to any person obtaining a copy
            of this software and associated documentation files (the "Software"), to deal
            in the Software without restriction, including without limitation the rights
            to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
            copies of the Software, and to permit persons to whom the Software is
            furnished to do so, subject to the following conditions:
-  
+
            The above copyright notice and this permission notice shall be included in all
            copies or substantial portions of the Software.
-  
+
            THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
            EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
            MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -40,7 +40,7 @@ import shutil
 
 def get_home_dir():
     # Attempt to get the HOME_DIR environment variable
-    home_dir = os.environ.get('HOME_DIR')
+    home_dir = os.environ.get("HOME_DIR")
     # If HOME_DIR is unset, empty, or specifically set to use the home directory
     if not home_dir:
         # Expand the tilde to the user's home directory
@@ -56,27 +56,27 @@ def get_home_dir():
 def get_default_root_path():
     root = os.path.join(os.sep)
     if os.name == "nt":
-        root = os.path.join('c:', os.sep)
+        root = os.path.join("c:", os.sep)
     return root
 
 
 def get_default_library_path():
-    library_path = os.path.join(get_default_root_path(), 'library')
+    library_path = os.path.join(get_default_root_path(), "library")
     # Windows set the default library directory into %USERPROFILE%\Documents
     if os.name == "nt":
-        library_path = os.path.join(os.path.expandvars(r'%USERPROFILE%'), 'Documents')
+        library_path = os.path.join(os.path.expandvars(r"%USERPROFILE%"), "Documents")
     return library_path
 
 
 def get_default_cache_path():
-    cache_path = os.path.join(get_default_root_path(), 'tmp', 'unmanic')
+    cache_path = os.path.join(get_default_root_path(), "tmp", "unmanic")
     # Windows set the default temp directory into %LOCALAPPDATA%\Temp\Unmanic
     if os.name == "nt":
-        cache_path = os.path.join(os.path.expandvars(r'%LOCALAPPDATA%\Temp'), 'Unmanic')
+        cache_path = os.path.join(os.path.expandvars(r"%LOCALAPPDATA%\Temp"), "Unmanic")
     return cache_path
 
 
-def format_message(message, message2=''):
+def format_message(message, message2=""):
     message = str(message)
     if message2:
         # Message2 can support other objects:
@@ -84,6 +84,7 @@ def format_message(message, message2=''):
             message = "%s - %s" % (message, str(message2))
         elif isinstance(message2, dict) or isinstance(message2, list):
             import pprint
+
             message2 = pprint.pformat(message2, indent=1)
             message = "%s \n%s" % (message, str(message2))
         else:
@@ -114,11 +115,11 @@ def make_timestamp_human_readable(ts):
     # Create a dictionary of units
     delta = abs(delta)
     d = {
-        "year":        int(delta.days / 365),
-        "day":         int(delta.days % 365),
-        "hour":        int(delta.seconds / 3600),
-        "minute":      int(delta.seconds / 60) % 60,
-        "second":      delta.seconds % 60,
+        "year": int(delta.days / 365),
+        "day": int(delta.days % 365),
+        "hour": int(delta.seconds / 3600),
+        "minute": int(delta.seconds / 60) % 60,
+        "second": delta.seconds % 60,
         "millisecond": delta.microseconds / 1000,
         "microsecond": delta.microseconds % 1000,
     }
@@ -147,7 +148,7 @@ def ensure_dir(file_path):
 
 
 def time_string_to_seconds(time_string):
-    pt = datetime.datetime.strptime(time_string, '%H:%M:%S.%f')
+    pt = datetime.datetime.strptime(time_string, "%H:%M:%S.%f")
     return pt.second + pt.minute * 60 + pt.hour * 3600
 
 
@@ -158,7 +159,7 @@ def tail(f, n, offset=0):
     while 1:
         try:
             f.seek(-(avg_line_length * to_read), 2)
-            while f.read(1) != b'\n':
+            while f.read(1) != b"\n":
                 f.seek(-2, os.SEEK_CUR)
         except IOError:
             f.seek(0)
@@ -173,8 +174,7 @@ def touch(fname, mode=0o666, dir_fd=None, **kwargs):
     """Touch a file. If it does not exist, create it."""
     flags = os.O_CREAT | os.O_APPEND
     with os.fdopen(os.open(fname, flags=flags, mode=mode, dir_fd=dir_fd)) as f:
-        os.utime(f.fileno() if os.utime in os.supports_fd else fname,
-                 dir_fd=None if os.supports_fd else dir_fd, **kwargs)
+        os.utime(f.fileno() if os.utime in os.supports_fd else fname, dir_fd=None if os.supports_fd else dir_fd, **kwargs)
 
 
 def clean_files_in_cache_dir(cache_directory):
@@ -199,7 +199,7 @@ def clean_files_in_cache_dir(cache_directory):
 def random_string(string_length=5):
     """Generate a random string of fixed length"""
     letters = string.ascii_lowercase
-    return ''.join(random.choice(letters) for i in range(string_length))
+    return "".join(random.choice(letters) for i in range(string_length))
 
 
 def json_dump_to_file(json_data, out_file, check=True, rollback_on_fail=True):
@@ -209,31 +209,28 @@ def json_dump_to_file(json_data, out_file, check=True, rollback_on_fail=True):
     import tempfile
     import shutil
 
-    result = {
-        'errors':  [],
-        'success': False
-    }
+    result = {"errors": [], "success": False}
 
     # If check param is flagged and there already exists a out file, create a temporary backup
 
     if rollback_on_fail and os.path.exists(out_file):
         temp_dir = tempfile.gettempdir()
-        temp_path = os.path.join(temp_dir, 'json_dump_to_file_backup-{}'.format(time.time()))
+        temp_path = os.path.join(temp_dir, "json_dump_to_file_backup-{}".format(time.time()))
         try:
             shutil.copy2(out_file, temp_path)
-            result['temp_path'] = temp_path
+            result["temp_path"] = temp_path
         except Exception as e:
-            result['success'] = False
-            result['errors'].append("Failed to create temporary file - {}".format(str(e)))
+            result["success"] = False
+            result["errors"].append("Failed to create temporary file - {}".format(str(e)))
 
     # Write data to out_file
     try:
-        with open(out_file, 'w') as outfile:
+        with open(out_file, "w") as outfile:
             json.dump(json_data, outfile, sort_keys=True, indent=4)
-        result['success'] = True
+        result["success"] = True
     except Exception as e:
-        result['success'] = False
-        result['errors'].append("Exception in writing to file: {}".format(str(e)))
+        result["success"] = False
+        result["errors"].append("Exception in writing to file: {}".format(str(e)))
 
     # If check param is flagged, ensure json data exists in the output file
     if check:
@@ -241,19 +238,19 @@ def json_dump_to_file(json_data, out_file, check=True, rollback_on_fail=True):
             with open(out_file) as infile:
                 data = json.load(infile)
         except Exception as e:
-            result['success'] = False
-            result['errors'].append("JSON file invalid - {}".format(e))
+            result["success"] = False
+            result["errors"].append("JSON file invalid - {}".format(e))
 
     # If data save was unsuccessful and the rollback_on_fail param is flagged
     #   and there is a temp file set, roll back to old file
-    if not result.get('success') and result.get('temp_path') and rollback_on_fail:
+    if not result.get("success") and result.get("temp_path") and rollback_on_fail:
         try:
             os.remove(out_file)
-            shutil.copy2(result.get('temp_path'), out_file)
-            os.remove(result.get('temp_path'))
+            shutil.copy2(result.get("temp_path"), out_file)
+            os.remove(result.get("temp_path"))
         except Exception as e:
-            result['success'] = False
-            result['errors'].append("Exception while restoring original file file: {}".format(str(e)))
+            result["success"] = False
+            result["errors"].append("Exception while restoring original file file: {}".format(str(e)))
 
     return result
 
@@ -267,9 +264,9 @@ def extract_video_codecs_from_file_properties(file_properties: dict):
     :return:
     """
     codecs = []
-    for stream in file_properties['streams']:
-        if stream['codec_type'] == 'video':
-            codecs.append(stream['codec_name'])
+    for stream in file_properties["streams"]:
+        if stream["codec_type"] == "video":
+            codecs.append(stream["codec_name"])
     return codecs
 
 
@@ -285,6 +282,6 @@ def get_file_checksum(path):
     """
     file_hash = hashlib.md5()
     with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(8192), b''):
+        for chunk in iter(lambda: f.read(8192), b""):
             file_hash.update(chunk)
     return copy.copy(file_hash.hexdigest())

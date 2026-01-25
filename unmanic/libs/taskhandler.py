@@ -59,7 +59,7 @@ class TaskHandler(threading.Thread):
     """
 
     def __init__(self, data_queues, task_queue, event):
-        super(TaskHandler, self).__init__(name='TaskHandler')
+        super(TaskHandler, self).__init__(name="TaskHandler")
         self.settings = config.Config()
         self.event = event
         self.data_queues = data_queues
@@ -72,7 +72,7 @@ class TaskHandler(threading.Thread):
         # Remove all items from the task list to start with
         self.clear_tasks_on_startup()
 
-    def _log(self, message, message2='', level="info"):
+    def _log(self, message, message2="", level="info"):
         message = common.format_message(message, message2)
         getattr(self.logger, level)(message)
 
@@ -93,42 +93,42 @@ class TaskHandler(threading.Thread):
             # Do not sleep at all here. Process this loop as quick as possible
             try:
                 item = self.scheduledtasks.get_nowait()
-                pathname = item['pathname']
-                library_id = item['library_id']
-                priority_score = item.get('priority_score', 0)
+                pathname = item["pathname"]
+                library_id = item["library_id"]
+                priority_score = item.get("priority_score", 0)
                 if self.add_path_to_task_queue(pathname, library_id, priority_score=priority_score):
-                    self._log("Adding file to task queue", pathname, level='info')
+                    self._log("Adding file to task queue", pathname, level="info")
                 else:
-                    self._log("Skipping file as it is already in the queue", pathname, level='info')
+                    self._log("Skipping file as it is already in the queue", pathname, level="info")
             except queue.Empty:
                 continue
             except Exception as e:
-                self._log("Exception in processing scheduledtasks", str(e), level='exception')
+                self._log("Exception in processing scheduledtasks", str(e), level="exception")
 
     def process_inotifytasks_queue(self):
         while not self.abort_flag.is_set() and not self.inotifytasks.empty():
             # Do not sleep at all here. Process this loop as quick as possible
             try:
                 item = self.inotifytasks.get_nowait()
-                pathname = item['pathname']
-                library_id = item['library_id']
-                priority_score = item.get('priority_score', 0)
+                pathname = item["pathname"]
+                library_id = item["library_id"]
+                priority_score = item.get("priority_score", 0)
                 # TODO: Ensure the file is not still being modified at this point.
                 #  If it is still being modified here, it is ok to wait for that to finish (should not matter much)
                 if self.add_path_to_task_queue(pathname, library_id, priority_score=priority_score):
-                    self._log("Adding inotify job to queue", pathname, level='info')
+                    self._log("Adding inotify job to queue", pathname, level="info")
                 else:
-                    self._log("Skipping inotify job already in the queue", pathname, level='info')
+                    self._log("Skipping inotify job already in the queue", pathname, level="info")
             except queue.Empty:
                 continue
             except Exception as e:
-                self._log("Exception in processing inotifytasks", str(e), level='exception')
+                self._log("Exception in processing inotifytasks", str(e), level="exception")
 
     def clear_tasks_on_startup(self):
         where_clause = None
         if not self.settings.get_clear_pending_tasks_on_restart():
             # Exclude all pending tasks except for those that are remote tasks... They need to be removed
-            where_clause = (Tasks.status != 'pending') | (Tasks.type == 'remote')
+            where_clause = (Tasks.status != "pending") | (Tasks.type == "remote")
         try:
             # Get all task IDs to be deleted
             select_query = Tasks.select(Tasks.id)
@@ -142,9 +142,9 @@ class TaskHandler(threading.Thread):
             if where_clause is not None:
                 delete_query = delete_query.where(where_clause)
             rows_deleted_count = delete_query.execute()
-            self._log("Deleted {} items from tasks list".format(rows_deleted_count), level='debug')
+            self._log("Deleted {} items from tasks list".format(rows_deleted_count), level="debug")
         except OperationalError as error:
-            self._log("Skipping task cleanup at startup; tasks table missing", str(error), level='debug')
+            self._log("Skipping task cleanup at startup; tasks table missing", str(error), level="debug")
 
     @staticmethod
     def check_if_task_exists_matching_path(abspath):
@@ -178,12 +178,15 @@ class TaskHandler(threading.Thread):
             return False
         # Execute event plugin runners
         plugin_handler = PluginsHandler()
-        plugin_handler.run_event_plugins_for_plugin_type('events.task_queued', {
-            'library_id':  library_id,
-            'task_id':     new_task.get_task_id(),
-            'task_type':   new_task.get_task_type(),
-            'source_data': new_task.get_source_data(),
-        })
+        plugin_handler.run_event_plugins_for_plugin_type(
+            "events.task_queued",
+            {
+                "library_id": library_id,
+                "task_id": new_task.get_task_id(),
+                "task_type": new_task.get_task_type(),
+                "source_data": new_task.get_source_data(),
+            },
+        )
 
         return True
 

@@ -38,16 +38,119 @@ from unmanic.libs.unmodels.workerschedules import WorkerSchedules
 
 
 def generate_random_worker_group_name():
-    names = ['Altoa', 'Anje', 'Anji', 'Azibo', 'Azra', 'Bajin', 'Baliaja', 'Benni', 'Bie', 'Ditid', 'Ecia', 'Ejie', 'Ekon',
-             'Equinus', 'Erasto', 'Fefeya', 'Gamjee', 'Gilta', 'Girisha', 'Haijen', 'Hakalai', 'Halasuwa', 'Hamedi', 'Hokajin',
-             'Hokima', 'Hyptu', 'Ithra', 'Jaryaya', 'Javinda', 'Javyn', 'Jijel', 'Jinjin', 'Jiranty', 'Jumoke', 'Kaijin',
-             'Kanjin', 'Khuwei', 'Kina', 'Lakjin', 'Makas', 'Malak', 'Meimei', 'Melkree', 'Napokue', 'Nelina', 'Nepita',
-             'Nuenvan', 'Prerrahar', 'Pujati', 'Rakash', 'Reji', 'Renji', 'Rhazin', 'Ronjaty', 'Rujabu', 'Saonji', 'Shadrala',
-             'Shengis', 'Suja', 'Suli', 'Suliya', 'Talisa', 'Tanjin', 'Tayo', 'Tazingo', 'Tedar', 'Teshi', 'Tirezi',
-             'Trezzahn', 'Trolgar', 'Ttarmek', 'Ugoki', 'Valja', 'Vekuzz', 'Venjo', 'Venmara', 'Vinji', 'Voyambi', 'Vujii',
-             'Vuzashi', 'Wanjin', 'Yaci', 'Yamike', 'Yavo', 'Yera', 'Yeree', 'Yetu', 'Yishi', 'Yuhai', 'Zaejin', 'Zalma',
-             'Zea', 'Zelaji', 'Zelea', 'Ziataaman', 'Ziataima', 'Ziatakraa', 'Zola', 'Zoljin', 'Zoti', 'Zujia', 'Zulabar',
-             'Zulja', 'Zuljah', 'Zulkis', 'Zulraja', 'Zulrajas', 'Zulwatha', 'Zulyafi', 'Zunabar', 'Zyra', ]
+    names = [
+        "Altoa",
+        "Anje",
+        "Anji",
+        "Azibo",
+        "Azra",
+        "Bajin",
+        "Baliaja",
+        "Benni",
+        "Bie",
+        "Ditid",
+        "Ecia",
+        "Ejie",
+        "Ekon",
+        "Equinus",
+        "Erasto",
+        "Fefeya",
+        "Gamjee",
+        "Gilta",
+        "Girisha",
+        "Haijen",
+        "Hakalai",
+        "Halasuwa",
+        "Hamedi",
+        "Hokajin",
+        "Hokima",
+        "Hyptu",
+        "Ithra",
+        "Jaryaya",
+        "Javinda",
+        "Javyn",
+        "Jijel",
+        "Jinjin",
+        "Jiranty",
+        "Jumoke",
+        "Kaijin",
+        "Kanjin",
+        "Khuwei",
+        "Kina",
+        "Lakjin",
+        "Makas",
+        "Malak",
+        "Meimei",
+        "Melkree",
+        "Napokue",
+        "Nelina",
+        "Nepita",
+        "Nuenvan",
+        "Prerrahar",
+        "Pujati",
+        "Rakash",
+        "Reji",
+        "Renji",
+        "Rhazin",
+        "Ronjaty",
+        "Rujabu",
+        "Saonji",
+        "Shadrala",
+        "Shengis",
+        "Suja",
+        "Suli",
+        "Suliya",
+        "Talisa",
+        "Tanjin",
+        "Tayo",
+        "Tazingo",
+        "Tedar",
+        "Teshi",
+        "Tirezi",
+        "Trezzahn",
+        "Trolgar",
+        "Ttarmek",
+        "Ugoki",
+        "Valja",
+        "Vekuzz",
+        "Venjo",
+        "Venmara",
+        "Vinji",
+        "Voyambi",
+        "Vujii",
+        "Vuzashi",
+        "Wanjin",
+        "Yaci",
+        "Yamike",
+        "Yavo",
+        "Yera",
+        "Yeree",
+        "Yetu",
+        "Yishi",
+        "Yuhai",
+        "Zaejin",
+        "Zalma",
+        "Zea",
+        "Zelaji",
+        "Zelea",
+        "Ziataaman",
+        "Ziataima",
+        "Ziatakraa",
+        "Zola",
+        "Zoljin",
+        "Zoti",
+        "Zujia",
+        "Zulabar",
+        "Zulja",
+        "Zuljah",
+        "Zulkis",
+        "Zulraja",
+        "Zulrajas",
+        "Zulwatha",
+        "Zulyafi",
+        "Zunabar",
+        "Zyra",
+    ]
     return random.choice(names)
 
 
@@ -83,24 +186,24 @@ class WorkerGroup(object):
 
         if not configured_worker_groups:
             default_worker_group = {
-                'id':                     1,
-                'locked':                 False,
-                'name':                   generate_random_worker_group_name(),
-                'number_of_workers':      0,
-                'tags':                   [],
-                'worker_event_schedules': [],
+                "id": 1,
+                "locked": False,
+                "name": generate_random_worker_group_name(),
+                "number_of_workers": 0,
+                "tags": [],
+                "worker_event_schedules": [],
             }
 
             # Migrate default worker data from
             settings = config.Config()
             if settings.number_of_workers is not None:
-                default_worker_group['number_of_workers'] = settings.number_of_workers
+                default_worker_group["number_of_workers"] = settings.number_of_workers
                 if settings.worker_event_schedules is not None:
-                    default_worker_group['worker_event_schedules'] = settings.worker_event_schedules
+                    default_worker_group["worker_event_schedules"] = settings.worker_event_schedules
 
                 # Disable the legacy settings
-                settings.set_config_item('number_of_workers', None, save_settings=True)
-                settings.set_config_item('worker_event_schedules', None, save_settings=True)
+                settings.set_config_item("number_of_workers", None, save_settings=True)
+                settings.set_config_item("worker_event_schedules", None, save_settings=True)
 
                 WorkerGroup.create(default_worker_group)
                 return [default_worker_group]
@@ -109,24 +212,26 @@ class WorkerGroup(object):
         worker_groups = []
         for group in configured_worker_groups:
             group_config = {
-                'id':                     group.id,
-                'locked':                 group.locked,
-                'name':                   group.name,
-                'number_of_workers':      group.number_of_workers,
-                'worker_event_schedules': [],
-                'tags':                   [],
+                "id": group.id,
+                "locked": group.locked,
+                "name": group.name,
+                "number_of_workers": group.number_of_workers,
+                "worker_event_schedules": [],
+                "tags": [],
             }
             # Append tags
             for tag in group.tags.order_by(Tags.name):
-                group_config['tags'].append(tag.name)
+                group_config["tags"].append(tag.name)
             # Append worker_event_schedules
             for event_schedule in group.worker_schedules:
-                group_config['worker_event_schedules'].append({
-                    'repetition':            event_schedule.repetition,
-                    'schedule_task':         event_schedule.schedule_task,
-                    'schedule_time':         event_schedule.schedule_time,
-                    'schedule_worker_count': event_schedule.schedule_worker_count,
-                })
+                group_config["worker_event_schedules"].append(
+                    {
+                        "repetition": event_schedule.repetition,
+                        "schedule_task": event_schedule.schedule_task,
+                        "schedule_time": event_schedule.schedule_time,
+                        "schedule_worker_count": event_schedule.schedule_worker_count,
+                    }
+                )
 
             worker_groups.append(group_config)
 
@@ -142,13 +247,13 @@ class WorkerGroup(object):
         :return:
         """
         # Ensure the name is not blank
-        if not data.get('name'):
-            data['name'] = generate_random_worker_group_name()
+        if not data.get("name"):
+            data["name"] = generate_random_worker_group_name()
 
         worker_group_data = {
-            'locked':            data.get('locked'),
-            'name':              data.get('name'),
-            'number_of_workers': data.get('number_of_workers'),
+            "locked": data.get("locked"),
+            "name": data.get("name"),
+            "number_of_workers": data.get("number_of_workers"),
         }
         worker_group_id = WorkerGroups.create(**worker_group_data)
 
@@ -156,18 +261,18 @@ class WorkerGroup(object):
         worker_group = WorkerGroup(int(worker_group_id.id))
 
         # Set lists
-        worker_group.set_tags(data.get('tags', []))
-        worker_group.set_worker_event_schedules(data.get('worker_event_schedules', []))
+        worker_group.set_tags(data.get("tags", []))
+        worker_group.set_worker_event_schedules(data.get("worker_event_schedules", []))
 
     @staticmethod
     def create_schedules(worker_group_id: int, worker_event_schedules: list):
         for worker_event_schedule in worker_event_schedules:
             worker_event_schedule_data = {
-                'worker_group_id':       worker_group_id,
-                'repetition':            worker_event_schedule.get('repetition'),
-                'schedule_task':         worker_event_schedule.get('schedule_task'),
-                'schedule_time':         worker_event_schedule.get('schedule_time'),
-                'schedule_worker_count': worker_event_schedule.get('schedule_worker_count'),
+                "worker_group_id": worker_group_id,
+                "repetition": worker_event_schedule.get("repetition"),
+                "schedule_task": worker_event_schedule.get("schedule_task"),
+                "schedule_time": worker_event_schedule.get("schedule_time"),
+                "schedule_worker_count": worker_event_schedule.get("schedule_worker_count"),
             }
             WorkerSchedules.create(**worker_event_schedule_data)
 
@@ -223,12 +328,14 @@ class WorkerGroup(object):
     def get_worker_event_schedules(self):
         return_value = []
         for event_schedule in self.model.worker_schedules:
-            return_value.append({
-                'repetition':            event_schedule.repetition,
-                'schedule_task':         event_schedule.schedule_task,
-                'schedule_time':         event_schedule.schedule_time,
-                'schedule_worker_count': event_schedule.schedule_worker_count,
-            })
+            return_value.append(
+                {
+                    "repetition": event_schedule.repetition,
+                    "schedule_task": event_schedule.schedule_task,
+                    "schedule_time": event_schedule.schedule_time,
+                    "schedule_worker_count": event_schedule.schedule_worker_count,
+                }
+            )
         return return_value
 
     def set_worker_event_schedules(self, value):

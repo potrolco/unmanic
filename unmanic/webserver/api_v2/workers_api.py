@@ -44,39 +44,39 @@ class ApiWorkersHandler(BaseApiHandler):
 
     routes = [
         {
-            "path_pattern":      r"/workers/worker/pause",
+            "path_pattern": r"/workers/worker/pause",
             "supported_methods": ["POST"],
-            "call_method":       "pause_worker",
+            "call_method": "pause_worker",
         },
         {
-            "path_pattern":      r"/workers/worker/pause/all",
+            "path_pattern": r"/workers/worker/pause/all",
             "supported_methods": ["POST"],
-            "call_method":       "pause_all_workers",
+            "call_method": "pause_all_workers",
         },
         {
-            "path_pattern":      r"/workers/worker/resume",
+            "path_pattern": r"/workers/worker/resume",
             "supported_methods": ["POST"],
-            "call_method":       "resume_worker",
+            "call_method": "resume_worker",
         },
         {
-            "path_pattern":      r"/workers/worker/resume/all",
+            "path_pattern": r"/workers/worker/resume/all",
             "supported_methods": ["POST"],
-            "call_method":       "resume_all_workers",
+            "call_method": "resume_all_workers",
         },
         {
-            "path_pattern":      r"/workers/worker/terminate",
+            "path_pattern": r"/workers/worker/terminate",
             "supported_methods": ["DELETE"],
-            "call_method":       "terminate_worker",
+            "call_method": "terminate_worker",
         },
         {
-            "path_pattern":      r"/workers/worker/terminate/all",
+            "path_pattern": r"/workers/worker/terminate/all",
             "supported_methods": ["DELETE"],
-            "call_method":       "terminate_all_workers",
+            "call_method": "terminate_all_workers",
         },
         {
-            "path_pattern":      r"/workers/status",
+            "path_pattern": r"/workers/status",
             "supported_methods": ["GET"],
-            "call_method":       "workers_status",
+            "call_method": "workers_status",
         },
     ]
 
@@ -85,7 +85,7 @@ class ApiWorkersHandler(BaseApiHandler):
         udq = UnmanicDataQueues()
         urt = UnmanicRunningTreads()
         self.unmanic_data_queues = udq.get_unmanic_data_queues()
-        self.foreman = urt.get_unmanic_running_thread('foreman')
+        self.foreman = urt.get_unmanic_running_thread("foreman")
 
     async def pause_worker(self):
         """
@@ -134,7 +134,7 @@ class ApiWorkersHandler(BaseApiHandler):
         try:
             json_request = self.read_json_request(RequestWorkerByIdSchema())
 
-            if not workers.pause_worker_by_id(json_request.get('worker_id')):
+            if not workers.pause_worker_by_id(json_request.get("worker_id")):
                 self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to pause worker")
                 self.write_error()
                 return
@@ -142,7 +142,7 @@ class ApiWorkersHandler(BaseApiHandler):
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -194,7 +194,7 @@ class ApiWorkersHandler(BaseApiHandler):
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -247,7 +247,7 @@ class ApiWorkersHandler(BaseApiHandler):
         try:
             json_request = self.read_json_request(RequestWorkerByIdSchema())
 
-            if not workers.resume_worker_by_id(json_request.get('worker_id')):
+            if not workers.resume_worker_by_id(json_request.get("worker_id")):
                 self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to resume worker")
                 self.write_error()
                 return
@@ -255,7 +255,7 @@ class ApiWorkersHandler(BaseApiHandler):
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -307,7 +307,7 @@ class ApiWorkersHandler(BaseApiHandler):
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -360,7 +360,7 @@ class ApiWorkersHandler(BaseApiHandler):
         try:
             json_request = self.read_json_request(RequestWorkerByIdSchema())
 
-            if not workers.terminate_worker_by_id(json_request.get('worker_id')):
+            if not workers.terminate_worker_by_id(json_request.get("worker_id")):
                 self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to resume worker")
                 self.write_error()
                 return
@@ -368,7 +368,7 @@ class ApiWorkersHandler(BaseApiHandler):
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -420,7 +420,7 @@ class ApiWorkersHandler(BaseApiHandler):
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -469,13 +469,13 @@ class ApiWorkersHandler(BaseApiHandler):
             response = self.build_response(
                 WorkerStatusSuccessSchema(),
                 {
-                    'workers_status': workers_status,
-                }
+                    "workers_status": workers_status,
+                },
             )
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))

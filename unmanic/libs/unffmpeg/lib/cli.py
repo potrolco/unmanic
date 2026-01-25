@@ -3,23 +3,23 @@
 
 """
     unmanic.cli.py
- 
+
     Written by:               Josh.5 <jsunnex@gmail.com>
     Date:                     21 Sep 2019, (2:31 PM)
- 
+
     Copyright:
            Copyright (C) Josh Sunnex - All Rights Reserved
- 
+
            Permission is hereby granted, free of charge, to any person obtaining a copy
            of this software and associated documentation files (the "Software"), to deal
            in the Software without restriction, including without limitation the rights
            to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
            copies of the Software, and to permit persons to whom the Software is
            furnished to do so, subject to the following conditions:
-  
+
            The above copyright notice and this permission notice shall be included in all
            copies or substantial portions of the Software.
-  
+
            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
            EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
            MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -53,10 +53,10 @@ def ffmpeg_cmd(params):
         raw_output = out.decode("utf-8")
     except Exception as e:
         raise FFMpegError(command, str(e))
-    if pipe.returncode == 1 or 'error' in raw_output:
+    if pipe.returncode == 1 or "error" in raw_output:
         raise FFMpegError(command, raw_output)
     if not raw_output:
-        raise FFMpegError(command, 'No command output returned')
+        raise FFMpegError(command, "No command output returned")
 
     return raw_output
 
@@ -78,10 +78,10 @@ def ffprobe_cmd(params):
         raw_output = out.decode("utf-8")
     except Exception as e:
         raise FFProbeError(command, str(e))
-    if pipe.returncode == 1 or 'error' in raw_output:
+    if pipe.returncode == 1 or "error" in raw_output:
         raise FFProbeError(command, raw_output)
     if not raw_output:
-        raise FFProbeError(command, 'No info found')
+        raise FFProbeError(command, "No info found")
 
     return raw_output
 
@@ -94,16 +94,9 @@ def ffprobe_file(vid_file_path):
     :return:
     """
     if type(vid_file_path) != str:
-        raise Exception('Give ffprobe a full file path of the video')
+        raise Exception("Give ffprobe a full file path of the video")
 
-    params = [
-        "-loglevel", "quiet",
-        "-print_format", "json",
-        "-show_format",
-        "-show_streams",
-        "-show_error",
-        vid_file_path
-    ]
+    params = ["-loglevel", "quiet", "-print_format", "json", "-show_format", "-show_streams", "-show_error", vid_file_path]
 
     # Check result
     results = ffprobe_cmd(params)
@@ -122,8 +115,10 @@ def ffmpeg_version_info():
     :return:
     """
     params = [
-        "-loglevel", "quiet",
-        "-print_format", "json",
+        "-loglevel",
+        "quiet",
+        "-print_format",
+        "json",
         "-show_versions",
     ]
 

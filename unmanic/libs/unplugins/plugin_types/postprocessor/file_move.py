@@ -52,44 +52,44 @@ class FileMove(PluginType):
     :return:
     """
     data_schema = {
-        "library_id":            {
+        "library_id": {
             "required": True,
-            "type":     int,
+            "type": int,
         },
-        "source_data":           {
+        "source_data": {
             "required": True,
-            "type":     dict,
+            "type": dict,
         },
-        "remove_source_file":    {
+        "remove_source_file": {
             "required": True,
-            "type":     bool,
+            "type": bool,
         },
-        "copy_file":             {
+        "copy_file": {
             "required": True,
-            "type":     bool,
+            "type": bool,
         },
-        "file_in":               {
+        "file_in": {
             "required": True,
-            "type":     str,
+            "type": str,
         },
-        "file_out":              {
+        "file_out": {
             "required": True,
-            "type":     str,
+            "type": str,
         },
         "run_default_file_copy": {
             "required": True,
-            "type":     bool,
+            "type": bool,
         },
     }
     test_data = {
-        'library_id':            1,
-        'copy_file':             True,
-        'file_in':               '{cache_path}/{test_file_out}',
-        'file_out':              '{library_path}/{test_file_in}',
-        'remove_source_file':    True,
-        'run_default_file_copy': True,
-        'source_data':           {
-            'abspath':  '{library_path}/{test_file_in}',
-            'basename': '{test_file_in}',
-        }
+        "library_id": 1,
+        "copy_file": True,
+        "file_in": "{cache_path}/{test_file_out}",
+        "file_out": "{library_path}/{test_file_in}",
+        "remove_source_file": True,
+        "run_default_file_copy": True,
+        "source_data": {
+            "abspath": "{library_path}/{test_file_in}",
+            "basename": "{test_file_in}",
+        },
     }

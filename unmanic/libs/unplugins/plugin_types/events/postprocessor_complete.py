@@ -59,32 +59,26 @@ class PostprocessorComplete(PluginType):
     :return:
     """
     data_schema = {
-        "library_id":          {"required": False, "type": int},
-        "task_id":             {"required": False, "type": int},
-        "task_type":           {"required": False, "type": str},
-        "source_data":         {"required": False, "type": dict},
-        "destination_data":    {"required": False, "type": dict},
-        "task_success":        {"required": False, "type": bool},
-        "start_time":          {"required": False, "type": float},
-        "finish_time":         {"required": False, "type": float},
+        "library_id": {"required": False, "type": int},
+        "task_id": {"required": False, "type": int},
+        "task_type": {"required": False, "type": str},
+        "source_data": {"required": False, "type": dict},
+        "destination_data": {"required": False, "type": dict},
+        "task_success": {"required": False, "type": bool},
+        "start_time": {"required": False, "type": float},
+        "finish_time": {"required": False, "type": float},
         "processed_by_worker": {"required": False, "type": str},
-        "log":                 {"required": False, "type": str},
+        "log": {"required": False, "type": str},
     }
     test_data = {
-        "library_id":          1,
-        "task_id":             4321,
-        "task_type":           "local",
-        "source_data":         {
-            "abspath":  "/path/to/media/file.mp4",
-            "basename": "file.mp4"
-        },
-        "destination_data":    {
-            "abspath":  "/path/to/media/file.mkv",
-            "basename": "file.mkv"
-        },
-        "task_success":        True,
-        "start_time":          1625080000.0,
-        "finish_time":         1625080050.0,
+        "library_id": 1,
+        "task_id": 4321,
+        "task_type": "local",
+        "source_data": {"abspath": "/path/to/media/file.mp4", "basename": "file.mp4"},
+        "destination_data": {"abspath": "/path/to/media/file.mkv", "basename": "file.mkv"},
+        "task_success": True,
+        "start_time": 1625080000.0,
+        "finish_time": 1625080050.0,
         "processed_by_worker": "worker-42",
-        "log":                 "RUNNER: Transcode Video Files [Pass #1]\nPost-processor complete\n",
+        "log": "RUNNER: Transcode Video Files [Pass #1]\nPost-processor complete\n",
     }

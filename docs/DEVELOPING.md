@@ -86,7 +86,7 @@ The Unmanic frontend UI exists in a submodule.
 Start by pulling the latest changes
 
 ```
-git submodule update --init --recursive 
+git submodule update --init --recursive
 ```
 
 Once you have done this, run the frontend_install.sh script.

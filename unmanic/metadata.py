@@ -33,7 +33,7 @@ import json
 import os
 
 
-def read_version_string(version_type='long'):
+def read_version_string(version_type="long"):
     """
     Return the application's version number as a string
 
@@ -41,20 +41,20 @@ def read_version_string(version_type='long'):
     """
     try:
         root_dir = os.path.dirname(os.path.realpath(__file__))
-        version_file = os.path.join(root_dir, 'version')
+        version_file = os.path.join(root_dir, "version")
         with open(version_file) as json_file:
             data = json.load(json_file)
         return data[version_type]
     except:
-        return 'UNKNOWN.VERSION'
+        return "UNKNOWN.VERSION"
 
 
 __name = "tars"
 __author = "TARS Fork (Original: Josh.5)"
 __email = "jsunnex@gmail.com"
 
-__author__ = '%s (%s)' % (__author, __email)
-__version__ = read_version_string('short')
+__author__ = "%s (%s)" % (__author, __email)
+__version__ = read_version_string("short")
 __description__ = "TARS - Transcoding Automation & Reorganization System (Unmanic fork with unlimited libraries)"
 __disclaimer__ = ""
 __forum__ = ""

@@ -36,10 +36,10 @@ from .basemodel import BaseModel
 from .basemodel import Database
 from .basemodel import db
 
-__author__ = 'Josh.5 (jsunnex@gmail.com)'
+__author__ = "Josh.5 (jsunnex@gmail.com)"
 
 __all__ = (
-    'BaseModel',
-    'Database',
-    'db',
+    "BaseModel",
+    "Database",
+    "db",
 )

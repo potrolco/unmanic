@@ -60,15 +60,15 @@ class FrontendPushMessages(Queue, metaclass=SingletonType):
     @staticmethod
     def __validate_item(item):
         # Ensure all required keys are present
-        for key in ['id', 'type', 'code', 'message', 'timeout']:
+        for key in ["id", "type", "code", "message", "timeout"]:
             if key not in item:
                 raise Exception("Frontend message item incorrectly formatted. Missing key: '{}'".format(key))
 
         # Ensure the given type is valid
-        if item.get('type') not in ['error', 'warning', 'success', 'info', 'status']:
+        if item.get("type") not in ["error", "warning", "success", "info", "status"]:
             raise Exception(
                 "Frontend message item's code must be in ['error', 'warning', 'success', 'info', 'status']. Received '{}'".format(
-                    item.get('type')
+                    item.get("type")
                 )
             )
         return True
@@ -92,7 +92,7 @@ class FrontendPushMessages(Queue, metaclass=SingletonType):
         # Ensure received item is valid
         self.__validate_item(item)
         with self._lock:
-            item_id = item.get('id')
+            item_id = item.get("id")
             if item_id in self.all_items:
                 return
             self.all_items.add(item_id)
@@ -117,7 +117,7 @@ class FrontendPushMessages(Queue, metaclass=SingletonType):
             requeue_items = []
             # Create list of items that will be queued again
             for current_item in current_items:
-                if current_item.get('id') != item_id:
+                if current_item.get("id") != item_id:
                     requeue_items.append(current_item)
             if item_id in self.all_items:
                 self.all_items.remove(item_id)
@@ -134,7 +134,7 @@ class FrontendPushMessages(Queue, metaclass=SingletonType):
     def update(self, item):
         # Ensure received item is valid
         self.__validate_item(item)
-        item_id = item.get('id')
+        item_id = item.get("id")
         with self._lock:
             current_items = self.__get_all_items_locked()
 
@@ -142,7 +142,7 @@ class FrontendPushMessages(Queue, metaclass=SingletonType):
             replaced = False
             # Create list of items that will be queued again, replacing matching IDs
             for current_item in current_items:
-                if current_item.get('id') == item_id:
+                if current_item.get("id") == item_id:
                     requeue_items.append(item)
                     replaced = True
                 else:

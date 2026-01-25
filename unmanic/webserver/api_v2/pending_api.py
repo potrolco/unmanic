@@ -35,9 +35,16 @@ import tornado.log
 from unmanic.libs import session
 from unmanic.libs.uiserver import UnmanicDataQueues
 from unmanic.webserver.api_v2.base_api_handler import BaseApiHandler, BaseApiError
-from unmanic.webserver.api_v2.schema.schemas import PendingTasksTableResultsSchema, RequestPendingTaskCreateSchema, \
-    RequestPendingTasksLibraryUpdateSchema, RequestPendingTasksReorderSchema, PendingTasksSchema, \
-    RequestPendingTableDataSchema, RequestTableUpdateByIdList, TaskDownloadLinkSchema
+from unmanic.webserver.api_v2.schema.schemas import (
+    PendingTasksTableResultsSchema,
+    RequestPendingTaskCreateSchema,
+    RequestPendingTasksLibraryUpdateSchema,
+    RequestPendingTasksReorderSchema,
+    PendingTasksSchema,
+    RequestPendingTableDataSchema,
+    RequestTableUpdateByIdList,
+    TaskDownloadLinkSchema,
+)
 from unmanic.webserver.downloads import DownloadsLinks
 from unmanic.webserver.helpers import pending_tasks
 
@@ -50,54 +57,54 @@ class ApiPendingHandler(BaseApiHandler):
 
     routes = [
         {
-            "path_pattern":      r"/pending/tasks",
+            "path_pattern": r"/pending/tasks",
             "supported_methods": ["POST"],
-            "call_method":       "get_pending_tasks",
+            "call_method": "get_pending_tasks",
         },
         {
-            "path_pattern":      r"/pending/tasks",
+            "path_pattern": r"/pending/tasks",
             "supported_methods": ["DELETE"],
-            "call_method":       "delete_pending_tasks",
+            "call_method": "delete_pending_tasks",
         },
         {
-            "path_pattern":      r"/pending/rescan",
+            "path_pattern": r"/pending/rescan",
             "supported_methods": ["POST"],
-            "call_method":       "trigger_library_rescan",
+            "call_method": "trigger_library_rescan",
         },
         {
-            "path_pattern":      r"/pending/reorder",
+            "path_pattern": r"/pending/reorder",
             "supported_methods": ["POST"],
-            "call_method":       "reorder_pending_tasks",
+            "call_method": "reorder_pending_tasks",
         },
         {
-            "path_pattern":      r"/pending/create",
+            "path_pattern": r"/pending/create",
             "supported_methods": ["POST"],
-            "call_method":       "create_task_from_path",
+            "call_method": "create_task_from_path",
         },
         {
-            "path_pattern":      r"/pending/library/update",
+            "path_pattern": r"/pending/library/update",
             "supported_methods": ["POST"],
-            "call_method":       "set_pending_library_by_name",
+            "call_method": "set_pending_library_by_name",
         },
         {
-            "path_pattern":      r"/pending/status/get",
+            "path_pattern": r"/pending/status/get",
             "supported_methods": ["POST"],
-            "call_method":       "get_pending_status_of_tasks",
+            "call_method": "get_pending_status_of_tasks",
         },
         {
-            "path_pattern":      r"/pending/status/set/ready",
+            "path_pattern": r"/pending/status/set/ready",
             "supported_methods": ["POST"],
-            "call_method":       "set_pending_status_as_ready",
+            "call_method": "set_pending_status_as_ready",
         },
         {
-            "path_pattern":      r"/pending/download/file/id/(?P<task_id>[0-9]+)?",
+            "path_pattern": r"/pending/download/file/id/(?P<task_id>[0-9]+)?",
             "supported_methods": ["GET"],
-            "call_method":       "gen_download_link_pending_task_file",
+            "call_method": "gen_download_link_pending_task_file",
         },
         {
-            "path_pattern":      r"/pending/download/data/id/(?P<task_id>[0-9]+)?",
+            "path_pattern": r"/pending/download/data/id/(?P<task_id>[0-9]+)?",
             "supported_methods": ["GET"],
-            "call_method":       "gen_download_link_pending_task_data",
+            "call_method": "gen_download_link_pending_task_data",
         },
     ]
 
@@ -155,28 +162,28 @@ class ApiPendingHandler(BaseApiHandler):
             json_request = self.read_json_request(RequestPendingTableDataSchema())
 
             params = {
-                'start':        json_request.get('start', '0'),
-                'length':       json_request.get('length', '10'),
-                'search_value': json_request.get('search_value', ''),
-                'order':        {
-                    "column": json_request.get('order_by', 'priority'),
-                    "dir":    json_request.get('order_direction', 'desc'),
-                }
+                "start": json_request.get("start", "0"),
+                "length": json_request.get("length", "10"),
+                "search_value": json_request.get("search_value", ""),
+                "order": {
+                    "column": json_request.get("order_by", "priority"),
+                    "dir": json_request.get("order_direction", "desc"),
+                },
             }
             task_list = pending_tasks.prepare_filtered_pending_tasks(params, include_library=True)
 
             response = self.build_response(
                 PendingTasksSchema(),
                 {
-                    "recordsTotal":    task_list.get('recordsTotal'),
-                    "recordsFiltered": task_list.get('recordsFiltered'),
-                    "results":         task_list.get('results'),
-                }
+                    "recordsTotal": task_list.get("recordsTotal"),
+                    "recordsFiltered": task_list.get("recordsFiltered"),
+                    "results": task_list.get("results"),
+                },
             )
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -229,7 +236,7 @@ class ApiPendingHandler(BaseApiHandler):
         try:
             json_request = self.read_json_request(RequestTableUpdateByIdList())
 
-            if not pending_tasks.remove_pending_tasks(json_request.get('id_list', [])):
+            if not pending_tasks.remove_pending_tasks(json_request.get("id_list", [])):
                 self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to delete the pending tasks by their IDs")
                 self.write_error()
                 return
@@ -237,7 +244,7 @@ class ApiPendingHandler(BaseApiHandler):
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -282,19 +289,19 @@ class ApiPendingHandler(BaseApiHandler):
         """
         try:
             # Fetch library scan queue. If it is full, then a library scan has already been requested.
-            library_scanner_triggers = self.unmanic_data_queues.get('library_scanner_triggers')
+            library_scanner_triggers = self.unmanic_data_queues.get("library_scanner_triggers")
             if library_scanner_triggers.full():
                 self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to queue library scan")
                 self.write_error()
                 return
 
             # Add library scan to queue
-            library_scanner_triggers.put('library_scan')
+            library_scanner_triggers.put("library_scan")
 
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -347,7 +354,7 @@ class ApiPendingHandler(BaseApiHandler):
         try:
             json_request = self.read_json_request(RequestPendingTasksReorderSchema())
 
-            if not pending_tasks.reorder_pending_tasks(json_request.get('id_list', []), json_request.get('position', 'top')):
+            if not pending_tasks.reorder_pending_tasks(json_request.get("id_list", []), json_request.get("position", "top")):
                 self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to save new order")
                 self.write_error()
                 return
@@ -355,7 +362,7 @@ class ApiPendingHandler(BaseApiHandler):
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -408,11 +415,11 @@ class ApiPendingHandler(BaseApiHandler):
         try:
             json_request = self.read_json_request(RequestPendingTaskCreateSchema())
 
-            abspath = os.path.abspath(json_request.get('path', ''))
-            library_id = json_request.get('library_id', 1)
-            library_name = json_request.get('library_name')
-            task_type = json_request.get('type', 'local')
-            priority_score = json_request.get('priority_score', 0)
+            abspath = os.path.abspath(json_request.get("path", ""))
+            library_id = json_request.get("library_id", 1)
+            library_name = json_request.get("library_name")
+            task_type = json_request.get("type", "local")
+            priority_score = json_request.get("priority_score", 0)
 
             # Ensure path exists
             if not os.path.exists(abspath):
@@ -422,13 +429,15 @@ class ApiPendingHandler(BaseApiHandler):
 
             # Ensure a task does not already exist with this path
             if pending_tasks.check_if_task_exists_matching_path(abspath):
-                self.set_status(self.STATUS_ERROR_EXTERNAL,
-                                reason="A task already exists with the provided path: '{}'".format(abspath))
+                self.set_status(
+                    self.STATUS_ERROR_EXTERNAL, reason="A task already exists with the provided path: '{}'".format(abspath)
+                )
                 self.write_error()
                 return False
 
-            task_info = pending_tasks.create_task(abspath, library_id=library_id, library_name=library_name,
-                                                  task_type=task_type, priority_score=priority_score)
+            task_info = pending_tasks.create_task(
+                abspath, library_id=library_id, library_name=library_name, task_type=task_type, priority_score=priority_score
+            )
             if not task_info:
                 self.set_status(self.STATUS_ERROR_EXTERNAL, reason="Failed to save new pending task for the provided path")
                 self.write_error()
@@ -439,7 +448,7 @@ class ApiPendingHandler(BaseApiHandler):
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -492,7 +501,7 @@ class ApiPendingHandler(BaseApiHandler):
         try:
             json_request = self.read_json_request(RequestTableUpdateByIdList())
 
-            status_results = pending_tasks.fetch_tasks_status(json_request.get('id_list', []))
+            status_results = pending_tasks.fetch_tasks_status(json_request.get("id_list", []))
             if not status_results:
                 self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to fetch pending tasks status")
                 self.write_error()
@@ -502,12 +511,12 @@ class ApiPendingHandler(BaseApiHandler):
                 PendingTasksSchema(),
                 {
                     "results": status_results,
-                }
+                },
             )
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -560,7 +569,7 @@ class ApiPendingHandler(BaseApiHandler):
         try:
             json_request = self.read_json_request(RequestTableUpdateByIdList())
 
-            if not pending_tasks.update_pending_tasks_status(json_request.get('id_list', []), status='pending'):
+            if not pending_tasks.update_pending_tasks_status(json_request.get("id_list", []), status="pending"):
                 self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to update pending tasks status")
                 self.write_error()
                 return
@@ -568,7 +577,7 @@ class ApiPendingHandler(BaseApiHandler):
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -621,8 +630,8 @@ class ApiPendingHandler(BaseApiHandler):
         try:
             json_request = self.read_json_request(RequestPendingTasksLibraryUpdateSchema())
 
-            id_list = json_request.get('id_list', [])
-            library_name = json_request.get('library_name')
+            id_list = json_request.get("id_list", [])
+            library_name = json_request.get("library_name")
 
             if not pending_tasks.update_pending_tasks_library(id_list, library_name):
                 self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to update pending tasks library")
@@ -632,7 +641,7 @@ class ApiPendingHandler(BaseApiHandler):
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -683,13 +692,13 @@ class ApiPendingHandler(BaseApiHandler):
                 return
 
             # Set file details
-            abspath = status_results[0].get('abspath', '')
+            abspath = status_results[0].get("abspath", "")
             basename = os.path.basename(abspath)
 
             # Generate download link
             link_data = {
-                'abspath':  abspath,
-                'basename': basename,
+                "abspath": abspath,
+                "basename": basename,
             }
             download_links = DownloadsLinks()
             link_id = download_links.generate_download_link(link_data)
@@ -698,12 +707,12 @@ class ApiPendingHandler(BaseApiHandler):
                 TaskDownloadLinkSchema(),
                 {
                     "link_id": link_id,
-                }
+                },
             )
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -753,20 +762,20 @@ class ApiPendingHandler(BaseApiHandler):
                 self.write_error()
                 return
 
-            if not status_results[0].get('status') == 'complete':
+            if not status_results[0].get("status") == "complete":
                 self.set_status(self.STATUS_ERROR_INTERNAL, reason="Pending tasks status is not 'complete'")
                 self.write_error()
                 return
 
             # Set file details
-            abspath = status_results[0].get('abspath', '')
-            basename = 'data.json'
+            abspath = status_results[0].get("abspath", "")
+            basename = "data.json"
             data_file = os.path.join(os.path.dirname(abspath), basename)
 
             # Generate download link
             link_data = {
-                'abspath':  data_file,
-                'basename': basename,
+                "abspath": data_file,
+                "basename": basename,
             }
             download_links = DownloadsLinks()
             link_id = download_links.generate_download_link(link_data)
@@ -775,12 +784,12 @@ class ApiPendingHandler(BaseApiHandler):
                 TaskDownloadLinkSchema(),
                 {
                     "link_id": link_id,
-                }
+                },
             )
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))

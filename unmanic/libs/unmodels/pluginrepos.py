@@ -38,4 +38,5 @@ class PluginRepos(BaseModel):
     """
     PluginRepos
     """
+
     path = TextField(null=False)

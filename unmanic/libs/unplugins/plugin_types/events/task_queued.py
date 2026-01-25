@@ -51,17 +51,14 @@ class TaskQueued(PluginType):
     :return:
     """
     data_schema = {
-        "library_id":  {"required": False, "type": int},
-        "task_id":     {"required": False, "type": int},
-        "task_type":   {"required": False, "type": str},
+        "library_id": {"required": False, "type": int},
+        "task_id": {"required": False, "type": int},
+        "task_type": {"required": False, "type": str},
         "source_data": {"required": False, "type": dict},
     }
     test_data = {
-        "library_id":  1,
-        "task_id":     4321,
-        "task_type":   "local",
-        "source_data": {
-            "abspath":  "/path/to/media/file.mp4",
-            "basename": "file.mp4"
-        }
+        "library_id": 1,
+        "task_id": 4321,
+        "task_type": "local",
+        "source_data": {"abspath": "/path/to/media/file.mp4", "basename": "file.mp4"},
     }

@@ -57,8 +57,9 @@ class FileTest(object):
         # Init plugins
         self.library_id = library_id
         self.plugin_handler = PluginsHandler()
-        self.plugin_modules = self.plugin_handler.get_enabled_plugin_modules_by_type('library_management.file_test',
-                                                                                     library_id=library_id)
+        self.plugin_modules = self.plugin_handler.get_enabled_plugin_modules_by_type(
+            "library_management.file_test", library_id=library_id
+        )
 
         # List of filed tasks
         self.failed_paths = []
@@ -77,7 +78,7 @@ class FileTest(object):
         if not self.failed_paths:
             failed_tasks = history_logging.get_historic_tasks_list_with_source_probe(task_success=False)
             for task in failed_tasks:
-                self.failed_paths.append(task.get('abspath'))
+                self.failed_paths.append(task.get("abspath"))
         if path in self.failed_paths:
             # That pathname was found in the results of failed historic tasks
             return True
@@ -93,7 +94,7 @@ class FileTest(object):
         # Get file parent directory
         dirname = os.path.dirname(path)
         # Check if lockfile (.unmanicignore) exists
-        unmanic_ignore_file = os.path.join(dirname, '.unmanicignore')
+        unmanic_ignore_file = os.path.join(dirname, ".unmanicignore")
         if os.path.exists(unmanic_ignore_file):
             # Get file basename
             basename = os.path.basename(path)
@@ -115,18 +116,22 @@ class FileTest(object):
 
         # TODO: Remove this
         if self.file_in_unmanic_ignore_lockfile(path):
-            file_issues.append({
-                'id':      'unmanicignore',
-                'message': "File found in unmanic ignore file - '{}'".format(path),
-            })
+            file_issues.append(
+                {
+                    "id": "unmanicignore",
+                    "message": "File found in unmanic ignore file - '{}'".format(path),
+                }
+            )
             return_value = False
 
         # Check if file has failed in history.
         if self.file_failed_in_history(path):
-            file_issues.append({
-                'id':      'blacklisted',
-                'message': "File found already failed in history - '{}'".format(path),
-            })
+            file_issues.append(
+                {
+                    "id": "blacklisted",
+                    "message": "File found already failed in history - '{}'".format(path),
+                }
+            )
             return_value = False
 
         # Only run checks with plugins if other tests were not conclusive
@@ -134,32 +139,33 @@ class FileTest(object):
         if return_value is None:
             # Set the initial data with just the priority score.
             data = {
-                'priority_score': 0,
-                'shared_info':    {},
+                "priority_score": 0,
+                "shared_info": {},
             }
             # Run tests against plugins
             for plugin_module in self.plugin_modules:
-                data['library_id'] = self.library_id
-                data['path'] = path
-                data['issues'] = deepcopy(file_issues)
-                data['add_file_to_pending_tasks'] = None
+                data["library_id"] = self.library_id
+                data["path"] = path
+                data["issues"] = deepcopy(file_issues)
+                data["add_file_to_pending_tasks"] = None
 
                 # Run plugin to update data
-                if not self.plugin_handler.exec_plugin_runner(data, plugin_module.get('plugin_id'),
-                                                              'library_management.file_test'):
+                if not self.plugin_handler.exec_plugin_runner(
+                    data, plugin_module.get("plugin_id"), "library_management.file_test"
+                ):
                     continue
 
                 # Append any file issues found during previous tests
-                file_issues = data.get('issues')
+                file_issues = data.get("issues")
 
                 # Set the return_value based on the plugin results
                 # If the add_file_to_pending_tasks returned an answer (True/False) then break the loop.
                 # No need to continue.
-                if data.get('add_file_to_pending_tasks') is not None:
-                    return_value = data.get('add_file_to_pending_tasks')
+                if data.get("add_file_to_pending_tasks") is not None:
+                    return_value = data.get("add_file_to_pending_tasks")
                     break
             # Set the priority score modification
-            priority_score_modification = data.get('priority_score', 0)
+            priority_score_modification = data.get("priority_score", 0)
 
         return return_value, file_issues, priority_score_modification
 
@@ -202,22 +208,27 @@ class FileTesterThread(threading.Thread):
                 # Log any error messages
                 for issue in issues:
                     if type(issue) is dict:
-                        self.logger.info(issue.get('message'))
+                        self.logger.info(issue.get("message"))
                     else:
                         self.logger.info(issue)
                 # If file needs to be added, then add it
                 if result:
-                    self.add_path_to_queue({
-                        'path':           next_file,
-                        'priority_score': priority_score,
-                    })
+                    self.add_path_to_queue(
+                        {
+                            "path": next_file,
+                            "priority_score": priority_score,
+                        }
+                    )
                     # Execute event plugin runners (only when added to queue)
-                    plugin_handler.run_event_plugins_for_plugin_type('events.file_queued', {
-                        'library_id':     self.library_id,
-                        'file_path':      next_file,
-                        'priority_score': priority_score,
-                        'issues':         issues,
-                    })
+                    plugin_handler.run_event_plugins_for_plugin_type(
+                        "events.file_queued",
+                        {
+                            "library_id": self.library_id,
+                            "file_path": next_file,
+                            "priority_score": priority_score,
+                            "issues": issues,
+                        },
+                    )
 
             except UnicodeEncodeError:
                 self.logger.warning("File contains Unicode characters that cannot be processed. Ignoring.")

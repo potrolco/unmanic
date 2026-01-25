@@ -42,6 +42,7 @@ class PluginSettings(object):
     to be configured by users from within the Unmanic WebUI.
 
     """
+
     settings = {}
 
     """
@@ -59,12 +60,12 @@ class PluginSettings(object):
 
     """
     The library ID that we are fetching settings for.
-    
+
     """
     library_id = None
 
     def __init__(self, *args, **kwargs):
-        self.library_id = kwargs.get('library_id')
+        self.library_id = kwargs.get("library_id")
         # If the given library is not None, ensure that it is a number
         if self.library_id:
             try:
@@ -77,20 +78,18 @@ class PluginSettings(object):
         profile_directory = self.get_profile_directory()
         # Temp code to migrate settings to userdata
         # TODO: Remove after initial release
-        if not os.path.exists(os.path.join(profile_directory, 'settings.json')):
-            if os.path.exists(os.path.join(plugin_directory, 'settings.json')):
+        if not os.path.exists(os.path.join(profile_directory, "settings.json")):
+            if os.path.exists(os.path.join(plugin_directory, "settings.json")):
                 import shutil
-                shutil.move(
-                    os.path.join(plugin_directory, 'settings.json'),
-                    os.path.join(profile_directory, 'settings.json')
-                )
+
+                shutil.move(os.path.join(plugin_directory, "settings.json"), os.path.join(profile_directory, "settings.json"))
         # If provided with a library ID, then the settings file will be different
-        plugin_settings_file = os.path.join(profile_directory, 'settings.json')
+        plugin_settings_file = os.path.join(profile_directory, "settings.json")
         if self.library_id:
-            plugin_settings_file = os.path.join(profile_directory, 'settings.{}.json'.format(self.library_id))
+            plugin_settings_file = os.path.join(profile_directory, "settings.{}.json".format(self.library_id))
             if not os.path.exists(plugin_settings_file) and not force_library_settings:
                 # If the library file does not yet exist, then resort to using the default settings file
-                plugin_settings_file = os.path.join(profile_directory, 'settings.json')
+                plugin_settings_file = os.path.join(profile_directory, "settings.json")
         return plugin_settings_file
 
     def __export_configured_settings(self):
@@ -101,7 +100,7 @@ class PluginSettings(object):
         """
         plugin_settings_file = self.__get_plugin_settings_file(force_library_settings=True)
 
-        with open(plugin_settings_file, 'w') as f:
+        with open(plugin_settings_file, "w") as f:
             json.dump(self.settings_configured, f, indent=2)
 
     def __import_configured_settings(self):
@@ -145,7 +144,7 @@ class PluginSettings(object):
 
         # If the settings file returned is the global settings file and this was called on a library config,
         # do not reset the config.
-        if self.library_id is not None and os.path.basename(plugin_settings_file) == 'settings.json':
+        if self.library_id is not None and os.path.basename(plugin_settings_file) == "settings.json":
             return False
 
         # if the file does not yet exist, create it

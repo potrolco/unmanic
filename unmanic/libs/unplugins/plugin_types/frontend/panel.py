@@ -51,28 +51,24 @@ class DataPanel(PluginType):
     data_schema = {
         "content_type": {
             "required": True,
-            "type":     str,
+            "type": str,
         },
-        "content":      {
+        "content": {
             "required": True,
-            "type":     str,
+            "type": str,
         },
-        "path":         {
+        "path": {
             "required": False,
-            "type":     str,
+            "type": str,
         },
-        "arguments":    {
+        "arguments": {
             "required": False,
-            "type":     dict,
+            "type": dict,
         },
     }
     test_data = {
-        'content_type': 'text/html',
-        'content':      "<!doctype html>"
-                        "<html>"
-                        "<head></head>"
-                        "<body></body>"
-                        "</html>",
-        'path':         "/ui/ajax",
-        'arguments':    {'param': [b'true'], 'foo': [b'ba']},
+        "content_type": "text/html",
+        "content": "<!doctype html>" "<html>" "<head></head>" "<body></body>" "</html>",
+        "path": "/ui/ajax",
+        "arguments": {"param": [b"true"], "foo": [b"ba"]},
     }

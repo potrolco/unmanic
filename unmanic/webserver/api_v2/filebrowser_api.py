@@ -35,8 +35,11 @@ import tornado.log
 from unmanic.libs import session
 from unmanic.libs.uiserver import UnmanicDataQueues
 from unmanic.webserver.api_v2.base_api_handler import BaseApiHandler, BaseApiError
-from unmanic.webserver.api_v2.schema.schemas import DirectoryListingResultsSchema, DocumentContentSuccessSchema, \
-    RequestDirectoryListingDataSchema
+from unmanic.webserver.api_v2.schema.schemas import (
+    DirectoryListingResultsSchema,
+    DocumentContentSuccessSchema,
+    RequestDirectoryListingDataSchema,
+)
 from unmanic.webserver.helpers.filebrowser import DirectoryListing
 
 
@@ -47,9 +50,9 @@ class ApiFilebrowserHandler(BaseApiHandler):
 
     routes = [
         {
-            "path_pattern":      r"/filebrowser/list",
+            "path_pattern": r"/filebrowser/list",
             "supported_methods": ["POST"],
-            "call_method":       "fetch_directory_listing",
+            "call_method": "fetch_directory_listing",
         }
     ]
 
@@ -106,20 +109,20 @@ class ApiFilebrowserHandler(BaseApiHandler):
         try:
             json_request = self.read_json_request(RequestDirectoryListingDataSchema())
 
-            directory_listing = DirectoryListing(json_request.get('list_type', 'all'))
-            path_data = directory_listing.fetch_path_data(json_request.get('current_path', '/'))
+            directory_listing = DirectoryListing(json_request.get("list_type", "all"))
+            path_data = directory_listing.fetch_path_data(json_request.get("current_path", "/"))
 
             response = self.build_response(
                 DirectoryListingResultsSchema(),
                 {
-                    'directories': path_data.get('directories', []),
-                    'files':       path_data.get('files', []),
-                }
+                    "directories": path_data.get("directories", []),
+                    "files": path_data.get("files", []),
+                },
             )
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))

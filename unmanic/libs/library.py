@@ -39,29 +39,220 @@ from unmanic.libs.unmodels import EnabledPlugins, Libraries, LibraryPluginFlow, 
 
 def generate_random_library_name():
     names = [
-        "Willes", "Here", "Helry", "Vyncent", "Burgwy", "Homas Yournet", "Roguy Eldys", "George Ewes", "Hearda",
-        "Mathye Gedde", "Wynfre", "Gauwill", "Aldhert", "Ryany", "Reward", "Atwulf", "Amer", "Alten Yourner", "Reda", "Oled",
-        "Anthohn Dene", "Rarder", "Artin Borne", "Eadwean", "Freyny Loray", "Breda", "Gauwalt Nynsell", "Lodwy", "Exam",
-        "Alters Corby", "Wilhye", "Gery", "Raffin", "Ceolbehrt", "Jamath", "George Sone", "Geoffrey Nette", "Eadund", "Dunne",
-        "Gilda", "Aered", "Lafa", "Eadulf", "Eanmaed", "Cyni", "Draffin", "Nichye", "Reder", "Aldwid", "Conbad", "Munda",
-        "Willex", "Ichohn", "Orkold", "Gyleon", "Ealard", "Helmund", "Nother", "Bertio", "Phamund Erett", "Cuthre", "Aewald",
-        "Aehehrt", "Folke", "Ales", "Chury Kypwe", "Liamund", "Rewalt Wyne", "Arryn", "Charlip", "Georguy", "Lare", "Aenward",
-        "Eanwald", "Ashwid", "Britheard", "Cholas", "Eolhed", "Anwulf", "Eorcorht", "Piersym", "Godre", "Edward", "Dreder",
-        "Geoffry", "Wyny", "Hardwy", "Witio", "Grewis", "Chilew", "Gare", "Arnwulf", "Masym Arren", "Iged", "Uwan", "Coenwy",
-        "Saefa", "Thiles", "Cyne", "Exard", "Ichas Horne", "Rewilh Morley", "Edmur Ferry", "Wine", "Ered", "Lacio", "Elres",
-        "Gaenbyrtf", "Stomund", "Riffin Maley", "Thiliam Save", "Walda", "Giles Drighte", "Robern Finchey", "Wulfa", "James",
-        "Stiny Fane", "Driffin", "Andrers", "Beorhtio", "Balda", "Warder", "Bealdu", "Dene", "Andren", "Stephye", "Ealcar",
-        "Richye Corby", "Ament Anes", "Tharry", "Germund", "Ralphye Payney"
+        "Willes",
+        "Here",
+        "Helry",
+        "Vyncent",
+        "Burgwy",
+        "Homas Yournet",
+        "Roguy Eldys",
+        "George Ewes",
+        "Hearda",
+        "Mathye Gedde",
+        "Wynfre",
+        "Gauwill",
+        "Aldhert",
+        "Ryany",
+        "Reward",
+        "Atwulf",
+        "Amer",
+        "Alten Yourner",
+        "Reda",
+        "Oled",
+        "Anthohn Dene",
+        "Rarder",
+        "Artin Borne",
+        "Eadwean",
+        "Freyny Loray",
+        "Breda",
+        "Gauwalt Nynsell",
+        "Lodwy",
+        "Exam",
+        "Alters Corby",
+        "Wilhye",
+        "Gery",
+        "Raffin",
+        "Ceolbehrt",
+        "Jamath",
+        "George Sone",
+        "Geoffrey Nette",
+        "Eadund",
+        "Dunne",
+        "Gilda",
+        "Aered",
+        "Lafa",
+        "Eadulf",
+        "Eanmaed",
+        "Cyni",
+        "Draffin",
+        "Nichye",
+        "Reder",
+        "Aldwid",
+        "Conbad",
+        "Munda",
+        "Willex",
+        "Ichohn",
+        "Orkold",
+        "Gyleon",
+        "Ealard",
+        "Helmund",
+        "Nother",
+        "Bertio",
+        "Phamund Erett",
+        "Cuthre",
+        "Aewald",
+        "Aehehrt",
+        "Folke",
+        "Ales",
+        "Chury Kypwe",
+        "Liamund",
+        "Rewalt Wyne",
+        "Arryn",
+        "Charlip",
+        "Georguy",
+        "Lare",
+        "Aenward",
+        "Eanwald",
+        "Ashwid",
+        "Britheard",
+        "Cholas",
+        "Eolhed",
+        "Anwulf",
+        "Eorcorht",
+        "Piersym",
+        "Godre",
+        "Edward",
+        "Dreder",
+        "Geoffry",
+        "Wyny",
+        "Hardwy",
+        "Witio",
+        "Grewis",
+        "Chilew",
+        "Gare",
+        "Arnwulf",
+        "Masym Arren",
+        "Iged",
+        "Uwan",
+        "Coenwy",
+        "Saefa",
+        "Thiles",
+        "Cyne",
+        "Exard",
+        "Ichas Horne",
+        "Rewilh Morley",
+        "Edmur Ferry",
+        "Wine",
+        "Ered",
+        "Lacio",
+        "Elres",
+        "Gaenbyrtf",
+        "Stomund",
+        "Riffin Maley",
+        "Thiliam Save",
+        "Walda",
+        "Giles Drighte",
+        "Robern Finchey",
+        "Wulfa",
+        "James",
+        "Stiny Fane",
+        "Driffin",
+        "Andrers",
+        "Beorhtio",
+        "Balda",
+        "Warder",
+        "Bealdu",
+        "Dene",
+        "Andren",
+        "Stephye",
+        "Ealcar",
+        "Richye Corby",
+        "Ament Anes",
+        "Tharry",
+        "Germund",
+        "Ralphye Payney",
     ]
     adjectives = [
-        "awesome", "adorable", "abounding", "aspiring", "beloved", "blue", "blissful", "creamy", "cavernous", "content",
-        "droopy", "excited", "enchanted", "enormous", "extroverted", "exciting", "gullible", "gaseous", "grumpy", "giant",
-        "handsome", "hefty", "harmless", "happy", "hairy", "humdrum", "invincible", "illiterate", "inexperienced", "impolite",
-        "illustrious", "impartial", "innocent", "jovial", "juvenile", "joyful", "jumpy", "jagged", "joyous", "kooky", "large",
-        "likeable", "mountainous", "momentous", "minty", "nocturnal", "nautical", "organic", "overcooked", "productive",
-        "plush", "polished", "queasy", "quirky", "quintessential", "reminiscent", "remarkable", "ragged", "rowdy", "soggy",
-        "sudden", "scandalous", "secretive", "spry", "squiggly", "smooth", "sulky", "scented", "spicy", "sticky", "slushy",
-        "symptomatic", "tart", "turbulent", "tiresome", "typical", "xyloid", "xanthic", "zealous", "zany",
+        "awesome",
+        "adorable",
+        "abounding",
+        "aspiring",
+        "beloved",
+        "blue",
+        "blissful",
+        "creamy",
+        "cavernous",
+        "content",
+        "droopy",
+        "excited",
+        "enchanted",
+        "enormous",
+        "extroverted",
+        "exciting",
+        "gullible",
+        "gaseous",
+        "grumpy",
+        "giant",
+        "handsome",
+        "hefty",
+        "harmless",
+        "happy",
+        "hairy",
+        "humdrum",
+        "invincible",
+        "illiterate",
+        "inexperienced",
+        "impolite",
+        "illustrious",
+        "impartial",
+        "innocent",
+        "jovial",
+        "juvenile",
+        "joyful",
+        "jumpy",
+        "jagged",
+        "joyous",
+        "kooky",
+        "large",
+        "likeable",
+        "mountainous",
+        "momentous",
+        "minty",
+        "nocturnal",
+        "nautical",
+        "organic",
+        "overcooked",
+        "productive",
+        "plush",
+        "polished",
+        "queasy",
+        "quirky",
+        "quintessential",
+        "reminiscent",
+        "remarkable",
+        "ragged",
+        "rowdy",
+        "soggy",
+        "sudden",
+        "scandalous",
+        "secretive",
+        "spry",
+        "squiggly",
+        "smooth",
+        "sulky",
+        "scented",
+        "spicy",
+        "sticky",
+        "slushy",
+        "symptomatic",
+        "tart",
+        "turbulent",
+        "tiresome",
+        "typical",
+        "xyloid",
+        "xanthic",
+        "zealous",
+        "zany",
     ]
     return "{name}, the {adjective} library".format(name=random.choice(names), adjective=random.choice(adjectives))
 
@@ -91,6 +282,7 @@ class Library(object):
         """
         # Fetch default library path from
         from unmanic.config import Config
+
         default_library_path = Config().get_library_path()
         if not default_library_path:
             default_library_path = common.get_default_library_path()
@@ -102,14 +294,14 @@ class Library(object):
         # If the libraries path is empty, then we should add the default path
         if not configured_libraries:
             default_library = {
-                'id':                 1,
-                'name':               generate_random_library_name(),
-                'path':               default_library_path,
-                'locked':             False,
+                "id": 1,
+                "name": generate_random_library_name(),
+                "path": default_library_path,
+                "locked": False,
                 "enable_remote_only": False,
-                "enable_scanner":     False,
-                "enable_inotify":     False,
-                'tags':               [],
+                "enable_scanner": False,
+                "enable_inotify": False,
+                "tags": [],
             }
             Libraries.create(**default_library)
             return [default_library]
@@ -124,18 +316,18 @@ class Library(object):
                 lib.save()
             # Create library config dictionary
             library_config = {
-                'id':                 lib.id,
-                'name':               lib.name,
-                'path':               lib.path,
-                'locked':             lib.locked,
-                'enable_remote_only': lib.enable_remote_only,
-                'enable_scanner':     lib.enable_scanner,
-                'enable_inotify':     lib.enable_inotify,
-                'tags':               [],
+                "id": lib.id,
+                "name": lib.name,
+                "path": lib.path,
+                "locked": lib.locked,
+                "enable_remote_only": lib.enable_remote_only,
+                "enable_scanner": lib.enable_scanner,
+                "enable_inotify": lib.enable_inotify,
+                "tags": [],
             }
             # Append tags
             for tag in lib.tags.order_by(Tags.name):
-                library_config['tags'].append(tag.name)
+                library_config["tags"].append(tag.name)
 
             # Keep the default library separate
             if lib.id == 1:
@@ -144,7 +336,7 @@ class Library(object):
             libraries.append(library_config)
 
         # Return the list of libraries sorted by name
-        return default_library + sorted(libraries, key=lambda d: d['name'])
+        return default_library + sorted(libraries, key=lambda d: d["name"])
 
     @staticmethod
     def within_library_count_limits():
@@ -155,7 +347,7 @@ class Library(object):
         """
         # Always return True - no library limits in TARS
         frontend_messages = FrontendPushMessages()
-        frontend_messages.remove_item('libraryEnabledLimits')
+        frontend_messages.remove_item("libraryEnabledLimits")
         return True
 
     @staticmethod
@@ -167,8 +359,8 @@ class Library(object):
         :return:
         """
         # Ensure ID is removed from data for a create
-        if 'id' in data:
-            del data['id']
+        if "id" in data:
+            del data["id"]
         new_library = Libraries.create(**data)
         return Library(new_library.id)
 
@@ -182,11 +374,13 @@ class Library(object):
         # Get list of enabled plugins with their settings
         enabled_plugins = []
         for enabled_plugin in library_config.get_enabled_plugins(include_settings=True):
-            enabled_plugins.append({
-                'plugin_id':  enabled_plugin.get('plugin_id'),
-                'has_config': enabled_plugin.get('has_config'),
-                'settings':   enabled_plugin.get('settings'),
-            })
+            enabled_plugins.append(
+                {
+                    "plugin_id": enabled_plugin.get("plugin_id"),
+                    "has_config": enabled_plugin.get("has_config"),
+                    "settings": enabled_plugin.get("settings"),
+                }
+            )
 
         # Create plugin flow
         plugin_flow = {}
@@ -196,20 +390,20 @@ class Library(object):
             plugin_flow[plugin_type] = []
             flow = plugin_handler.get_enabled_plugin_flows_for_plugin_type(plugin_type, library_id)
             for f in flow:
-                plugin_flow[plugin_type].append(f.get('plugin_id'))
+                plugin_flow[plugin_type].append(f.get("plugin_id"))
 
         return {
-            "plugins":        {
+            "plugins": {
                 "enabled_plugins": enabled_plugins,
-                "plugin_flow":     plugin_flow,
+                "plugin_flow": plugin_flow,
             },
             "library_config": {
-                "name":               library_config.get_name(),
-                "path":               library_config.get_path(),
-                'enable_remote_only': library_config.get_enable_remote_only(),
-                'enable_scanner':     library_config.get_enable_scanner(),
-                'enable_inotify':     library_config.get_enable_inotify(),
-                'tags':               library_config.get_tags(),
+                "name": library_config.get_name(),
+                "path": library_config.get_path(),
+                "enable_remote_only": library_config.get_enable_remote_only(),
+                "enable_scanner": library_config.get_enable_scanner(),
+                "enable_inotify": library_config.get_enable_inotify(),
+                "tags": library_config.get_tags(),
             },
         }
 
@@ -320,10 +514,11 @@ class Library(object):
         """
         # Fetch enabled plugins for this library
         query = self.model.enabled_plugins.select(Plugins, EnabledPlugins.library_id)
-        query = query.join(Plugins, join_type='LEFT OUTER JOIN', on=(EnabledPlugins.plugin_id == Plugins.id))
+        query = query.join(Plugins, join_type="LEFT OUTER JOIN", on=(EnabledPlugins.plugin_id == Plugins.id))
         query = query.order_by(Plugins.name)
 
         from unmanic.libs.unplugins import PluginExecutor
+
         plugin_executor = PluginExecutor()
 
         # Extract required data
@@ -331,20 +526,21 @@ class Library(object):
         for enabled_plugin in query.dicts():
             # Check if plugin is able to be configured
             has_config = False
-            plugin_settings, plugin_settings_meta = plugin_executor.get_plugin_settings(enabled_plugin.get('plugin_id'),
-                                                                                        library_id=self.model.id)
+            plugin_settings, plugin_settings_meta = plugin_executor.get_plugin_settings(
+                enabled_plugin.get("plugin_id"), library_id=self.model.id
+            )
             if plugin_settings:
                 has_config = True
             # Add plugin to list of enabled plugins
             item = {
-                'plugin_id':   enabled_plugin.get('plugin_id'),
-                'name':        enabled_plugin.get('name'),
-                'description': enabled_plugin.get('description'),
-                'icon':        enabled_plugin.get('icon'),
-                'has_config':  has_config,
+                "plugin_id": enabled_plugin.get("plugin_id"),
+                "name": enabled_plugin.get("name"),
+                "description": enabled_plugin.get("description"),
+                "icon": enabled_plugin.get("icon"),
+                "has_config": has_config,
             }
             if include_settings:
-                item['settings'] = plugin_settings
+                item["settings"] = plugin_settings
             enabled_plugins.append(item)
 
         return enabled_plugins
@@ -357,26 +553,28 @@ class Library(object):
         """
         plugin_flow = {}
         from unmanic.libs.plugins import PluginsHandler
+
         plugin_handler = PluginsHandler()
         from unmanic.libs.unplugins import PluginExecutor
+
         plugin_ex = PluginExecutor()
         for plugin_type in plugin_ex.get_all_plugin_types():
             # Ignore types without flows
-            if not plugin_type.get('has_flow'):
+            if not plugin_type.get("has_flow"):
                 continue
 
             # Create list of plugins in this plugin type
-            plugin_flow[plugin_type.get('id')] = []
-            plugin_modules = plugin_handler.get_enabled_plugin_modules_by_type(plugin_type.get('id'), library_id=self.model.id)
+            plugin_flow[plugin_type.get("id")] = []
+            plugin_modules = plugin_handler.get_enabled_plugin_modules_by_type(plugin_type.get("id"), library_id=self.model.id)
             for plugin_module in plugin_modules:
-                plugin_flow[plugin_type.get('id')].append(
+                plugin_flow[plugin_type.get("id")].append(
                     {
-                        "plugin_id":   plugin_module.get("plugin_id"),
-                        "name":        plugin_module.get("name", ""),
-                        "author":      plugin_module.get("author", ""),
+                        "plugin_id": plugin_module.get("plugin_id"),
+                        "name": plugin_module.get("name", ""),
+                        "author": plugin_module.get("author", ""),
                         "description": plugin_module.get("description", ""),
-                        "version":     plugin_module.get("version", ""),
-                        "icon":        plugin_module.get("icon", ""),
+                        "version": plugin_module.get("version", ""),
+                        "icon": plugin_module.get("icon", ""),
                     }
                 )
 
@@ -384,8 +582,10 @@ class Library(object):
 
     def __set_default_plugin_flow_priority(self, plugin_list):
         from unmanic.libs.unplugins import PluginExecutor
+
         plugin_executor = PluginExecutor()
         from unmanic.libs.plugins import PluginsHandler
+
         plugin_handler = PluginsHandler()
 
         # Fetch current items
@@ -396,10 +596,10 @@ class Library(object):
 
         for plugin in plugin_list:
             # Ignore already configured plugins
-            if plugin.get('plugin_id') in configured_plugin_ids:
+            if plugin.get("plugin_id") in configured_plugin_ids:
                 continue
-            plugin_info = plugin_handler.get_plugin_info(plugin.get('plugin_id'))
-            plugin_priorities = plugin_info.get('priorities')
+            plugin_info = plugin_handler.get_plugin_info(plugin.get("plugin_id"))
+            plugin_priorities = plugin_info.get("priorities")
             if plugin_priorities:
                 # Fetch the plugin info back from the DB
                 plugin_info = Plugins.select().where(Plugins.plugin_id == plugin.get("plugin_id")).first()
@@ -414,10 +614,7 @@ class Library(object):
                         # If the runner has a priority set and that value is greater than 0 (default that wont set anything),
                         # Save the priority
                         PluginsHandler.set_plugin_flow_position_for_single_plugin(
-                            plugin_info,
-                            plugin_type,
-                            self.model.id,
-                            plugin_priorities.get(runner_string)
+                            plugin_info, plugin_type, self.model.id, plugin_priorities.get(runner_string)
                         )
 
     def set_enabled_plugins(self, plugin_list: list):
@@ -434,14 +631,16 @@ class Library(object):
         data = []
         plugin_ids = []
         for plugin_info in plugin_list:
-            plugin = Plugins.get(plugin_id=plugin_info.get('plugin_id'))
+            plugin = Plugins.get(plugin_id=plugin_info.get("plugin_id"))
             plugin_ids.append(plugin.id)
             if plugin:
-                data.append({
-                    "library_id":  self.model.id,
-                    "plugin_id":   plugin,
-                    "plugin_name": plugin.name,
-                })
+                data.append(
+                    {
+                        "library_id": self.model.id,
+                        "plugin_id": plugin,
+                        "plugin_name": plugin.name,
+                    }
+                )
 
         # Delete all plugin flows for plugins not to be enabled for this library
         self.__trim_plugin_flow(plugin_ids)
@@ -464,7 +663,7 @@ class Library(object):
         # If this is the default library path, save to config.library_path object also
         if self.get_id() == 1:
             config = Config()
-            config.set_config_item('library_path', self.get_path())
+            config.set_config_item("library_path", self.get_path())
 
         return save_result
 

@@ -56,47 +56,47 @@ class PluginAPI(PluginType):
     data_schema = {
         "content_type": {
             "required": True,
-            "type":     str,
+            "type": str,
         },
-        "content":      {
+        "content": {
             "required": True,
-            "type":     dict,
+            "type": dict,
         },
-        "status":      {
+        "status": {
             "required": True,
-            "type":     int,
+            "type": int,
         },
-        "method":      {
+        "method": {
             "required": False,
-            "type":     str,
+            "type": str,
         },
-        "path":         {
+        "path": {
             "required": False,
-            "type":     str,
+            "type": str,
         },
-        "uri":          {
+        "uri": {
             "required": False,
-            "type":     str,
+            "type": str,
         },
-        "query":        {
+        "query": {
             "required": False,
-            "type":     str,
+            "type": str,
         },
-        "arguments":    {
+        "arguments": {
             "required": False,
-            "type":     dict,
+            "type": dict,
         },
-        "body":         {
+        "body": {
             "required": False,
-            "type":     dict,
+            "type": dict,
         },
     }
     test_data = {
-        'content_type': 'application/json',
-        'content':      {},
-        'status':       200,
-        'method':       "GET",
-        'path':         "/webhook",
-        'arguments':    {'param': [b'true'], 'foo': [b'ba']},
-        'body':         {'param': [b'true'], 'foo': [b'ba']},
+        "content_type": "application/json",
+        "content": {},
+        "status": 200,
+        "method": "GET",
+        "path": "/webhook",
+        "arguments": {"param": [b"true"], "foo": [b"ba"]},
+        "body": {"param": [b"true"], "foo": [b"ba"]},
     }

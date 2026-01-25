@@ -41,5 +41,6 @@ class Tags(BaseModel):
     """
     Tags
     """
+
     name = TextField(null=False, unique=True)
     created = DateTimeField(null=False, default=datetime.datetime.now)

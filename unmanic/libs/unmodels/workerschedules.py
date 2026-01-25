@@ -40,9 +40,10 @@ class WorkerSchedules(BaseModel):
     """
     WorkerSchedules
     """
+
     repetition = TextField(null=False)
     schedule_task = TextField(null=False)
     schedule_time = TextField(null=False)
     schedule_worker_count = IntegerField(null=True)
     # Link to Worker Groups
-    worker_group_id = ForeignKeyField(WorkerGroups, backref='worker_schedules', on_delete='CASCADE', on_update='CASCADE')
+    worker_group_id = ForeignKeyField(WorkerGroups, backref="worker_schedules", on_delete="CASCADE", on_update="CASCADE")

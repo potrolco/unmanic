@@ -36,7 +36,7 @@ RUN \
             libxml2 \
     && \
     echo "**** Install all available media acceleration packages ****" \
-        # va-driver-all: 
+        # va-driver-all:
         #   A meta-package for installing all available Video Acceleration API (VAAPI) drivers. Includes packages like:
         #       - i965-va-driver
         #       - intel-media-va-driver

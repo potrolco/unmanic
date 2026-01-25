@@ -36,7 +36,7 @@ import configparser
 
 class UnmanicDirectoryInfoException(Exception):
     def __init__(self, message, path):
-        errmsg = '%s: file %s' % (message, path)
+        errmsg = "%s: file %s" % (message, path)
         Exception.__init__(self, errmsg)
         self.message = message
         self.path = path
@@ -63,7 +63,7 @@ class UnmanicDirectoryInfo:
     """
 
     def __init__(self, directory):
-        self.path = os.path.join(directory, '.unmanic')
+        self.path = os.path.join(directory, ".unmanic")
         self.json_data = None
         self.config_parser = None
         # If the path does not exist, do not try to read it
@@ -151,8 +151,9 @@ class UnmanicDirectoryInfo:
                 self.config_parser.add_section(section)
             self.config_parser.set(section, option, value)
             return
-        raise UnmanicDirectoryInfoException("Failed to set section '{}' option '{}' value '{}'".format(section, option, value),
-                                            self.path)
+        raise UnmanicDirectoryInfoException(
+            "Failed to set section '{}' option '{}' value '{}'".format(section, option, value), self.path
+        )
 
     def get(self, section, option):
         """
@@ -176,21 +177,21 @@ class UnmanicDirectoryInfo:
         :return:
         """
         if self.json_data is not None:
-            with open(self.path, 'w') as outfile:
+            with open(self.path, "w") as outfile:
                 json.dump(self.json_data, outfile, indent=2)
             return
         elif self.config_parser:
-            with open(self.path, 'w') as outfile:
+            with open(self.path, "w") as outfile:
                 self.config_parser.write(outfile)
             return
         raise UnmanicDirectoryInfoException("Failed to save directory info", self.path)
 
 
-if __name__ == '__main__':
-    directory_info = UnmanicDirectoryInfo('/tmp/unmanic')
-    directory_info.set('test_section', 'key', 'value')
+if __name__ == "__main__":
+    directory_info = UnmanicDirectoryInfo("/tmp/unmanic")
+    directory_info.set("test_section", "key", "value")
     directory_info.save()
-    print(directory_info.get('test_section', 'key'))
+    print(directory_info.get("test_section", "key"))
     directory_info.set('"section with double quotes"', '"key with double quotes"', '"value with double quotes"')
     directory_info.save()
     print(directory_info.get('"section with double quotes"', '"key with double quotes"'))

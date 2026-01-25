@@ -57,31 +57,31 @@ class UnmanicWebsocketHandler(tornado.websocket.WebSocketHandler):
     close_event = False
 
     def __init__(self, *args, **kwargs):
-        self.name = 'UnmanicWebsocketHandler'
+        self.name = "UnmanicWebsocketHandler"
         self.config = config.Config()
         self.server_id = str(uuid.uuid4())
         udq = UnmanicDataQueues()
         urt = UnmanicRunningTreads()
         self.data_queues = udq.get_unmanic_data_queues()
-        self.foreman = urt.get_unmanic_running_thread('foreman')
+        self.foreman = urt.get_unmanic_running_thread("foreman")
         self.session = session.Session()
         super().__init__(*args, **kwargs)
 
     def open(self):
-        tornado.log.app_log.warning('WS Opened', exc_info=True)
+        tornado.log.app_log.warning("WS Opened", exc_info=True)
         self.close_event = tornado.locks.Event()
 
     def on_message(self, message):
         try:
             message_data = json.loads(message)
-            if message_data.get('command'):
+            if message_data.get("command"):
                 # Execute the function
-                getattr(self, message_data.get('command', 'default_failure_response'))(params=message_data.get('params', {}))
+                getattr(self, message_data.get("command", "default_failure_response"))(params=message_data.get("params", {}))
         except json.decoder.JSONDecodeError:
-            tornado.log.app_log.error('Received incorrectly formatted message - {}'.format(message), exc_info=False)
+            tornado.log.app_log.error("Received incorrectly formatted message - {}".format(message), exc_info=False)
 
     def on_close(self):
-        tornado.log.app_log.warning('WS Closed', exc_info=True)
+        tornado.log.app_log.warning("WS Closed", exc_info=True)
         self.close_event.set()
         self.stop_frontend_messages()
         self.stop_workers_info()
@@ -98,7 +98,7 @@ class UnmanicWebsocketHandler(tornado.websocket.WebSocketHandler):
         :return:
         :rtype:
         """
-        self.write_message({'success': False})
+        self.write_message({"success": False})
 
     def start_frontend_messages(self, params=None):
         """
@@ -244,7 +244,7 @@ class UnmanicWebsocketHandler(tornado.websocket.WebSocketHandler):
         :rtype:
         """
         frontend_messages = FrontendPushMessages()
-        frontend_messages.remove_item(params.get('message_id', ''))
+        frontend_messages.remove_item(params.get("message_id", ""))
 
     async def send(self, message):
         if self.ws_connection:
@@ -257,15 +257,15 @@ class UnmanicWebsocketHandler(tornado.websocket.WebSocketHandler):
             # Send message to client
             await self.send(
                 {
-                    'success':   True,
-                    'server_id': self.server_id,
-                    'type':      'frontend_message',
-                    'data':      frontend_message_items,
+                    "success": True,
+                    "server_id": self.server_id,
+                    "type": "frontend_message",
+                    "data": frontend_message_items,
                 }
             )
 
             # Sleep for X seconds
-            await gen.sleep(.2)
+            await gen.sleep(0.2)
 
     async def async_system_logs(self):
         while self.sending_system_logs:
@@ -274,12 +274,12 @@ class UnmanicWebsocketHandler(tornado.websocket.WebSocketHandler):
             # Send message to client
             await self.send(
                 {
-                    'success':   True,
-                    'server_id': self.server_id,
-                    'type':      'system_logs',
-                    'data':      {
-                        "logs_path":   self.config.get_log_path(),
-                        'system_logs': system_logs,
+                    "success": True,
+                    "server_id": self.server_id,
+                    "type": "system_logs",
+                    "data": {
+                        "logs_path": self.config.get_log_path(),
+                        "system_logs": system_logs,
                     },
                 }
             )
@@ -294,50 +294,48 @@ class UnmanicWebsocketHandler(tornado.websocket.WebSocketHandler):
             # Send message to client
             await self.send(
                 {
-                    'success':   True,
-                    'server_id': self.server_id,
-                    'type':      'workers_info',
-                    'data':      workers_info,
+                    "success": True,
+                    "server_id": self.server_id,
+                    "type": "workers_info",
+                    "data": workers_info,
                 }
             )
 
             # Sleep for X seconds
-            await gen.sleep(.2)
+            await gen.sleep(0.2)
 
     async def async_pending_tasks_info(self):
         while self.sending_pending_tasks_info:
             results = []
             params = {
-                'start':        '0',
-                'length':       '10',
-                'search_value': '',
-                'order':        {
-                    "column": 'priority',
-                    "dir":    'desc',
-                }
+                "start": "0",
+                "length": "10",
+                "search_value": "",
+                "order": {
+                    "column": "priority",
+                    "dir": "desc",
+                },
             }
             task_list = pending_tasks.prepare_filtered_pending_tasks(params)
 
-            for task_result in task_list.get('results', []):
+            for task_result in task_list.get("results", []):
                 # Append the task to the results list
                 results.append(
                     {
-                        'id':       task_result['id'],
-                        'label':    task_result['abspath'],
-                        'priority': task_result['priority'],
-                        'status':   task_result['status'],
+                        "id": task_result["id"],
+                        "label": task_result["abspath"],
+                        "priority": task_result["priority"],
+                        "status": task_result["status"],
                     }
                 )
 
             # Send message to client
             await self.send(
                 {
-                    'success':   True,
-                    'server_id': self.server_id,
-                    'type':      'pending_tasks',
-                    'data':      {
-                        'results': results
-                    },
+                    "success": True,
+                    "server_id": self.server_id,
+                    "type": "pending_tasks",
+                    "data": {"results": results},
                 }
             )
 
@@ -348,43 +346,41 @@ class UnmanicWebsocketHandler(tornado.websocket.WebSocketHandler):
         while self.sending_completed_tasks_info:
             results = []
             params = {
-                'start':        '0',
-                'length':       '10',
-                'search_value': '',
-                'order':        {
-                    "column": 'finish_time',
-                    "dir":    'desc',
-                }
+                "start": "0",
+                "length": "10",
+                "search_value": "",
+                "order": {
+                    "column": "finish_time",
+                    "dir": "desc",
+                },
             }
             task_list = completed_tasks.prepare_filtered_completed_tasks(params)
 
-            for task_result in task_list.get('results', []):
+            for task_result in task_list.get("results", []):
                 # Set human-readable time
-                if (int(task_result['finish_time']) + 60) > int(time.time()):
-                    human_readable_time = 'Just Now'
+                if (int(task_result["finish_time"]) + 60) > int(time.time()):
+                    human_readable_time = "Just Now"
                 else:
-                    human_readable_time = common.make_timestamp_human_readable(int(task_result['finish_time']))
+                    human_readable_time = common.make_timestamp_human_readable(int(task_result["finish_time"]))
 
                 # Append the task to the results list
                 results.append(
                     {
-                        'id':                  task_result['id'],
-                        'label':               task_result['task_label'],
-                        'success':             task_result['task_success'],
-                        'finish_time':         task_result['finish_time'],
-                        'human_readable_time': human_readable_time,
+                        "id": task_result["id"],
+                        "label": task_result["task_label"],
+                        "success": task_result["task_success"],
+                        "finish_time": task_result["finish_time"],
+                        "human_readable_time": human_readable_time,
                     }
                 )
 
             # Send message to client
             await self.send(
                 {
-                    'success':   True,
-                    'server_id': self.server_id,
-                    'type':      'completed_tasks',
-                    'data':      {
-                        'results': results
-                    },
+                    "success": True,
+                    "server_id": self.server_id,
+                    "type": "completed_tasks",
+                    "data": {"results": results},
                 }
             )
 

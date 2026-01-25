@@ -1,0 +1,60 @@
+# TARS/Unmanic Pre-commit Configuration
+# Added as part of Phase 0 modernization (Session 150)
+#
+# Strategy: Gradual adoption
+# - Black: ENFORCED (auto-fixes formatting)
+# - Flake8: WARN-ONLY until Phase 1 fixes exceptions
+# - MyPy: WARN-ONLY until type hints added
+
+repos:
+  # Black - Python code formatter (ENFORCED)
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+        language_version: python3
+        args: ['--line-length=127']
+
+  # Flake8 - Linting (WARN-ONLY for now)
+  # TODO: Remove verbose after Phase 1 exception fixes
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        args: ['--config=setup.cfg', '--exit-zero']  # exit-zero = warn only
+        verbose: true
+        additional_dependencies:
+          - flake8-bugbear
+
+  # MyPy - Type checking (WARN-ONLY for now)
+  # TODO: Enforce after Phase 1 type hints added
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        args: ['--ignore-missing-imports', '--no-strict-optional', '--no-error-summary']
+        verbose: true
+        additional_dependencies:
+          - types-requests
+          - types-PyYAML
+        # Only check new/modified files (gradual adoption)
+        files: ^unmanic/(libs/unmodels|webserver)/.*\.py$
+        # Don't fail commits - just warn
+        stages: [manual]  # Only run on manual invocation for now
+
+  # General pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: debug-statements
+
+# CI configuration
+ci:
+  autofix_commit_msg: 'style: auto-fix by pre-commit hooks'
+  autoupdate_commit_msg: 'chore: update pre-commit hooks'

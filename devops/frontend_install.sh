@@ -34,7 +34,7 @@ project_root="$(readlink -e $(dirname $(readlink -e ${BASH_SOURCE[0]}))/../)"
 # Build backage
 pushd "${project_root}/unmanic/webserver/frontend" &> /dev/null
 npm install
-npm run build 
+npm run build
 popd &> /dev/null
 
 # Copy dist package backage

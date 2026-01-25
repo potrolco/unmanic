@@ -30,20 +30,20 @@ as many details as possible, including potential implementation options.
 
 ### Developing
 
-See [Development Environment Guide](./DEVELOPING.md) for details on setting up a local 
+See [Development Environment Guide](./DEVELOPING.md) for details on setting up a local
 development environment.
 
 
 ### Opening Pull Requests
 
-Code contributions are very welcome. However, please understand that by opening a pull 
+Code contributions are very welcome. However, please understand that by opening a pull
 requests you hand over copyright ownership of that work to the Unmanic project and the
 project owner.
 Your contribution becomes licensed under the same license as the project and ownership
-is handed over to the project owner. 
+is handed over to the project owner.
 This extends upon paragraph 11 of the Terms & Conditions stipulated in the GPL v3.0
 
-All pull requests must be opened to merge into the staging branch. No pull requests 
+All pull requests must be opened to merge into the staging branch. No pull requests
 will be merged into the master branch.
 
 All new python file contributions must contain the following header:
@@ -54,23 +54,23 @@ All new python file contributions must contain the following header:
 
 """
     unmanic.{{FILE_NAME}}
- 
+
     Written by:               {{YOUR_NAME}} <{{YOUR_EMAIL}}>
     Date:                     {{DAY_NAME}} {{MONTH}} {{DAY_NUMBER}} {{YEAR}}, ({{TIME}} {{AM_PM}})
- 
+
     Copyright:
            Copyright (C) Josh Sunnex - All Rights Reserved
- 
+
            Permission is hereby granted, free of charge, to any person obtaining a copy
            of this software and associated documentation files (the "Software"), to deal
            in the Software without restriction, including without limitation the rights
            to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
            copies of the Software, and to permit persons to whom the Software is
            furnished to do so, subject to the following conditions:
-  
+
            The above copyright notice and this permission notice shall be included in all
            copies or substantial portions of the Software.
-  
+
            THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
            EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
            MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -88,4 +88,3 @@ and its owner.
 Only submissions that conform to this will be merged into the mainline project. This ensures
 that Unmanic as a project is free to grow following any path that opens up at the discretion
 of the project's owner.
-

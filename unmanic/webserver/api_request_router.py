@@ -41,7 +41,7 @@ from unmanic import config
 class Handle404(tornado.web.RequestHandler):
     def get(self):
         self.set_status(404)
-        self.write('404 Not Found')
+        self.write("404 Not Found")
 
 
 class APIRequestRouter(tornado.routing.Router):
@@ -53,11 +53,11 @@ class APIRequestRouter(tornado.routing.Router):
         self.config = config.Config()
 
     def find_handler(self, request, **kwargs):
-        api_version = request.path.split('/')[3]  # Set API version
-        endpoint = request.path.split('/')[4]  # Set the endpoint
-        params = list(filter(None, request.path.split('/')[4:]))  # Set the request params
+        api_version = request.path.split("/")[3]  # Set API version
+        endpoint = request.path.split("/")[4]  # Set the endpoint
+        params = list(filter(None, request.path.split("/")[4:]))  # Set the request params
 
-        endpoint_handler = 'Api%sHandler' % endpoint.title()
+        endpoint_handler = "Api%sHandler" % endpoint.title()
 
         # Check if the handler exists - Otherwise set it to 404
         try:
@@ -68,8 +68,11 @@ class APIRequestRouter(tornado.routing.Router):
             handler = Handle404
 
         # Return handler
-        return self.app.get_handler_delegate(request, handler,
-                                             target_kwargs=dict(
-                                                 params=params,
-                                             ),
-                                             path_args=[request.path])
+        return self.app.get_handler_delegate(
+            request,
+            handler,
+            target_kwargs=dict(
+                params=params,
+            ),
+            path_args=[request.path],
+        )

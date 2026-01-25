@@ -12,7 +12,7 @@ https://github.com/Unmanic/unmanic/compare/master...staging
 ## Step 2: Rebase merge into master
 Perform a rebase merge from `staging` into `master` on the checked out repo. Push this change to the official repo's `master` branch.
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > If you are going to generate a tagged release, cancel the `Build All Packages CI` GitHub action for this push. This will be run again once we generate the release in the steps below. If you are not generating a release, let this action run.
 
 
@@ -38,11 +38,11 @@ Create a release in GitHub with these rules.
 
     ## Service
     - [NEW] This is a new feature added to the main service.
-        - This is a bullet point to the above mentioned feature. 
+        - This is a bullet point to the above mentioned feature.
     - [FIX] This is a fix for the main service.
-        - This is a bullet point to the above mentioned fix. 
+        - This is a bullet point to the above mentioned fix.
     - [IMPR] This is an improvement to an existing feature in the main service.
-        - This is a bullet point to the above mentioned improvement. 
+        - This is a bullet point to the above mentioned improvement.
 
     ## Plugin executor
     - [NEW] ...

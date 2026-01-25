@@ -135,7 +135,7 @@ class BaseApiHandler(RequestHandler):
         :return:
         """
         if response is None:
-            response = {'success': True}
+            response = {"success": True}
         self.set_status(self.STATUS_SUCCESS)
         self.finish(response)
 
@@ -160,13 +160,13 @@ class BaseApiHandler(RequestHandler):
         if status_code is None:
             status_code = self.get_status()
         response = {
-            'error':    "%(code)d: %(message)s" % {"code": status_code, "message": self._reason},
-            'messages': {},
+            "error": "%(code)d: %(message)s" % {"code": status_code, "message": self._reason},
+            "messages": {},
         }
         if self.error_messages:
-            response['messages'] = self.error_messages
+            response["messages"] = self.error_messages
         if self.settings.get("serve_traceback"):
-            exc_info = kwargs.get('exc_info')
+            exc_info = kwargs.get("exc_info")
             if not exc_info:
                 exc_info = sys.exc_info()
             # in debug mode, try to send a traceback
@@ -175,7 +175,7 @@ class BaseApiHandler(RequestHandler):
             if exc_info and exc_info[0]:
                 for line in traceback.format_exception(*exc_info):
                     traceback_lines.append(line)
-            response['traceback'] = traceback_lines
+            response["traceback"] = traceback_lines
         self.finish(response)
 
     def handle_endpoint_not_found(self):
@@ -185,9 +185,7 @@ class BaseApiHandler(RequestHandler):
 
         :return:
         """
-        response = {
-            'error': "%(code)d: Endpoint not found" % {"code": self.STATUS_ERROR_ENDPOINT_NOT_FOUND}
-        }
+        response = {"error": "%(code)d: Endpoint not found" % {"code": self.STATUS_ERROR_ENDPOINT_NOT_FOUND}}
         self.set_status(self.STATUS_ERROR_ENDPOINT_NOT_FOUND)
         self.finish(response)
 
@@ -199,10 +197,8 @@ class BaseApiHandler(RequestHandler):
         :return:
         """
         response = {
-            'error': "%(code)d: Method '%(method)s' not allowed" % {
-                "code":   self.STATUS_ERROR_METHOD_NOT_ALLOWED,
-                "method": self.request.method
-            }
+            "error": "%(code)d: Method '%(method)s' not allowed"
+            % {"code": self.STATUS_ERROR_METHOD_NOT_ALLOWED, "method": self.request.method}
         }
         self.set_status(self.STATUS_ERROR_METHOD_NOT_ALLOWED)
         self.finish(response)
@@ -216,7 +212,7 @@ class BaseApiHandler(RequestHandler):
 
         :return:
         """
-        request_api_base = self.request.uri.split('api/v2')[0] + 'api/v2'
+        request_api_base = self.request.uri.split("api/v2")[0] + "api/v2"
         # request_api_endpoint = re.sub('^/(unmanic/)*api/v\d', '', self.request.uri)
         matched_route_with_unsupported_method = False
         for route in self.routes:
@@ -240,17 +236,20 @@ class BaseApiHandler(RequestHandler):
                 # If we have a match and were returned some params, load that method
                 if params:
                     tornado.log.app_log.debug(
-                        "Routing API to {}.{}(*args={}, **kwargs={})".format(self.__class__.__name__,
-                                                                             route.get("call_method"), params["path_args"],
-                                                                             params["path_kwargs"]), exc_info=True)
+                        "Routing API to {}.{}(*args={}, **kwargs={})".format(
+                            self.__class__.__name__, route.get("call_method"), params["path_args"], params["path_kwargs"]
+                        ),
+                        exc_info=True,
+                    )
 
                     await getattr(self, route.get("call_method"))(*params["path_args"], **params["path_kwargs"])
                     return
 
                 # This route matches the current request URI and does not have any params.
                 # Set this route and call the configured method.
-                tornado.log.app_log.debug("Routing API to {}.{}()".format(self.__class__.__name__, route.get("call_method")),
-                                          exc_info=True)
+                tornado.log.app_log.debug(
+                    "Routing API to {}.{}()".format(self.__class__.__name__, route.get("call_method")), exc_info=True
+                )
                 self.route = route
                 await getattr(self, route.get("call_method"))()
                 return

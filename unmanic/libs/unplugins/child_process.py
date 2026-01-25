@@ -117,9 +117,7 @@ class PluginChildProcess:
           - data['worker_log']              : list to which your child functions logs go
           - data['command_progress_parser'] : callable(line_text, pid=None, proc_start_time=None, unset=False)
         """
-        self.logger = UnmanicLogging.get_logger(
-            name=f'Plugin.{plugin_id}.{__class__.__name__}'
-        )
+        self.logger = UnmanicLogging.get_logger(name=f"Plugin.{plugin_id}.{__class__.__name__}")
         self.data = data
         if _shared_manager is None:
             raise RuntimeError("PluginChildProcess must be initialized after shared Manager is set")
@@ -138,17 +136,14 @@ class PluginChildProcess:
         """
         # Start child as before
         from multiprocessing import Process
-        self._proc = Process(
-            target=self._child_entry,
-            args=(target, args, kwargs),
-            daemon=True
-        )
+
+        self._proc = Process(target=self._child_entry, args=(target, args, kwargs), daemon=True)
         self._proc.start()
         _register_pid(self._proc.pid)
         self.logger.info("Started child PID %s", self._proc.pid)
 
         # Register PID & start time with WorkerSubprocessMonitor
-        parser = self.data.get('command_progress_parser')
+        parser = self.data.get("command_progress_parser")
         if callable(parser):
             try:
                 parser(None, pid=self._proc.pid, proc_start_time=time.time())
@@ -170,8 +165,8 @@ class PluginChildProcess:
         Injects our two required queues into the call.
         """
         try:
-            kwargs['log_queue'] = self._log_q
-            kwargs['prog_queue'] = self._prog_q
+            kwargs["log_queue"] = self._log_q
+            kwargs["prog_queue"] = self._prog_q
             target(*args, **kwargs)
         except Exception:
             self.logger.exception("Exception in child target")
@@ -182,14 +177,14 @@ class PluginChildProcess:
                      pull from prog_q -> call parser(...)
         """
         exit_ok = False
-        parser = self.data.get('command_progress_parser')
+        parser = self.data.get("command_progress_parser")
 
         while True:
             # 1) drain logs
             try:
                 while True:
                     msg = self._log_q.get_nowait()
-                    self.data['worker_log'].append(f"{msg}\n")
+                    self.data["worker_log"].append(f"{msg}\n")
             except queue.Empty:
                 pass
 
@@ -204,7 +199,7 @@ class PluginChildProcess:
 
             # 3) if the child exited, we’re done. Unset parser PID
             if not self._proc.is_alive():
-                exit_ok = (self._proc.exitcode == 0)
+                exit_ok = self._proc.exitcode == 0
                 if callable(parser):
                     # tell parser to unset its internal proc state
                     parser(None, unset=True)

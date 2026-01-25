@@ -41,6 +41,7 @@ class EnabledPlugins(BaseModel):
     """
     EnabledPlugins
     """
-    library_id = ForeignKeyField(Libraries, backref='enabled_plugins', on_delete='CASCADE', on_update='CASCADE')
-    plugin_id = ForeignKeyField(Plugins, backref='enabled_libraries', on_delete='CASCADE', on_update='CASCADE')
+
+    library_id = ForeignKeyField(Libraries, backref="enabled_plugins", on_delete="CASCADE", on_update="CASCADE")
+    plugin_id = ForeignKeyField(Plugins, backref="enabled_libraries", on_delete="CASCADE", on_update="CASCADE")
     plugin_name = TextField(null=False)

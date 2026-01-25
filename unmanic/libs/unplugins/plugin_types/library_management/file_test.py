@@ -51,41 +51,36 @@ class FileTest(PluginType):
     :return:
     """
     data_schema = {
-        "library_id":                {
+        "library_id": {
             "required": True,
-            "type":     int,
+            "type": int,
         },
-        "path":                      {
+        "path": {
             "required": True,
-            "type":     str,
+            "type": str,
         },
-        "issues":                    {
+        "issues": {
             "required": True,
-            "type":     list,
+            "type": list,
         },
         "add_file_to_pending_tasks": {
             "required": True,
-            "type":     bool,
+            "type": bool,
         },
-        "priority_score":            {
+        "priority_score": {
             "required": True,
-            "type":     int,
+            "type": int,
         },
-        "shared_info":               {
+        "shared_info": {
             "required": False,
-            "type":     dict,
+            "type": dict,
         },
     }
     test_data = {
-        'library_id':                1,
-        'path':                      '{library_path}/{test_file_in}',
-        'issues':                    [
-            {
-                'id':      'format',
-                'message': "File is already in target format - '{library_path}/{test_file_in}'"
-            }
-        ],
-        'add_file_to_pending_tasks': True,
-        'priority_score':            0,
-        'shared_info':               {},
+        "library_id": 1,
+        "path": "{library_path}/{test_file_in}",
+        "issues": [{"id": "format", "message": "File is already in target format - '{library_path}/{test_file_in}'"}],
+        "add_file_to_pending_tasks": True,
+        "priority_score": 0,
+        "shared_info": {},
     }

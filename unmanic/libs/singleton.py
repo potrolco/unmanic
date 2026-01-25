@@ -36,6 +36,7 @@ lock = threading.RLock()
 
 class SingletonType(type):
     """Singleton metaclass"""
+
     _instances = {}
 
     def __call__(cls, *args, **kwargs):

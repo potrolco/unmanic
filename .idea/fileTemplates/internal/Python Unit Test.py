@@ -55,7 +55,7 @@ class TestClass(object):
         :return:
         """
         pass
-        
+
     def setup_method(self):
         """
         Setup any state tied to the execution of the given method in a
@@ -65,9 +65,9 @@ class TestClass(object):
         :return:
         """
         pass
-        
+
     def teardown_method(self):
-        """ 
+        """
         Teardown any state that was previously setup with a setup_method
         call.
 
@@ -77,8 +77,8 @@ class TestClass(object):
 
     @pytest.mark.unittest
     def test_something(self):
-        assert ('condition' == 'expected')
+        assert "condition" == "expected"
 
 
-if __name__ == '__main__':
-    pytest.main(['-s', '--log-cli-level=INFO', __file__])
+if __name__ == "__main__":
+    pytest.main(["-s", "--log-cli-level=INFO", __file__])

@@ -49,6 +49,7 @@ class System(object, metaclass=SingletonType):
         :return:
         """
         import sys
+
         if not self.python_version:
             self.python_version = "{0}.{1}.{2}.{3}.{4}".format(*sys.version_info)
         return self.python_version
@@ -60,6 +61,7 @@ class System(object, metaclass=SingletonType):
         :return:
         """
         import cpuinfo
+
         if not self.devices:
             self.devices = {
                 "cpu_info": cpuinfo.get_cpu_info(),
@@ -74,6 +76,7 @@ class System(object, metaclass=SingletonType):
         :return:
         """
         import platform
+
         if not self.platform:
             self.platform = platform.uname()
         return self.platform
@@ -85,9 +88,9 @@ class System(object, metaclass=SingletonType):
         :return:
         """
         info = {
-            "devices":  self.__get_devices_info(),
+            "devices": self.__get_devices_info(),
             "platform": self.__get_platform_info(),
-            "python":   self.__get_python_info(),
+            "python": self.__get_python_info(),
         }
         return info
 

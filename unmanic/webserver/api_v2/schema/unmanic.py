@@ -49,10 +49,10 @@ class UnmanicSpecPlugin(TornadoPlugin):
         """
         handler_class = urlspec.handler_class
         for r in handler_class.routes:
-            matcher = PathMatches(r.get('path_pattern'))
+            matcher = PathMatches(r.get("path_pattern"))
             if matcher.regex == urlspec.regex:
-                for http_method in r.get('supported_methods', []):
-                    method = getattr(handler_class, r.get('call_method'))
+                for http_method in r.get("supported_methods", []):
+                    method = getattr(handler_class, r.get("call_method"))
                     operation_data = yaml_utils.load_yaml_from_docstring(method.__doc__)
                     if operation_data:
                         operation = {http_method.lower(): operation_data}

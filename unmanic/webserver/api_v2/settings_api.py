@@ -38,13 +38,22 @@ from unmanic.libs.library import Library
 from unmanic.libs.uiserver import UnmanicDataQueues
 from unmanic.libs.worker_group import WorkerGroup
 from unmanic.webserver.api_v2.base_api_handler import BaseApiError, BaseApiHandler
-from unmanic.webserver.api_v2.schema.schemas import RequestDatabaseItemByIdSchema, RequestLibraryByIdSchema, \
-    RequestRemoteInstallationLinkConfigSchema, SettingsLibrariesListSchema, SettingsLibraryConfigReadAndWriteSchema, \
-    SettingsLibraryPluginConfigExportSchema, \
-    SettingsLibraryPluginConfigImportSchema, SettingsReadAndWriteSchema, \
-    SettingsRemoteInstallationDataSchema, \
-    SettingsRemoteInstallationLinkConfigSchema, SettingsSystemConfigSchema, \
-    RequestSettingsRemoteInstallationAddressValidationSchema, SettingsWorkerGroupConfigSchema, WorkerGroupsListSchema
+from unmanic.webserver.api_v2.schema.schemas import (
+    RequestDatabaseItemByIdSchema,
+    RequestLibraryByIdSchema,
+    RequestRemoteInstallationLinkConfigSchema,
+    SettingsLibrariesListSchema,
+    SettingsLibraryConfigReadAndWriteSchema,
+    SettingsLibraryPluginConfigExportSchema,
+    SettingsLibraryPluginConfigImportSchema,
+    SettingsReadAndWriteSchema,
+    SettingsRemoteInstallationDataSchema,
+    SettingsRemoteInstallationLinkConfigSchema,
+    SettingsSystemConfigSchema,
+    RequestSettingsRemoteInstallationAddressValidationSchema,
+    SettingsWorkerGroupConfigSchema,
+    WorkerGroupsListSchema,
+)
 from unmanic.webserver.helpers import plugins
 
 
@@ -55,89 +64,89 @@ class ApiSettingsHandler(BaseApiHandler):
 
     routes = [
         {
-            "path_pattern":      r"/settings/read",
+            "path_pattern": r"/settings/read",
             "supported_methods": ["GET"],
-            "call_method":       "get_all_settings",
+            "call_method": "get_all_settings",
         },
         {
-            "path_pattern":      r"/settings/write",
+            "path_pattern": r"/settings/write",
             "supported_methods": ["POST"],
-            "call_method":       "write_settings",
+            "call_method": "write_settings",
         },
         {
-            "path_pattern":      r"/settings/configuration",
+            "path_pattern": r"/settings/configuration",
             "supported_methods": ["GET"],
-            "call_method":       "get_system_configuration",
+            "call_method": "get_system_configuration",
         },
         {
-            "path_pattern":      r"/settings/link/validate",
+            "path_pattern": r"/settings/link/validate",
             "supported_methods": ["POST"],
-            "call_method":       "validate_remote_installation",
+            "call_method": "validate_remote_installation",
         },
         {
-            "path_pattern":      r"/settings/worker_groups",
+            "path_pattern": r"/settings/worker_groups",
             "supported_methods": ["GET"],
-            "call_method":       "get_all_worker_groups",
+            "call_method": "get_all_worker_groups",
         },
         {
-            "path_pattern":      r"/settings/worker_group/read",
+            "path_pattern": r"/settings/worker_group/read",
             "supported_methods": ["POST"],
-            "call_method":       "read_worker_group_config",
+            "call_method": "read_worker_group_config",
         },
         {
-            "path_pattern":      r"/settings/worker_group/write",
+            "path_pattern": r"/settings/worker_group/write",
             "supported_methods": ["POST"],
-            "call_method":       "write_worker_group_config",
+            "call_method": "write_worker_group_config",
         },
         {
-            "path_pattern":      r"/settings/worker_group/remove",
+            "path_pattern": r"/settings/worker_group/remove",
             "supported_methods": ["DELETE"],
-            "call_method":       "remove_worker_group",
+            "call_method": "remove_worker_group",
         },
         {
-            "path_pattern":      r"/settings/link/read",
+            "path_pattern": r"/settings/link/read",
             "supported_methods": ["POST"],
-            "call_method":       "read_link_config",
+            "call_method": "read_link_config",
         },
         {
-            "path_pattern":      r"/settings/link/write",
+            "path_pattern": r"/settings/link/write",
             "supported_methods": ["POST"],
-            "call_method":       "write_link_config",
+            "call_method": "write_link_config",
         },
         {
-            "path_pattern":      r"/settings/link/remove",
+            "path_pattern": r"/settings/link/remove",
             "supported_methods": ["DELETE"],
-            "call_method":       "remove_link_config",
+            "call_method": "remove_link_config",
         },
         {
-            "path_pattern":      r"/settings/libraries",
+            "path_pattern": r"/settings/libraries",
             "supported_methods": ["GET"],
-            "call_method":       "get_all_libraries",
+            "call_method": "get_all_libraries",
         },
         {
-            "path_pattern":      r"/settings/library/read",
+            "path_pattern": r"/settings/library/read",
             "supported_methods": ["POST"],
-            "call_method":       "read_library_config",
+            "call_method": "read_library_config",
         },
         {
-            "path_pattern":      r"/settings/library/write",
+            "path_pattern": r"/settings/library/write",
             "supported_methods": ["POST"],
-            "call_method":       "write_library_config",
+            "call_method": "write_library_config",
         },
         {
-            "path_pattern":      r"/settings/library/remove",
+            "path_pattern": r"/settings/library/remove",
             "supported_methods": ["DELETE"],
-            "call_method":       "remove_library",
+            "call_method": "remove_library",
         },
         {
-            "path_pattern":      r"/settings/library/export",
+            "path_pattern": r"/settings/library/export",
             "supported_methods": ["POST"],
-            "call_method":       "export_library_plugin_config",
+            "call_method": "export_library_plugin_config",
         },
         {
-            "path_pattern":      r"/settings/library/import",
+            "path_pattern": r"/settings/library/import",
             "supported_methods": ["POST"],
-            "call_method":       "import_library_plugin_config",
+            "call_method": "import_library_plugin_config",
         },
     ]
 
@@ -190,12 +199,12 @@ class ApiSettingsHandler(BaseApiHandler):
                 SettingsReadAndWriteSchema(),
                 {
                     "settings": settings,
-                }
+                },
             )
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -249,24 +258,22 @@ class ApiSettingsHandler(BaseApiHandler):
             json_request = self.read_json_request(SettingsReadAndWriteSchema())
 
             # Get settings dict from request
-            settings_dict = json_request.get('settings', {})
+            settings_dict = json_request.get("settings", {})
 
             # Remove config items that should not be saved through this API endpoint
-            remove_settings = [
-                'remote_installations'
-            ]
+            remove_settings = ["remote_installations"]
             for remove_setting in remove_settings:
                 if settings_dict.get(remove_setting):
                     del settings_dict[remove_setting]
 
             # Save settings - writing to file.
             # Throws exception if settings fail to save
-            self.config.set_bulk_config_items(json_request.get('settings', {}))
+            self.config.set_bulk_config_items(json_request.get("settings", {}))
 
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -311,18 +318,19 @@ class ApiSettingsHandler(BaseApiHandler):
         """
         try:
             from unmanic.libs.system import System
+
             system = System()
             system_info = system.info()
             response = self.build_response(
                 SettingsSystemConfigSchema(),
                 {
                     "configuration": system_info,
-                }
+                },
             )
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -378,21 +386,23 @@ class ApiSettingsHandler(BaseApiHandler):
             # Fetch all data from the remote installation
             # Throws exception if the provided address is invalid
             links = Links()
-            data = links.validate_remote_installation(json_request.get('address'),
-                                                      auth=json_request.get('auth'),
-                                                      username=json_request.get('username'),
-                                                      password=json_request.get('password'))
+            data = links.validate_remote_installation(
+                json_request.get("address"),
+                auth=json_request.get("auth"),
+                username=json_request.get("username"),
+                password=json_request.get("password"),
+            )
 
             response = self.build_response(
                 SettingsRemoteInstallationDataSchema(),
                 {
                     "installation": data,
-                }
+                },
             )
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -441,12 +451,12 @@ class ApiSettingsHandler(BaseApiHandler):
                 WorkerGroupsListSchema(),
                 {
                     "worker_groups": worker_groups,
-                }
+                },
             )
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -500,7 +510,7 @@ class ApiSettingsHandler(BaseApiHandler):
             json_request = self.read_json_request(RequestDatabaseItemByIdSchema())
 
             # Fetch all data for this worker group
-            worker_group = WorkerGroup(json_request.get('id'))
+            worker_group = WorkerGroup(json_request.get("id"))
             if not worker_group:
                 self.set_status(self.STATUS_ERROR_INTERNAL, reason="Unable to find worker group config by its ID")
                 self.write_error()
@@ -509,18 +519,18 @@ class ApiSettingsHandler(BaseApiHandler):
             response = self.build_response(
                 SettingsWorkerGroupConfigSchema(),
                 {
-                    "id":                     worker_group.get_id(),
-                    "locked":                 worker_group.get_locked(),
-                    "name":                   worker_group.get_name(),
-                    "number_of_workers":      worker_group.get_number_of_workers(),
+                    "id": worker_group.get_id(),
+                    "locked": worker_group.get_locked(),
+                    "name": worker_group.get_name(),
+                    "number_of_workers": worker_group.get_number_of_workers(),
                     "worker_event_schedules": worker_group.get_worker_event_schedules(),
-                    "tags":                   worker_group.get_tags(),
-                }
+                    "tags": worker_group.get_tags(),
+                },
             )
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -575,12 +585,13 @@ class ApiSettingsHandler(BaseApiHandler):
 
             # Write config for this worker group
             from unmanic.webserver.helpers import settings
+
             settings.save_worker_group_config(json_request)
 
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -634,7 +645,7 @@ class ApiSettingsHandler(BaseApiHandler):
             json_request = self.read_json_request(RequestDatabaseItemByIdSchema())
 
             # Fetch existing worker group by ID
-            worker_group = WorkerGroup(json_request.get('id'))
+            worker_group = WorkerGroup(json_request.get("id"))
 
             # Delete the worker group
             if not worker_group.delete():
@@ -645,7 +656,7 @@ class ApiSettingsHandler(BaseApiHandler):
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -701,35 +712,35 @@ class ApiSettingsHandler(BaseApiHandler):
             # Fetch all data from the remote installation
             # Throws exception if the provided address is invalid
             links = Links()
-            data = links.read_remote_installation_link_config(json_request.get('uuid'))
+            data = links.read_remote_installation_link_config(json_request.get("uuid"))
 
             response = self.build_response(
                 SettingsRemoteInstallationLinkConfigSchema(),
                 {
-                    "link_config":                     {
-                        "address":                         data.get('address'),
-                        "auth":                            data.get('auth'),
-                        "username":                        data.get('username'),
-                        "password":                        data.get('password'),
-                        "available":                       data.get('available', False),
-                        "name":                            data.get('name'),
-                        "version":                         data.get('version'),
-                        "last_updated":                    data.get('last_updated', 1),
-                        "enable_receiving_tasks":          data.get('enable_receiving_tasks'),
-                        "enable_sending_tasks":            data.get('enable_sending_tasks'),
-                        "enable_task_preloading":          data.get('enable_task_preloading'),
-                        "preloading_count":                data.get('preloading_count'),
-                        "enable_checksum_validation":      data.get('enable_checksum_validation'),
-                        "enable_config_missing_libraries": data.get('enable_config_missing_libraries'),
-                        "enable_distributed_worker_count": data.get('enable_distributed_worker_count', False),
+                    "link_config": {
+                        "address": data.get("address"),
+                        "auth": data.get("auth"),
+                        "username": data.get("username"),
+                        "password": data.get("password"),
+                        "available": data.get("available", False),
+                        "name": data.get("name"),
+                        "version": data.get("version"),
+                        "last_updated": data.get("last_updated", 1),
+                        "enable_receiving_tasks": data.get("enable_receiving_tasks"),
+                        "enable_sending_tasks": data.get("enable_sending_tasks"),
+                        "enable_task_preloading": data.get("enable_task_preloading"),
+                        "preloading_count": data.get("preloading_count"),
+                        "enable_checksum_validation": data.get("enable_checksum_validation"),
+                        "enable_config_missing_libraries": data.get("enable_config_missing_libraries"),
+                        "enable_distributed_worker_count": data.get("enable_distributed_worker_count", False),
                     },
-                    "distributed_worker_count_target": data.get('distributed_worker_count_target', 0),
-                }
+                    "distributed_worker_count_target": data.get("distributed_worker_count_target", 0),
+                },
             )
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -784,13 +795,14 @@ class ApiSettingsHandler(BaseApiHandler):
 
             # Update a single remote installation config by matching the UUID
             links = Links()
-            links.update_single_remote_installation_link_config(json_request.get('link_config'),
-                                                                json_request.get('distributed_worker_count_target', 0))
+            links.update_single_remote_installation_link_config(
+                json_request.get("link_config"), json_request.get("distributed_worker_count_target", 0)
+            )
 
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -845,7 +857,7 @@ class ApiSettingsHandler(BaseApiHandler):
 
             # Delete the remote installation using the given uuid
             links = Links()
-            if not links.delete_remote_installation_link_config(json_request.get('uuid')):
+            if not links.delete_remote_installation_link_config(json_request.get("uuid")):
                 self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to remove link by its uuid")
                 self.write_error()
                 return
@@ -853,7 +865,7 @@ class ApiSettingsHandler(BaseApiHandler):
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -902,12 +914,12 @@ class ApiSettingsHandler(BaseApiHandler):
                 SettingsLibrariesListSchema(),
                 {
                     "libraries": libraries,
-                }
+                },
             )
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -962,47 +974,44 @@ class ApiSettingsHandler(BaseApiHandler):
 
             library_settings = {
                 "library_config": {
-                    "id":                 0,
-                    "name":               '',
-                    "path":               '/',
+                    "id": 0,
+                    "name": "",
+                    "path": "/",
                     "enable_remote_only": False,
-                    "enable_scanner":     False,
-                    "enable_inotify":     False,
-                    "priority_score":     0,
+                    "enable_scanner": False,
+                    "enable_inotify": False,
+                    "priority_score": 0,
                 },
-                "plugins":        {
+                "plugins": {
                     "enabled_plugins": [],
-                }
+                },
             }
-            if json_request.get('id'):
+            if json_request.get("id"):
                 # Read the library
-                library_config = Library(json_request.get('id'))
+                library_config = Library(json_request.get("id"))
                 library_settings = {
                     "library_config": {
-                        "id":                 library_config.get_id(),
-                        "name":               library_config.get_name(),
-                        "path":               library_config.get_path(),
-                        "locked":             library_config.get_locked(),
+                        "id": library_config.get_id(),
+                        "name": library_config.get_name(),
+                        "path": library_config.get_path(),
+                        "locked": library_config.get_locked(),
                         "enable_remote_only": library_config.get_enable_remote_only(),
-                        "enable_scanner":     library_config.get_enable_scanner(),
-                        "enable_inotify":     library_config.get_enable_inotify(),
-                        "priority_score":     library_config.get_priority_score(),
-                        "tags":               library_config.get_tags(),
+                        "enable_scanner": library_config.get_enable_scanner(),
+                        "enable_inotify": library_config.get_enable_inotify(),
+                        "priority_score": library_config.get_priority_score(),
+                        "tags": library_config.get_tags(),
                     },
-                    "plugins":        {
+                    "plugins": {
                         "enabled_plugins": library_config.get_enabled_plugins(),
-                    }
+                    },
                 }
 
-            response = self.build_response(
-                SettingsLibraryConfigReadAndWriteSchema(),
-                library_settings
-            )
+            response = self.build_response(SettingsLibraryConfigReadAndWriteSchema(), library_settings)
 
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -1057,9 +1066,10 @@ class ApiSettingsHandler(BaseApiHandler):
 
             # Save settings
             from unmanic.webserver.helpers import settings
-            library_config = json_request['library_config']
-            plugin_config = json_request.get('plugins', {})
-            library_id = library_config.get('id', 0)
+
+            library_config = json_request["library_config"]
+            plugin_config = json_request.get("plugins", {})
+            library_id = library_config.get("id", 0)
             if not settings.save_library_config(library_id, library_config=library_config, plugin_config=plugin_config):
                 self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to write library config")
                 self.write_error()
@@ -1068,7 +1078,7 @@ class ApiSettingsHandler(BaseApiHandler):
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -1122,7 +1132,7 @@ class ApiSettingsHandler(BaseApiHandler):
             json_request = self.read_json_request(RequestLibraryByIdSchema())
 
             # Fetch existing library by ID
-            library = Library(json_request.get('id'))
+            library = Library(json_request.get("id"))
 
             # Delete the library
             if not library.delete():
@@ -1133,7 +1143,7 @@ class ApiSettingsHandler(BaseApiHandler):
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -1187,17 +1197,14 @@ class ApiSettingsHandler(BaseApiHandler):
             json_request = self.read_json_request(RequestLibraryByIdSchema())
 
             # Fetch library config
-            library_config = Library.export(json_request.get('id'))
+            library_config = Library.export(json_request.get("id"))
 
-            response = self.build_response(
-                SettingsLibraryPluginConfigExportSchema(),
-                library_config
-            )
+            response = self.build_response(SettingsLibraryPluginConfigExportSchema(), library_config)
 
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -1252,9 +1259,10 @@ class ApiSettingsHandler(BaseApiHandler):
 
             # Save settings
             from unmanic.webserver.helpers import settings
-            library_config = json_request.get('library_config')
-            plugin_config = json_request.get('plugins', {})
-            library_id = json_request.get('library_id')
+
+            library_config = json_request.get("library_config")
+            plugin_config = json_request.get("plugins", {})
+            library_id = json_request.get("library_id")
             if not settings.save_library_config(library_id, library_config=library_config, plugin_config=plugin_config):
                 self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to import library config")
                 self.write_error()
@@ -1263,7 +1271,7 @@ class ApiSettingsHandler(BaseApiHandler):
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))

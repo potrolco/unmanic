@@ -44,31 +44,34 @@ def prepare_filtered_completed_tasks(params):
     :param params:
     :return:
     """
-    start = params.get('start', 0)
-    length = params.get('length', 0)
+    start = params.get("start", 0)
+    length = params.get("length", 0)
 
-    search_value = params.get('search_value', '')
-    status = params.get('status', 'all')
+    search_value = params.get("search_value", "")
+    status = params.get("status", "all")
 
-    order = params.get('order', {
-        "column": 'finish_time',
-        "dir":    'desc',
-    })
+    order = params.get(
+        "order",
+        {
+            "column": "finish_time",
+            "dir": "desc",
+        },
+    )
 
     # Define filters
     task_success = None
-    if status == 'success':
+    if status == "success":
         task_success = True
-    elif status == 'failed':
+    elif status == "failed":
         task_success = False
 
     after_time = None
-    if params.get('after'):
-        after_time = datetime.strptime(params.get('after'), '%Y-%m-%dT%H:%M:%S').timestamp()
+    if params.get("after"):
+        after_time = datetime.strptime(params.get("after"), "%Y-%m-%dT%H:%M:%S").timestamp()
 
     before_time = None
-    if params.get('before'):
-        before_time = datetime.strptime(params.get('before'), '%Y-%m-%dT%H:%M:%S').timestamp()
+    if params.get("before"):
+        before_time = datetime.strptime(params.get("before"), "%Y-%m-%dT%H:%M:%S").timestamp()
 
     # Fetch historical tasks
     history_logging = history.History()
@@ -79,34 +82,43 @@ def prepare_filtered_completed_tasks(params):
     # Get total failed count
     records_total_failed_count = history_logging.get_historic_task_list_filtered_and_sorted(task_success=False).count()
     # Get quantity after filters (without pagination)
-    records_filtered_count = history_logging.get_historic_task_list_filtered_and_sorted(order=order, start=0, length=0,
-                                                                                        search_value=search_value,
-                                                                                        task_success=task_success,
-                                                                                        after_time=after_time,
-                                                                                        before_time=before_time).count()
+    records_filtered_count = history_logging.get_historic_task_list_filtered_and_sorted(
+        order=order,
+        start=0,
+        length=0,
+        search_value=search_value,
+        task_success=task_success,
+        after_time=after_time,
+        before_time=before_time,
+    ).count()
     # Get filtered/sorted results
-    task_results = history_logging.get_historic_task_list_filtered_and_sorted(order=order, start=start, length=length,
-                                                                              search_value=search_value,
-                                                                              task_success=task_success, after_time=after_time,
-                                                                              before_time=before_time)
+    task_results = history_logging.get_historic_task_list_filtered_and_sorted(
+        order=order,
+        start=start,
+        length=length,
+        search_value=search_value,
+        task_success=task_success,
+        after_time=after_time,
+        before_time=before_time,
+    )
 
     # Build return data
     return_data = {
-        "recordsTotal":    records_total_count,
+        "recordsTotal": records_total_count,
         "recordsFiltered": records_filtered_count,
-        "successCount":    records_total_success_count,
-        "failedCount":     records_total_failed_count,
-        "results":         []
+        "successCount": records_total_success_count,
+        "failedCount": records_total_failed_count,
+        "results": [],
     }
 
     # Iterate over tasks and append them to the task data
     for task in task_results:
         # Set params as required in template
         item = {
-            'id':           task['id'],
-            'task_label':   task['task_label'],
-            'task_success': task['task_success'],
-            'finish_time':  task['finish_time'],
+            "id": task["id"],
+            "task_label": task["task_label"],
+            "task_success": task["task_success"],
+            "finish_time": task["finish_time"],
         }
         return_data["results"].append(item)
 
@@ -163,17 +175,17 @@ def add_historic_tasks_to_pending_tasks_list(historic_task_ids, library_id=None)
 
 def read_command_log_for_task(task_id):
     data = {
-        'command_log':       '',
-        'command_log_lines': [],
+        "command_log": "",
+        "command_log_lines": [],
     }
     task_handler = history.History()
     task_data = task_handler.get_historic_task_data_dictionary(task_id=task_id)
     if not task_data:
         return data
 
-    for command_log in task_data.get('completedtaskscommandlogs_set', []):
-        data['command_log'] += command_log['dump']
-        data['command_log_lines'] += format_ffmpeg_log_text(command_log['dump'].split("\n"))
+    for command_log in task_data.get("completedtaskscommandlogs_set", []):
+        data["command_log"] += command_log["dump"]
+        data["command_log_lines"] += format_ffmpeg_log_text(command_log["dump"].split("\n"))
 
     return data
 
@@ -181,37 +193,48 @@ def read_command_log_for_task(task_id):
 def format_ffmpeg_log_text(log_lines):
     return_list = []
     pre_text = False
-    headers = ['RUNNER:', 'COMMAND:', 'LOG:', 'WORKER TERMINATED!', 'PLUGIN FAILED!', 'REMOTE TASK FAILED!',
-               'REMOTE LINK MANAGER TERMINATED!']
+    headers = [
+        "RUNNER:",
+        "COMMAND:",
+        "LOG:",
+        "WORKER TERMINATED!",
+        "PLUGIN FAILED!",
+        "REMOTE TASK FAILED!",
+        "REMOTE LINK MANAGER TERMINATED!",
+    ]
     for i, line in enumerate(log_lines):
         line_text = line
 
         # Add PRE to lines
         if line_text and pre_text and line_text.rstrip() not in headers:
-            line_text = '<pre>{}</pre>'.format(line_text)
+            line_text = "<pre>{}</pre>".format(line_text)
 
         # Add bold to headers
         if line_text.rstrip() not in headers:
             line_text = line_text
         else:
-            if line_text.rstrip() in ['WORKER TERMINATED!', 'PLUGIN FAILED!', 'REMOTE TASK FAILED!',
-                                      'REMOTE LINK MANAGER TERMINATED!']:
+            if line_text.rstrip() in [
+                "WORKER TERMINATED!",
+                "PLUGIN FAILED!",
+                "REMOTE TASK FAILED!",
+                "REMOTE LINK MANAGER TERMINATED!",
+            ]:
                 line_text = '<b><span class="terminated">{}</span></b>'.format(line_text)
             else:
-                line_text = '<b>{}</b>'.format(line_text)
+                line_text = "<b>{}</b>".format(line_text)
 
         # Replace leading whitespace
         stripped = line.lstrip()
         line_text = "&nbsp;" * (len(line) - len(stripped)) + line_text
 
         # If log section is COMMAND:
-        if 'RUNNER:' in line_text:
+        if "RUNNER:" in line_text:
             # prepend a horizontal rule
             return_list.append("<hr>")
             pre_text = False
-        elif 'COMMAND:' in line_text:
+        elif "COMMAND:" in line_text:
             pre_text = True
-        elif 'LOG:' in line_text:
+        elif "LOG:" in line_text:
             pre_text = False
         return_list.append(line_text)
     return return_list

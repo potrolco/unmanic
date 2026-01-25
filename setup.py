@@ -3,23 +3,23 @@
 
 """
     unmanic.setup.py
- 
+
     Written by:               Josh.5 <jsunnex@gmail.com>
     Date:                     04 May 2020, (10:47 AM)
- 
+
     Copyright:
            Copyright (C) Josh Sunnex - All Rights Reserved
- 
+
            Permission is hereby granted, free of charge, to any person obtaining a copy
            of this software and associated documentation files (the "Software"), to deal
            in the Software without restriction, including without limitation the rights
            to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
            copies of the Software, and to permit persons to whom the Software is
            furnished to do so, subject to the following conditions:
-  
+
            The above copyright notice and this permission notice shall be included in all
            copies or substantial portions of the Software.
-  
+
            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
            EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
            MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -46,7 +46,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 import versioninfo
 
 project_root_dir = os.path.dirname(os.path.realpath(__file__))
-src_dir = 'unmanic'
+src_dir = "unmanic"
 
 module_name = versioninfo.name()
 module_version = versioninfo.version()
@@ -56,17 +56,17 @@ module_email = versioninfo.email()
 module_url = versioninfo.url()
 module_classifiers = [
     versioninfo.dev_status(),
-    'Intended Audience :: End Users/Desktop',
-    'Intended Audience :: Developers',
-    'Programming Language :: Python :: 3.8',
-    'Programming Language :: Python :: 3.9',
-    'Programming Language :: Python :: 3.10',
-    'Programming Language :: Python :: 3.11',
-    'Programming Language :: Python :: 3.12',
-    'Operating System :: POSIX :: Linux',
-    'Operating System :: Unix',
-    'Topic :: Multimedia :: Video :: Conversion',
-    'Topic :: Internet :: WWW/HTTP',
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Unix",
+    "Topic :: Multimedia :: Video :: Conversion",
+    "Topic :: Internet :: WWW/HTTP",
 ]
 
 
@@ -75,8 +75,8 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
 
     def run(self):
         setuptools.command.build_py.build_py.run(self)
-        self.run_command('write-build-version')
-        self.run_command('build-frontend')
+        self.run_command("write-build-version")
+        self.run_command("build-frontend")
 
 
 class WriteVersionCommand(Command):
@@ -90,12 +90,12 @@ class WriteVersionCommand(Command):
 
     @staticmethod
     def run():
-        version_file = os.path.join('.', 'build', 'lib', src_dir, 'version')
+        version_file = os.path.join(".", "build", "lib", src_dir, "version")
         data = {
-            'short': versioninfo.version(),
-            'long':  versioninfo.full_version(),
+            "short": versioninfo.version(),
+            "long": versioninfo.full_version(),
         }
-        with open(version_file, 'w') as f:
+        with open(version_file, "w") as f:
             json.dump(data, f)
 
 
@@ -105,12 +105,12 @@ class BuildFrontendCommand(setuptools.command.build_py.build_py):
     def run(self):
         setuptools.command.build_py.build_py.run(self)
 
-        public_asset_path = os.path.abspath(os.path.join('.', 'build', 'lib', src_dir, 'webserver', 'public'))
-        frontend_path = os.path.abspath(os.path.join('.', 'build', 'lib', src_dir, 'webserver', 'frontend'))
+        public_asset_path = os.path.abspath(os.path.join(".", "build", "lib", src_dir, "webserver", "public"))
+        frontend_path = os.path.abspath(os.path.join(".", "build", "lib", src_dir, "webserver", "frontend"))
 
         # Start by clearing out anything if this was pulled from a dirty tree
         shutil.rmtree(public_asset_path, ignore_errors=True)
-        shutil.rmtree(os.path.join(frontend_path, 'node_modules'), ignore_errors=True)
+        shutil.rmtree(os.path.join(frontend_path, "node_modules"), ignore_errors=True)
 
         # Install all modules
         subprocess.run(
@@ -128,13 +128,14 @@ class BuildFrontendCommand(setuptools.command.build_py.build_py):
         )
 
         # Move built dist to templates directory
-        shutil.move(os.path.join(frontend_path, 'dist', 'spa'), public_asset_path)
+        shutil.move(os.path.join(frontend_path, "dist", "spa"), public_asset_path)
         # Remove the frontend source from the package (we will not distribute these)
         shutil.rmtree(frontend_path, ignore_errors=True)
 
 
 class CleanCommand(Command):
     """Custom clean command to tidy up the project root."""
+
     user_options = []
 
     def initialize_options(self):
@@ -145,15 +146,16 @@ class CleanCommand(Command):
 
     @staticmethod
     def run():
-        shutil.rmtree(os.path.abspath(os.path.join(os.path.dirname(__file__), 'build')), ignore_errors=True)
-        shutil.rmtree(os.path.abspath(os.path.join(os.path.dirname(__file__), 'dist')), ignore_errors=True)
-        shutil.rmtree(os.path.abspath(os.path.join(os.path.dirname(__file__), '*.pyc')), ignore_errors=True)
-        shutil.rmtree(os.path.abspath(os.path.join(os.path.dirname(__file__), 'unmanic.egg-info')), ignore_errors=True)
+        shutil.rmtree(os.path.abspath(os.path.join(os.path.dirname(__file__), "build")), ignore_errors=True)
+        shutil.rmtree(os.path.abspath(os.path.join(os.path.dirname(__file__), "dist")), ignore_errors=True)
+        shutil.rmtree(os.path.abspath(os.path.join(os.path.dirname(__file__), "*.pyc")), ignore_errors=True)
+        shutil.rmtree(os.path.abspath(os.path.join(os.path.dirname(__file__), "unmanic.egg-info")), ignore_errors=True)
         [shutil.rmtree(f) for f in glob.glob(src_dir + "/**/__pycache__", recursive=True)]
 
 
 class FullVersionCommand(Command):
     """Custom clean command to tidy up the project root."""
+
     user_options = []
 
     def initialize_options(self):
@@ -168,21 +170,21 @@ class FullVersionCommand(Command):
 
 
 cmd_class = {
-    'build_py':            BuildPyCommand,
-    'write-build-version': WriteVersionCommand,
-    'build-frontend':      BuildFrontendCommand,
-    'clean':               CleanCommand,
-    'fullversion':         FullVersionCommand,
+    "build_py": BuildPyCommand,
+    "write-build-version": WriteVersionCommand,
+    "build-frontend": BuildFrontendCommand,
+    "clean": CleanCommand,
+    "fullversion": FullVersionCommand,
 }
 
 
 def requirements():
-    with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'requirements.txt'))) as f:
+    with open(os.path.abspath(os.path.join(os.path.dirname(__file__), "requirements.txt"))) as f:
         return f.read().splitlines()
 
 
 def requirements_dev():
-    with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'requirements-dev.txt'))) as f:
+    with open(os.path.abspath(os.path.join(os.path.dirname(__file__), "requirements-dev.txt"))) as f:
         return f.read().splitlines()
 
 
@@ -199,15 +201,9 @@ setup(
     url=module_url,
     classifiers=module_classifiers,
     install_requires=requirements(),
-    extras_require={
-        'dev': requirements_dev()
-    },
+    extras_require={"dev": requirements_dev()},
     packages=find_namespace_packages(include=[f"{src_dir}*"]),
     include_package_data=True,
-    entry_points={
-        'console_scripts': [
-            '%s=%s.service:main' % (module_name, module_name)
-        ]
-    },
+    entry_points={"console_scripts": ["%s=%s.service:main" % (module_name, module_name)]},
     cmdclass=cmd_class,
 )

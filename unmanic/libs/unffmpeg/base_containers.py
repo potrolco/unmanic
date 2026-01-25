@@ -60,7 +60,7 @@ class Containers(object):
 
         :return:
         """
-        if hasattr(self, 'supports_subtitles'):
+        if hasattr(self, "supports_subtitles"):
             if self.supports_subtitles:
                 return True
         return False
@@ -81,7 +81,7 @@ class Containers(object):
 
         :return:
         """
-        if hasattr(self, 'unsupports_codecs'):
+        if hasattr(self, "unsupports_codecs"):
             return self.unsubtitle_codecs
         # HDMV streams cannot be written by FFMPEG
-        return ['hdmv_pgs_subtitle']
+        return ["hdmv_pgs_subtitle"]

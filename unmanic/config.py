@@ -47,9 +47,9 @@ logger = UnmanicLogging.get_logger(name="Config")
 
 
 class Config(object, metaclass=SingletonType):
-    app_version = ''
+    app_version = ""
 
-    test = ''
+    test = ""
 
     def __init__(self, config_path=None, **kwargs):
         # Set the default UI Port
@@ -57,10 +57,10 @@ class Config(object, metaclass=SingletonType):
 
         # Set default directories
         home_directory = common.get_home_dir()
-        self.config_path = os.path.join(home_directory, '.unmanic', 'config')
-        self.log_path = os.path.join(home_directory, '.unmanic', 'logs')
-        self.plugins_path = os.path.join(home_directory, '.unmanic', 'plugins')
-        self.userdata_path = os.path.join(home_directory, '.unmanic', 'userdata')
+        self.config_path = os.path.join(home_directory, ".unmanic", "config")
+        self.log_path = os.path.join(home_directory, ".unmanic", "logs")
+        self.plugins_path = os.path.join(home_directory, ".unmanic", "plugins")
+        self.userdata_path = os.path.join(home_directory, ".unmanic", "userdata")
 
         # Configure debugging
         self.debugging = False
@@ -90,7 +90,7 @@ class Config(object, metaclass=SingletonType):
         self.cache_path = common.get_default_cache_path()
 
         # Link settings
-        self.installation_name = ''
+        self.installation_name = ""
         self.remote_installations = []
         self.distributed_worker_count_target = 0
 
@@ -103,21 +103,21 @@ class Config(object, metaclass=SingletonType):
         self.__import_settings_from_env()
 
         # Import Unmanic path settings from command params
-        if kwargs.get('unmanic_path'):
-            self.set_config_item('config_path', os.path.join(kwargs.get('unmanic_path'), 'config'), save_settings=False)
-            self.set_config_item('plugins_path', os.path.join(kwargs.get('unmanic_path'), 'plugins'), save_settings=False)
-            self.set_config_item('userdata_path', os.path.join(kwargs.get('unmanic_path'), 'userdata'), save_settings=False)
+        if kwargs.get("unmanic_path"):
+            self.set_config_item("config_path", os.path.join(kwargs.get("unmanic_path"), "config"), save_settings=False)
+            self.set_config_item("plugins_path", os.path.join(kwargs.get("unmanic_path"), "plugins"), save_settings=False)
+            self.set_config_item("userdata_path", os.path.join(kwargs.get("unmanic_path"), "userdata"), save_settings=False)
 
         # Finally, re-read config from file and override all previous settings.
         self.__import_settings_from_file(config_path)
 
         # Overwrite current settings with given args
         if config_path:
-            self.set_config_item('config_path', config_path, save_settings=False)
+            self.set_config_item("config_path", config_path, save_settings=False)
 
         # Overwrite all other settings passed from command params
-        if kwargs.get('port'):
-            self.set_config_item('ui_port', kwargs.get('port'), save_settings=False)
+        if kwargs.get("port"):
+            self.set_config_item("ui_port", kwargs.get("port"), save_settings=False)
 
         # Apply settings to the unmanic logger
         self.__setup_unmanic_logger()
@@ -169,7 +169,7 @@ class Config(object, metaclass=SingletonType):
         # Ensure the config path exists
         if not os.path.exists(config_path):
             os.makedirs(config_path)
-        settings_file = os.path.join(config_path, 'settings.json')
+        settings_file = os.path.join(config_path, "settings.json")
         if os.path.exists(settings_file):
             data = {}
             try:
@@ -188,11 +188,11 @@ class Config(object, metaclass=SingletonType):
         """
         if not os.path.exists(self.get_config_path()):
             os.makedirs(self.get_config_path())
-        settings_file = os.path.join(self.get_config_path(), 'settings.json')
+        settings_file = os.path.join(self.get_config_path(), "settings.json")
         data = self.get_config_as_dict()
         result = common.json_dump_to_file(data, settings_file)
-        if not result['success']:
-            for message in result['errors']:
+        if not result["success"]:
+            for message in result["errors"]:
                 logger.error(message)
             raise Exception("Exception in writing settings to file")
 
@@ -268,7 +268,7 @@ class Config(object, metaclass=SingletonType):
 
         :return:
         """
-        return metadata.read_version_string('long')
+        return metadata.read_version_string("long")
 
     def read_system_logs(self, lines=None):
         """
@@ -278,7 +278,7 @@ class Config(object, metaclass=SingletonType):
         :return:
         """
         log_lines = []
-        log_file = os.path.join(self.log_path, 'unmanic.log')
+        log_file = os.path.join(self.log_path, "unmanic.log")
         line_count = 0
         for line in reversed(list(open(log_file))):
             log_lines.insert(0, line.rstrip())
@@ -367,7 +367,7 @@ class Config(object, metaclass=SingletonType):
         try:
             # On Unmanic startup, it may not have yet initialised the logger when this is first run.
             UnmanicLogging.set_remote_logging_retention(retention_days)
-        except (AttributeError):
+        except AttributeError:
             pass
         self.log_buffer_retention = retention_days
 
@@ -523,7 +523,7 @@ class Config(object, metaclass=SingletonType):
         """
         remote_installations = []
         for ri in self.remote_installations:
-            ri['distributed_worker_count_target'] = self.distributed_worker_count_target
+            ri["distributed_worker_count_target"] = self.distributed_worker_count_target
             remote_installations.append(ri)
         return remote_installations
 

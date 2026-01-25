@@ -100,15 +100,15 @@ class Notifications(Queue, metaclass=SingletonType):
     @staticmethod
     def __validate_item(item):
         # Ensure all required keys are present
-        for key in ['type', 'icon', 'label', 'message', 'navigation']:
+        for key in ["type", "icon", "label", "message", "navigation"]:
             if key not in item:
                 raise Exception("Frontend message item incorrectly formatted. Missing key: '{}'".format(key))
 
         # Ensure the given type is valid
-        if item.get('type') not in ['error', 'warning', 'success', 'info']:
+        if item.get("type") not in ["error", "warning", "success", "info"]:
             raise Exception(
                 "Frontend message item's code must be in ['error', 'warning', 'success', 'info', 'status']. Received '{}'".format(
-                    item.get('type')
+                    item.get("type")
                 )
             )
         return True
@@ -133,12 +133,12 @@ class Notifications(Queue, metaclass=SingletonType):
         self.__validate_item(item)
         with self._lock:
             # Generate uuid if one is not provided
-            if not item.get('uuid'):
-                item['uuid'] = str(uuid.uuid4())
+            if not item.get("uuid"):
+                item["uuid"] = str(uuid.uuid4())
             # If it is not already in message list, add it to the list and the queue
-            if item['uuid'] in self.all_items:
+            if item["uuid"] in self.all_items:
                 return
-            self.all_items.add(item['uuid'])
+            self.all_items.add(item["uuid"])
             self.__add_to_queue_locked(item)
 
     def remove(self, item_uuid):
@@ -155,7 +155,7 @@ class Notifications(Queue, metaclass=SingletonType):
             # Create list of items that will be queued again
             requeue_items = []
             for current_item in current_items:
-                if current_item.get('uuid') != item_uuid:
+                if current_item.get("uuid") != item_uuid:
                     requeue_items.append(current_item)
                 else:
                     success = True
@@ -179,23 +179,23 @@ class Notifications(Queue, metaclass=SingletonType):
         self.__validate_item(item)
         with self._lock:
             # Generate uuid if one is not provided
-            if not item.get('uuid'):
-                item['uuid'] = str(uuid.uuid4())
+            if not item.get("uuid"):
+                item["uuid"] = str(uuid.uuid4())
             current_items = self.__get_all_items_locked()
             requeue_items = []
             replaced = False
             for current_item in current_items:
-                if current_item.get('uuid') == item['uuid']:
+                if current_item.get("uuid") == item["uuid"]:
                     requeue_items.append(item)
                     replaced = True
                 else:
                     requeue_items.append(current_item)
             if not replaced:
-                self.all_items.add(item['uuid'])
+                self.all_items.add(item["uuid"])
                 # Restore original queue state before adding new item
                 self.__requeue_items_locked(current_items)
                 self.__add_to_queue_locked(item)
                 return
-            self.all_items.add(item['uuid'])
+            self.all_items.add(item["uuid"])
             # Add all requeue_items items back into the queue
             self.__requeue_items_locked(requeue_items)

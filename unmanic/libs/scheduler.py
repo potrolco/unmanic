@@ -50,7 +50,7 @@ class ScheduledTasksManager(threading.Thread):
     """
 
     def __init__(self, event):
-        super(ScheduledTasksManager, self).__init__(name='ScheduledTasksManager')
+        super(ScheduledTasksManager, self).__init__(name="ScheduledTasksManager")
         self.logger = UnmanicLogging.get_logger(name=__class__.__name__)
         self.event = event
         self.abort_flag = threading.Event()
@@ -117,7 +117,7 @@ class ScheduledTasksManager(threading.Thread):
 
         linked_configs = []
         for local_config in settings.get_remote_installations():
-            if local_config.get('enable_distributed_worker_count'):
+            if local_config.get("enable_distributed_worker_count"):
                 linked_configs.append(local_config)
 
         # If no remote links are configured, then return here
@@ -130,14 +130,14 @@ class ScheduledTasksManager(threading.Thread):
         # Get total tasks count of pending tasks across all linked_configs
         total_tasks = local_task_count
         for linked_config in linked_configs:
-            total_tasks += int(linked_config.get('task_count', 0))
+            total_tasks += int(linked_config.get("task_count", 0))
 
         # From the counts fetched from all linked_configs, balance out the target count (including this installation)
         allocated_worker_count = 0
         for linked_config in linked_configs:
-            if linked_config.get('task_count', 0) == 0:
+            if linked_config.get("task_count", 0) == 0:
                 continue
-            allocated_worker_count += round((int(linked_config.get('task_count', 0)) / total_tasks) * target_count)
+            allocated_worker_count += round((int(linked_config.get("task_count", 0)) / total_tasks) * target_count)
 
         # Calculate worker count for local
         target_workers_for_this_installation = 0
@@ -160,7 +160,7 @@ class ScheduledTasksManager(threading.Thread):
                 self.force_local_worker_timer = time_now
 
         self.logger.info("Configuring worker count as %s for this installation", target_workers_for_this_installation)
-        settings.set_config_item('number_of_workers', target_workers_for_this_installation, save_settings=True)
+        settings.set_config_item("number_of_workers", target_workers_for_this_installation, save_settings=True)
 
     def manage_completed_tasks(self):
         settings = config.Config()
@@ -174,25 +174,29 @@ class ScheduledTasksManager(threading.Thread):
         before_time = date_x_days_ago.timestamp()
 
         task_success = True
-        inc_status = 'successfully'
+        inc_status = "successfully"
         if not settings.get_always_keep_failed_tasks():
-            inc_status = 'successfully or failed'
+            inc_status = "successfully or failed"
             task_success = None
 
         # Fetch completed tasks
         from unmanic.libs import history
+
         history_logging = history.History()
-        count = history_logging.get_historic_task_list_filtered_and_sorted(task_success=task_success,
-                                                                           before_time=before_time).count()
-        results = history_logging.get_historic_task_list_filtered_and_sorted(task_success=task_success,
-                                                                             before_time=before_time)
+        count = history_logging.get_historic_task_list_filtered_and_sorted(
+            task_success=task_success, before_time=before_time
+        ).count()
+        results = history_logging.get_historic_task_list_filtered_and_sorted(
+            task_success=task_success, before_time=before_time
+        )
 
         if count == 0:
             self.logger.info("Found no %s completed tasks older than %s days", inc_status, max_age_in_days)
             return
 
-        self.logger.info("Found %s %s completed tasks older than %s days that should be removed", count, inc_status,
-                         max_age_in_days)
+        self.logger.info(
+            "Found %s %s completed tasks older than %s days that should be removed", count, inc_status, max_age_in_days
+        )
         if not history_logging.delete_historic_tasks_recursively(results):
             self.logger.error("Failed to delete %s %s completed tasks", count, inc_status)
             return

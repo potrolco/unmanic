@@ -36,4 +36,3 @@ PROJECT_ROOT=$(realpath ${SCRIPT_PATH}/../)
 find ${PROJECT_ROOT}/ -type f -name "*.pyc"  -exec bash -c "
     rm -fv {};
 " \;
-

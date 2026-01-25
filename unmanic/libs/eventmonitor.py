@@ -43,15 +43,14 @@ try:
     from watchdog.observers import Observer
     from watchdog.events import FileSystemEventHandler
 
-    event_monitor_module = 'watchdog'
+    event_monitor_module = "watchdog"
 except ImportError:
+
     class Observer(object):
         pass
 
-
     class FileSystemEventHandler(object):
         pass
-
 
     event_monitor_module = None
 
@@ -92,10 +91,12 @@ class EventHandler(FileSystemEventHandler):
                 self.logger.debug("Detected event is for a directory. Ignoring...")
             else:
                 self.logger.info("Detected '%s' event on file path '%s'", event.event_type, event.src_path)
-                self.files_to_test.put({
-                    'src_path':   event.src_path,
-                    'library_id': self.library_id,
-                })
+                self.files_to_test.put(
+                    {
+                        "src_path": event.src_path,
+                        "library_id": self.library_id,
+                    }
+                )
 
 
 class EventMonitorManager(threading.Thread):
@@ -109,7 +110,7 @@ class EventMonitorManager(threading.Thread):
     """
 
     def __init__(self, data_queues, event):
-        super(EventMonitorManager, self).__init__(name='EventMonitorManager')
+        super(EventMonitorManager, self).__init__(name="EventMonitorManager")
         self.name = __class__.__name__
         self.logger = UnmanicLogging.get_logger(name=__class__.__name__)
         self.data_queues = data_queues
@@ -131,7 +132,7 @@ class EventMonitorManager(threading.Thread):
     def run(self):
         self.logger.info("Starting EventMonitorManager loop")
         while not self.abort_flag.is_set():
-            self.event.wait(.5)
+            self.event.wait(0.5)
 
             if not self.system_configuration_is_valid():
                 self.event.wait(2)
@@ -139,8 +140,8 @@ class EventMonitorManager(threading.Thread):
 
             if not self.files_to_test.empty():
                 item = self.files_to_test.get()
-                pathname = item.get('src_path')
-                library_id = item.get('library_id')
+                pathname = item.get("src_path")
+                library_id = item.get("library_id")
                 self.manage_event_queue(pathname, library_id)
                 continue
 
@@ -148,9 +149,9 @@ class EventMonitorManager(threading.Thread):
             enable_inotify = False
             for lib_info in Library.get_all_libraries():
                 try:
-                    library = Library(lib_info['id'])
+                    library = Library(lib_info["id"])
                 except Exception as e:
-                    self.logger.exception("Unable to fetch library config for ID %s", lib_info['id'])
+                    self.logger.exception("Unable to fetch library config for ID %s", lib_info["id"])
                     continue
                 # Check if the library is configured for remote files only
                 if library.get_enable_remote_only():
@@ -199,11 +200,11 @@ class EventMonitorManager(threading.Thread):
             monitoring_path = False
             self.event_observer_thread = Observer()
             for lib_info in Library.get_all_libraries():
-                self.event.wait(.2)
+                self.event.wait(0.2)
                 try:
-                    library = Library(lib_info['id'])
+                    library = Library(lib_info["id"])
                 except Exception as e:
-                    self.logger.exception("Unable to fetch library config for ID %s", lib_info['id'])
+                    self.logger.exception("Unable to fetch library config for ID %s", lib_info["id"])
                     continue
                 # Check if the library is configured for remote files only
                 if library.get_enable_remote_only():
@@ -263,7 +264,7 @@ class EventMonitorManager(threading.Thread):
             # Log any error messages
             for issue in issues:
                 if type(issue) is dict:
-                    self.logger.info(issue.get('message'))
+                    self.logger.info(issue.get("message"))
                 else:
                     self.logger.info(issue)
             # If file needs to be added, then add it
@@ -283,8 +284,10 @@ class EventMonitorManager(threading.Thread):
         :param priority_score:
         :return:
         """
-        self.data_queues.get('inotifytasks').put({
-            'pathname':       pathname,
-            'library_id':     library_id,
-            'priority_score': priority_score,
-        })
+        self.data_queues.get("inotifytasks").put(
+            {
+                "pathname": pathname,
+                "library_id": library_id,
+                "priority_score": priority_score,
+            }
+        )

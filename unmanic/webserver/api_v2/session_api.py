@@ -49,24 +49,24 @@ class ApiSessionHandler(BaseApiHandler):
 
     routes = [
         {
-            "path_pattern":      r"/session/state",
+            "path_pattern": r"/session/state",
             "supported_methods": ["GET"],
-            "call_method":       "get_session_state",
+            "call_method": "get_session_state",
         },
         {
-            "path_pattern":      r"/session/reload",
+            "path_pattern": r"/session/reload",
             "supported_methods": ["POST"],
-            "call_method":       "session_reload",
+            "call_method": "session_reload",
         },
         {
-            "path_pattern":      r"/session/logout",
+            "path_pattern": r"/session/logout",
             "supported_methods": ["GET"],
-            "call_method":       "session_logout",
+            "call_method": "session_logout",
         },
         {
-            "path_pattern":      r"/session/get_app_auth_code",
+            "path_pattern": r"/session/get_app_auth_code",
             "supported_methods": ["GET"],
-            "call_method":       "get_app_auth_code",
+            "call_method": "get_app_auth_code",
         },
     ]
 
@@ -123,18 +123,18 @@ class ApiSessionHandler(BaseApiHandler):
                 response = self.build_response(
                     SessionStateSuccessSchema(),
                     {
-                        "level":       self.session.level,
+                        "level": self.session.level,
                         "picture_uri": self.session.picture_uri,
-                        "name":        self.session.name,
-                        "email":       self.session.email,
-                        "created":     self.session.created,
-                        "uuid":        self.session.uuid,
-                    }
+                        "name": self.session.name,
+                        "email": self.session.email,
+                        "created": self.session.created,
+                        "uuid": self.session.uuid,
+                    },
                 )
                 self.write_success(response)
                 return
         except BaseApiError as bae:
-            self.logger.error("BaseApiError.%s: %s", self.route.get('call_method'), str(bae))
+            self.logger.error("BaseApiError.%s: %s", self.route.get("call_method"), str(bae))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -186,7 +186,7 @@ class ApiSessionHandler(BaseApiHandler):
                 self.write_success()
                 return
         except BaseApiError as bae:
-            self.logger.error("BaseApiError.%s: %s", self.route.get('call_method'), str(bae))
+            self.logger.error("BaseApiError.%s: %s", self.route.get("call_method"), str(bae))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -238,7 +238,7 @@ class ApiSessionHandler(BaseApiHandler):
                 self.write_success()
                 return
         except BaseApiError as bae:
-            self.logger.error("BaseApiError.%s: %s", self.route.get('call_method'), str(bae))
+            self.logger.error("BaseApiError.%s: %s", self.route.get("call_method"), str(bae))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -301,22 +301,18 @@ class ApiSessionHandler(BaseApiHandler):
                 self.logger.info("Cancelling the running poll task and starting a new one.")
                 self.session.token_poll_task.cancel()
             self.session.token_poll_task = current_loop.run_in_executor(
-                None,
-                self.session.poll_for_app_token,
-                device_code,
-                interval,
-                expires_in
+                None, self.session.poll_for_app_token, device_code, interval, expires_in
             )
 
             response = self.build_response(
                 SessionAuthCodeSchema(),
                 {
-                    "user_code":                 user_code,
-                    "device_code":               device_code,
-                    "verification_uri":          verification_uri,
+                    "user_code": user_code,
+                    "device_code": device_code,
+                    "verification_uri": verification_uri,
                     "verification_uri_complete": verification_uri_complete,
-                    "expires_in":                expires_in,
-                }
+                    "expires_in": expires_in,
+                },
             )
             self.write_success(response)
             return

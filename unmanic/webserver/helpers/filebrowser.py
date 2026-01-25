@@ -37,7 +37,7 @@ from unmanic.libs import common
 
 def fetch_windows_drives():
     # Credit: https://stackoverflow.com/a/37761506
-    return ['%s:' % d for d in string.ascii_uppercase if os.path.exists('%s:' % d)]
+    return ["%s:" % d for d in string.ascii_uppercase if os.path.exists("%s:" % d)]
 
 
 class DirectoryListing(object):
@@ -48,7 +48,7 @@ class DirectoryListing(object):
     """
 
     def __init__(self, list_type=None):
-        self.list_type = 'all'
+        self.list_type = "all"
         if list_type:
             self.list_type = list_type
 
@@ -68,9 +68,9 @@ class DirectoryListing(object):
             files = self.fetch_files(path)
         path_data = {
             "current_path": path,
-            "list_type":    self.list_type,
-            "directories":  directories,
-            "files":        files,
+            "list_type": self.list_type,
+            "directories": directories,
+            "files": files,
         }
         return path_data
 
@@ -85,12 +85,12 @@ class DirectoryListing(object):
         results = []
         if os.path.exists(path):
             # check if this is a root path or if it has a parent
-            parent_path = os.path.join(path, '..')
+            parent_path = os.path.join(path, "..")
             if os.path.exists(parent_path) and os.path.abspath(parent_path) != path:
                 # Path has a parent, Add the double dots
                 results.append(
                     {
-                        "name":      "..",
+                        "name": "..",
                         "full_path": os.path.abspath(parent_path),
                     }
                 )
@@ -98,7 +98,7 @@ class DirectoryListing(object):
                 # Windows allow selection of drives as parent to root directory
                 results.append(
                     {
-                        "name":      "..",
+                        "name": "..",
                         "full_path": "",
                     }
                 )
@@ -108,7 +108,7 @@ class DirectoryListing(object):
                     if os.path.isdir(abspath):
                         results.append(
                             {
-                                "name":      item,
+                                "name": item,
                                 "full_path": abspath,
                             }
                         )
@@ -119,7 +119,7 @@ class DirectoryListing(object):
             for drive in fetch_windows_drives():
                 results.append(
                     {
-                        "name":      drive,
+                        "name": drive,
                         "full_path": os.path.abspath(os.path.join(drive, os.sep)),
                     }
                 )
@@ -129,7 +129,7 @@ class DirectoryListing(object):
             root_path = common.get_default_root_path()
             results.append(
                 {
-                    "name":      root_path,
+                    "name": root_path,
                     "full_path": root_path,
                 }
             )
@@ -150,7 +150,7 @@ class DirectoryListing(object):
                 if os.path.isfile(abspath):
                     results.append(
                         {
-                            "name":      item,
+                            "name": item,
                             "full_path": abspath,
                         }
                     )

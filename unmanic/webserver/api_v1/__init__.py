@@ -39,12 +39,12 @@ from .pending_api import ApiPendingHandler
 from .plugins_api import ApiPluginsHandler
 from .session_api import ApiSessionHandler
 
-__author__ = 'Josh.5 (jsunnex@gmail.com)'
+__author__ = "Josh.5 (jsunnex@gmail.com)"
 
 __all__ = (
-    'ApiFilebrowserHandler',
-    'ApiHistoryHandler',
-    'ApiPendingHandler',
-    'ApiPluginsHandler',
-    'ApiSessionHandler',
+    "ApiFilebrowserHandler",
+    "ApiHistoryHandler",
+    "ApiPendingHandler",
+    "ApiPluginsHandler",
+    "ApiSessionHandler",
 )

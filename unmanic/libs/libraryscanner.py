@@ -48,7 +48,7 @@ from unmanic.libs.plugins import PluginsHandler
 
 class LibraryScannerManager(threading.Thread):
     def __init__(self, data_queues, event):
-        super(LibraryScannerManager, self).__init__(name='LibraryScannerManager')
+        super(LibraryScannerManager, self).__init__(name="LibraryScannerManager")
         self.logger = UnmanicLogging.get_logger(name=__class__.__name__)
         self.interval = 0
         self.firstrun = True
@@ -76,7 +76,7 @@ class LibraryScannerManager(threading.Thread):
             # Return True straight away if it is
             return True
         # Sleep for a fraction of a second to prevent CPU pinning
-        self.event.wait(.1)
+        self.event.wait(0.1)
         # Return False
         return False
 
@@ -150,9 +150,9 @@ class LibraryScannerManager(threading.Thread):
         for lib_info in Library.get_all_libraries():
             no_libraries_configured = False
             try:
-                library = Library(lib_info['id'])
+                library = Library(lib_info["id"])
             except Exception as e:
-                self.logger.exception("Unable to fetch library config for ID %s", lib_info['id'])
+                self.logger.exception("Unable to fetch library config for ID %s", lib_info["id"])
                 continue
             # Check if the library is configured for remote files only
             if library.get_enable_remote_only():
@@ -182,15 +182,23 @@ class LibraryScannerManager(threading.Thread):
         return valid
 
     def add_path_to_queue(self, pathname, library_id, priority_score):
-        self.scheduledtasks.put({
-            'pathname':       pathname,
-            'library_id':     library_id,
-            'priority_score': priority_score,
-        })
+        self.scheduledtasks.put(
+            {
+                "pathname": pathname,
+                "library_id": library_id,
+                "priority_score": priority_score,
+            }
+        )
 
     def start_results_manager_thread(self, manager_id, status_updates, library_id):
-        manager = FileTesterThread("FileTesterThread-{}".format(manager_id), self.files_to_test,
-                                   self.files_to_process, status_updates, library_id, self.event)
+        manager = FileTesterThread(
+            "FileTesterThread-{}".format(manager_id),
+            self.files_to_test,
+            self.files_to_process,
+            status_updates,
+            library_id,
+            self.event,
+        )
         manager.daemon = True
         manager.start()
         self.file_test_managers[manager_id] = manager
@@ -228,18 +236,18 @@ class LibraryScannerManager(threading.Thread):
 
         frontend_messages.update(
             {
-                'id':      'libraryScanProgress',
-                'type':    'status',
-                'code':    'libraryScanProgress',
-                'message': "Scanning directory - '{}'".format(library_path),
-                'timeout': 0
+                "id": "libraryScanProgress",
+                "type": "status",
+                "code": "libraryScanProgress",
+                "message": "Scanning directory - '{}'".format(library_path),
+                "timeout": 0,
             }
         )
 
         follow_symlinks = self.settings.get_follow_symlinks()
         total_file_count = 0
-        current_file = ''
-        percent_completed_string = ''
+        current_file = ""
+        percent_completed_string = ""
         for root, subFolders, files in os.walk(library_path, followlinks=follow_symlinks):
             if self.abort_flag.is_set():
                 break
@@ -257,14 +265,14 @@ class LibraryScannerManager(threading.Thread):
                 # Update status messages while fetching file list
                 if not status_updates.empty():
                     current_file = status_updates.get()
-                    percent_completed_string = 'Testing: {}'.format(current_file)
+                    percent_completed_string = "Testing: {}".format(current_file)
                     frontend_messages.update(
                         {
-                            'id':      'libraryScanProgress',
-                            'type':    'status',
-                            'code':    'libraryScanProgress',
-                            'message': percent_completed_string,
-                            'timeout': 0
+                            "id": "libraryScanProgress",
+                            "type": "status",
+                            "code": "libraryScanProgress",
+                            "message": percent_completed_string,
+                            "timeout": 0,
                         }
                     )
 
@@ -273,16 +281,16 @@ class LibraryScannerManager(threading.Thread):
         while not self.abort_flag.is_set():
             frontend_messages.update(
                 {
-                    'id':      'libraryScanProgress',
-                    'type':    'status',
-                    'code':    'libraryScanProgress',
-                    'message': percent_completed_string,
-                    'timeout': 0
+                    "id": "libraryScanProgress",
+                    "type": "status",
+                    "code": "libraryScanProgress",
+                    "message": percent_completed_string,
+                    "timeout": 0,
                 }
             )
             # Check if all files have been tested
             if self.files_to_test.empty() and self.files_to_process.empty() and status_updates.empty():
-                percent_completed_string = '100%'
+                percent_completed_string = "100%"
                 # Add a "double check" section.
                 # This is used to ensure that the loop does not prematurely exit when the last file tests still
                 # progressing that have not yet made it to the "files_to_process" queue.
@@ -300,9 +308,9 @@ class LibraryScannerManager(threading.Thread):
                 if int(total_file_count) > 0 and int(current_queue_size) > 0:
                     percent_remaining = int((int(current_queue_size) / int(total_file_count)) * 100)
                     percent_completed = int(100 - percent_remaining)
-                    percent_completed_string = '{}% - Testing: {}'.format(percent_completed, current_file)
+                    percent_completed_string = "{}% - Testing: {}".format(percent_completed, current_file)
                 elif current_file:
-                    percent_completed_string = '{}% - Testing: {}'.format('???', current_file)
+                    percent_completed_string = "{}% - Testing: {}".format("???", current_file)
 
             # Fetch frontend messages from queue
             if not status_updates.empty():
@@ -310,10 +318,10 @@ class LibraryScannerManager(threading.Thread):
                 continue
             elif not self.files_to_process.empty():
                 item = self.files_to_process.get()
-                self.add_path_to_queue(item.get('path'), library_id, item.get('priority_score'))
+                self.add_path_to_queue(item.get("path"), library_id, item.get("priority_score"))
                 continue
             else:
-                self.event.wait(.1)
+                self.event.wait(0.1)
 
         # Wait for threads to finish
         for manager_id in self.file_test_managers:
@@ -323,43 +331,48 @@ class LibraryScannerManager(threading.Thread):
         scan_end_time = time.time()
         scan_duration = str((scan_end_time - scan_start_time))
         self.logger.warning("Library scan completed in %s seconds", scan_duration)
-        UnmanicLogging.metric("library_scan_completed",
-                              library_name=library_name,
-                              library_path=library_path,
-                              library_id=library_id,
-                              scan_start_time=scan_start_time,
-                              scan_end_time=scan_end_time,
-                              scan_duration=scan_duration)
-        UnmanicLogging.data("last_library_scan",
-                            data_search_key=library_id,  # Key this metric by the library_id
-                            library_name=library_name,
-                            library_path=library_path,
-                            library_id=library_id,
-                            scan_start_time=scan_start_time,
-                            scan_end_time=scan_end_time,
-                            scan_duration=scan_duration,
-                            files_scanned_count=total_file_count)
+        UnmanicLogging.metric(
+            "library_scan_completed",
+            library_name=library_name,
+            library_path=library_path,
+            library_id=library_id,
+            scan_start_time=scan_start_time,
+            scan_end_time=scan_end_time,
+            scan_duration=scan_duration,
+        )
+        UnmanicLogging.data(
+            "last_library_scan",
+            data_search_key=library_id,  # Key this metric by the library_id
+            library_name=library_name,
+            library_path=library_path,
+            library_id=library_id,
+            scan_start_time=scan_start_time,
+            scan_end_time=scan_end_time,
+            scan_duration=scan_duration,
+            files_scanned_count=total_file_count,
+        )
 
         # Execute event plugin runners
         data = {
-            "library_id":          library_id,
-            "library_name":        library_name,
-            "library_path":        library_path,
-            "scan_start_time":     scan_start_time,
-            "scan_end_time":       scan_end_time,
-            "scan_duration":       scan_duration,
+            "library_id": library_id,
+            "library_name": library_name,
+            "library_path": library_path,
+            "scan_start_time": scan_start_time,
+            "scan_end_time": scan_end_time,
+            "scan_duration": scan_duration,
             "files_scanned_count": total_file_count,
         }
         plugin_handler = PluginsHandler()
-        plugin_handler.run_event_plugins_for_plugin_type('events.scan_complete', data)
+        plugin_handler.run_event_plugins_for_plugin_type("events.scan_complete", data)
 
         # Run a manual garbage collection
         gc.collect()
 
         # Remove frontend status message
-        frontend_messages.remove_item('libraryScanProgress')
+        frontend_messages.remove_item("libraryScanProgress")
 
     def register_unmanic(self):
         from unmanic.libs import session
+
         s = session.Session()
         s.register_unmanic()

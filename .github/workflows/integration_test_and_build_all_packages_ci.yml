@@ -270,7 +270,7 @@ jobs:
           echo "docker_push:${DOCKER_PUSH:?}"
           echo "docker_push=${DOCKER_PUSH:?}" >> $GITHUB_OUTPUT
 
-          echo "docker_build_date:${BUILD_DATE:?}" 
+          echo "docker_build_date:${BUILD_DATE:?}"
           echo "docker_build_date=${BUILD_DATE:?}" >> $GITHUB_OUTPUT
 
           echo "docker_platforms=linux/amd64,linux/arm64" >> $GITHUB_OUTPUT

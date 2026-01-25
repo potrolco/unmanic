@@ -47,14 +47,14 @@ class ApiDocsHandler(BaseApiHandler):
 
     routes = [
         {
-            "path_pattern":      r"/docs/privacypolicy",
+            "path_pattern": r"/docs/privacypolicy",
             "supported_methods": ["GET"],
-            "call_method":       "get_privacy_policy",
+            "call_method": "get_privacy_policy",
         },
         {
-            "path_pattern":      r"/docs/logs/zip",
+            "path_pattern": r"/docs/logs/zip",
             "supported_methods": ["GET"],
-            "call_method":       "get_logs_as_zip",
+            "call_method": "get_logs_as_zip",
         },
     ]
 
@@ -103,9 +103,9 @@ class ApiDocsHandler(BaseApiHandler):
         """
         try:
             privacy_policy_content = []
-            privacy_policy_file = os.path.join(os.path.dirname(__file__), '..', 'docs', 'privacy_policy.md')
+            privacy_policy_file = os.path.join(os.path.dirname(__file__), "..", "docs", "privacy_policy.md")
             if os.path.exists(privacy_policy_file):
-                with open(privacy_policy_file, 'r') as f:
+                with open(privacy_policy_file, "r") as f:
                     privacy_policy_content = f.readlines()
             if not privacy_policy_content:
                 self.set_status(self.STATUS_ERROR_INTERNAL, reason="Unable to read privacy policy.")
@@ -116,12 +116,12 @@ class ApiDocsHandler(BaseApiHandler):
                     DocumentContentSuccessSchema(),
                     {
                         "content": privacy_policy_content,
-                    }
+                    },
                 )
                 self.write_success(response)
                 return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -169,14 +169,14 @@ class ApiDocsHandler(BaseApiHandler):
             log_files_zip_path = documents.generate_log_files_zip()
 
             with open(log_files_zip_path, "rb") as f:
-                for chunk in iter(lambda: f.read(8192), b''):
+                for chunk in iter(lambda: f.read(8192), b""):
                     self.write(chunk)
 
-            self.set_header('Content-Type', 'application/octet-stream')
-            self.set_header('Content-Disposition', 'attachment; filename=UnmanicLogs.zip')
+            self.set_header("Content-Type", "application/octet-stream")
+            self.set_header("Content-Disposition", "attachment; filename=UnmanicLogs.zip")
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))

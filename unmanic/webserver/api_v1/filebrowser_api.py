@@ -44,13 +44,13 @@ class ApiFilebrowserHandler(BaseApiHandler):
     routes = [
         {
             "supported_methods": ["POST"],
-            "call_method":       "fetch_directory_listing",
-            "path_pattern":      r"/api/v1/filebrowser/list",
+            "call_method": "fetch_directory_listing",
+            "path_pattern": r"/api/v1/filebrowser/list",
         },
     ]
 
     def initialize(self, **kwargs):
-        self.name = 'file_browser_api'
+        self.name = "file_browser_api"
         self.params = kwargs.get("params")
         udq = UnmanicDataQueues()
         self.unmanic_data_queues = udq.get_unmanic_data_queues()
@@ -66,8 +66,8 @@ class ApiFilebrowserHandler(BaseApiHandler):
         self.action_route()
 
     def fetch_directory_listing(self, *args, **kwargs):
-        current_path = self.get_argument('current_path')
-        list_type = self.get_argument('list_type') if self.get_body_arguments('list_type') else "all"
+        current_path = self.get_argument("current_path")
+        list_type = self.get_argument("list_type") if self.get_body_arguments("list_type") else "all"
 
         path_data = self.fetch_path_data(current_path, list_type)
 
@@ -89,10 +89,10 @@ class ApiFilebrowserHandler(BaseApiHandler):
             files = self.fetch_files(current_path)
         path_data = {
             "current_path": current_path,
-            "list_type":    list_type,
-            "directories":  directories,
-            "files":        files,
-            "success":      True,
+            "list_type": list_type,
+            "directories": directories,
+            "files": files,
+            "success": True,
         }
         return path_data
 
@@ -106,12 +106,12 @@ class ApiFilebrowserHandler(BaseApiHandler):
         results = []
         if os.path.exists(path):
             # check if this is a root path or if it has a parent
-            parent_path = os.path.join(path, '..')
+            parent_path = os.path.join(path, "..")
             if os.path.exists(parent_path) and os.path.abspath(parent_path) != path:
                 # Path has a parent, Add the double dots
                 results.append(
                     {
-                        "name":      "..",
+                        "name": "..",
                         "full_path": os.path.abspath(parent_path),
                     }
                 )
@@ -120,7 +120,7 @@ class ApiFilebrowserHandler(BaseApiHandler):
                 if os.path.isdir(abspath):
                     results.append(
                         {
-                            "name":      item,
+                            "name": item,
                             "full_path": abspath,
                         }
                     )
@@ -129,7 +129,7 @@ class ApiFilebrowserHandler(BaseApiHandler):
             # Just return the root dir as the first directory option
             results.append(
                 {
-                    "name":      "/",
+                    "name": "/",
                     "full_path": "/",
                 }
             )
@@ -149,7 +149,7 @@ class ApiFilebrowserHandler(BaseApiHandler):
                 if os.path.isfile(abspath):
                     results.append(
                         {
-                            "name":      item,
+                            "name": item,
                             "full_path": abspath,
                         }
                     )

@@ -54,23 +54,23 @@ class ApiPendingHandler(BaseApiHandler):
     routes = [
         {
             "supported_methods": ["POST"],
-            "call_method":       "create_task_from_path",
-            "path_pattern":      r"/api/v1/pending/add/",
+            "call_method": "create_task_from_path",
+            "path_pattern": r"/api/v1/pending/add/",
         },
         {
             "supported_methods": ["POST"],
-            "call_method":       "manage_pending_tasks_list",
-            "path_pattern":      r"/api/v1/pending/list",
+            "call_method": "manage_pending_tasks_list",
+            "path_pattern": r"/api/v1/pending/list",
         },
         {
             "supported_methods": ["GET"],
-            "call_method":       "trigger_library_rescan",
-            "path_pattern":      r"/api/v1/pending/rescan",
+            "call_method": "trigger_library_rescan",
+            "path_pattern": r"/api/v1/pending/rescan",
         },
     ]
 
     def initialize(self, **kwargs):
-        self.name = 'pending_api'
+        self.name = "pending_api"
         self.config = config.Config()
 
         self.params = kwargs.get("params")
@@ -124,12 +124,12 @@ class ApiPendingHandler(BaseApiHandler):
         """
         # Handle request to manually trigger a rescan of the library
         # Check if we are able to start up a worker for another encoding job
-        library_scanner_triggers = self.unmanic_data_queues.get('library_scanner_triggers')
+        library_scanner_triggers = self.unmanic_data_queues.get("library_scanner_triggers")
         if library_scanner_triggers.full():
             self.write(json.dumps({"success": False}))
             return
         else:
-            library_scanner_triggers.put('library_scan')
+            library_scanner_triggers.put("library_scan")
             self.write(json.dumps({"success": True}))
             return
 

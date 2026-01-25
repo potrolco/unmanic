@@ -65,7 +65,7 @@ NUMBER_OF_WORKERS=1
 SCHEDULE_FULL_SCAN_MINUTES=1
 RUN_FULL_SCAN_ON_START=true
 ```
-To clean the config run 
+To clean the config run
 ```
 tests/scripts/library_scan.sh --clean
 ```

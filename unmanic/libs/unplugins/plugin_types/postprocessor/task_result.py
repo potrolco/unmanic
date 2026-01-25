@@ -55,29 +55,29 @@ class TaskResult(PluginType):
     :return:
     """
     data_schema = {
-        "library_id":                  {"required": False, "type": int},
-        "task_id":                     {"required": False, "type": int},
-        "task_type":                   {"required": False, "type": str},
-        "final_cache_path":            {"required": False, "type": str},
-        "task_processing_success":     {"required": False, "type": bool},
+        "library_id": {"required": False, "type": int},
+        "task_id": {"required": False, "type": int},
+        "task_type": {"required": False, "type": str},
+        "final_cache_path": {"required": False, "type": str},
+        "task_processing_success": {"required": False, "type": bool},
         "file_move_processes_success": {"required": False, "type": bool},
-        "destination_files":           {"required": False, "type": list},
-        "source_data":                 {"required": False, "type": dict},
-        "start_time":                  {"required": False, "type": float},
-        "finish_time":                 {"required": False, "type": float},
+        "destination_files": {"required": False, "type": list},
+        "source_data": {"required": False, "type": dict},
+        "start_time": {"required": False, "type": float},
+        "finish_time": {"required": False, "type": float},
     }
     test_data = {
-        'library_id':                  1,
-        "task_id":                     4321,
-        "task_type":                   "local",
-        'final_cache_path':            '{cache_path}/{test_file_out}',
-        'task_processing_success':     True,
-        'file_move_processes_success': True,
-        'destination_files':           [
-            '{library_path}/complete/library/{test_file_in}',
+        "library_id": 1,
+        "task_id": 4321,
+        "task_type": "local",
+        "final_cache_path": "{cache_path}/{test_file_out}",
+        "task_processing_success": True,
+        "file_move_processes_success": True,
+        "destination_files": [
+            "{library_path}/complete/library/{test_file_in}",
         ],
-        'source_data':                 {
-            'abspath':  '{library_path}/{test_file_in}',
-            'basename': '{test_file_in}',
+        "source_data": {
+            "abspath": "{library_path}/{test_file_in}",
+            "basename": "{test_file_in}",
         },
     }

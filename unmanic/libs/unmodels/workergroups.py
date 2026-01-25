@@ -40,11 +40,13 @@ class WorkerGroups(BaseModel):
     """
     WorkerGroups
     """
+
     name = TextField(null=False)
     locked = BooleanField(null=False, default=False)
     number_of_workers = IntegerField(null=False, default=0)
     # ManyToMany Linking fields. Does not create a column in the DB. See linking table below
-    tags = ManyToManyField(Tags, backref='tags')
+    tags = ManyToManyField(Tags, backref="tags")
+
 
 # Generate linking table for the 'tags' field above
 # https://docs.peewee-orm.com/en/latest/peewee/relationships.html#manytomanyfield

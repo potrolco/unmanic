@@ -54,17 +54,19 @@ class Migrations(object):
         self.logger = UnmanicLogging.get_logger(name=__class__.__name__)
 
         # Based on configuration, select database to connect to.
-        if config['TYPE'] == 'SQLITE':
+        if config["TYPE"] == "SQLITE":
             # Create SQLite directory if not exists
-            db_file_directory = os.path.dirname(config['FILE'])
+            db_file_directory = os.path.dirname(config["FILE"])
             if not os.path.exists(db_file_directory):
                 os.makedirs(db_file_directory)
-            self.database = SqliteDatabase(config['FILE'])
+            self.database = SqliteDatabase(config["FILE"])
 
-            self.router = Router(database=self.database,
-                                 migrate_table='migratehistory_{}'.format(config.get('MIGRATIONS_HISTORY_VERSION')),
-                                 migrate_dir=config.get('MIGRATIONS_DIR'),
-                                 logger=self.logger)
+            self.router = Router(
+                database=self.database,
+                migrate_table="migratehistory_{}".format(config.get("MIGRATIONS_HISTORY_VERSION")),
+                migrate_dir=config.get("MIGRATIONS_DIR"),
+                logger=self.logger,
+            )
 
             self.migrator = Migrator(self.database)
 

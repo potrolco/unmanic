@@ -1,4 +1,4 @@
-Unmanic - Library Optimiser  
+Unmanic - Library Optimiser
 ===========================
 
 ![UNMANIC - Library Optimiser](https://github.com/unmanic/unmanic/raw/master/logo.png)
@@ -87,10 +87,10 @@ To run from source:
     ```
     # Ensure the submodules are checked out
     git submodule update --init --recursive
-    
+
     # Build and install the project into your home directory
     python3 ./setup.py install --user
-    
+
     # Run Unmanic
     unmanic
     ```
@@ -98,7 +98,7 @@ To run from source:
 
 ## License and Contribution
 
-This projected is licensed under the GPL version 3. 
+This projected is licensed under the GPL version 3.
 
 Copyright (C) Josh Sunnex - All Rights Reserved
 
@@ -108,7 +108,7 @@ in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
- 
+
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 

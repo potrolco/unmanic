@@ -54,29 +54,29 @@ class ForwardJSONFormatter(JSONFormatter):
         # Check the logger's effective level
         logger = logging.getLogger(record.name)
         # Always include levelname used for labels
-        extra['levelname'] = record.levelname
+        extra["levelname"] = record.levelname
         # If the logger's effective level is DEBUG, add more context
         if logger.getEffectiveLevel() == logging.DEBUG:
-            extra['filename'] = record.filename
-            extra['funcName'] = record.funcName
-            extra['lineno'] = record.lineno
-            extra['module'] = record.module
-            extra['name'] = record.name
-            extra['pathname'] = record.pathname
-            extra['process'] = record.process
-            extra['processName'] = record.processName
-            if hasattr(record, 'stack_info'):
-                extra['stack_info'] = record.stack_info
+            extra["filename"] = record.filename
+            extra["funcName"] = record.funcName
+            extra["lineno"] = record.lineno
+            extra["module"] = record.module
+            extra["name"] = record.name
+            extra["pathname"] = record.pathname
+            extra["process"] = record.process
+            extra["processName"] = record.processName
+            if hasattr(record, "stack_info"):
+                extra["stack_info"] = record.stack_info
             else:
-                extra['stack_info'] = None
-            extra['thread'] = record.thread
-            extra['threadName'] = record.threadName
+                extra["stack_info"] = None
+            extra["thread"] = record.thread
+            extra["threadName"] = record.threadName
         # Choose time from metric_timestamp or data_timestamp
-        ts_str = extra.get('metric_timestamp') or extra.get('data_timestamp')
+        ts_str = extra.get("metric_timestamp") or extra.get("data_timestamp")
         if ts_str:
             try:
                 ts_float = float(ts_str)
-                extra['time'] = datetime.utcfromtimestamp(ts_float).isoformat()
+                extra["time"] = datetime.utcfromtimestamp(ts_float).isoformat()
             except Exception:
                 pass  # Ignore this. The default formatter will add a "time" record
         return super(ForwardJSONFormatter, self).json_record(message, extra, record)
@@ -137,8 +137,7 @@ class ForwardLogHandler(logging.Handler):
         except (TypeError, ValueError):
             if max_days is not None:
                 logging.getLogger("Unmanic.ForwardLogHandler").warning(
-                    "Invalid log buffer retention value %r. Falling back to default.",
-                    max_days
+                    "Invalid log buffer retention value %r. Falling back to default.", max_days
                 )
             max_days_int = None
 
@@ -164,11 +163,11 @@ class ForwardLogHandler(logging.Handler):
 
             # Set default labels
             labels = {
-                "service_name":      "unmanic",  # This is a required label
-                "logger":            record.name,
-                "level":             record.levelname,
+                "service_name": "unmanic",  # This is a required label
+                "logger": record.name,
+                "level": record.levelname,
                 "installation_name": self.installation_name,
-                "log_type":          "APPLICATION_LOG",
+                "log_type": "APPLICATION_LOG",
             }
 
             # If the record has a log_type attribute, override
@@ -183,10 +182,7 @@ class ForwardLogHandler(logging.Handler):
             if hasattr(record, "data_primary_key") and record.data_primary_key:
                 labels["data_primary_key"] = record.data_primary_key
 
-            self.log_queue.put({
-                "labels": labels,
-                "entry":  [ts, log_entry]
-            })
+            self.log_queue.put({"labels": labels, "entry": [ts, log_entry]})
         except Exception as e:
             logging.getLogger("Unmanic.ForwardLogHandler").error("Failed to enqueue log: %s", e)
 
@@ -473,7 +469,7 @@ class ForwardLogHandler(logging.Handler):
                     return processed
 
                 if not self._transmit_buffer(sub_entries, "in-memory chunk", payload):
-                    remaining = list(sub_entries) + chunk[index + consumed:]
+                    remaining = list(sub_entries) + chunk[index + consumed :]
                     if remaining:
                         self._in_memory_chunks.put(list(remaining))
                     return processed
@@ -534,7 +530,7 @@ class ForwardLogHandler(logging.Handler):
         suffix = ".jsonl"
         if not filename.startswith(prefix) or not filename.endswith(suffix):
             return None
-        timestamp_str = filename[len(prefix):-len(suffix)]
+        timestamp_str = filename[len(prefix) : -len(suffix)]
         try:
             return datetime.strptime(timestamp_str, "%Y%m%dT%H")
         except ValueError:
@@ -553,7 +549,7 @@ class ForwardLogHandler(logging.Handler):
             return
 
         for start in range(0, len(pending), self._BATCH_MAX_ITEMS):
-            self._append_to_disk(pending[start:start + self._BATCH_MAX_ITEMS])
+            self._append_to_disk(pending[start : start + self._BATCH_MAX_ITEMS])
 
     def _load_buffer_state(self):
         """Read the persisted offsets mapping from disk, if present."""
@@ -563,8 +559,7 @@ class ForwardLogHandler(logging.Handler):
             with open(self._buffer_state_path, "r", encoding="utf-8") as handle:
                 data = json.load(handle)
         except Exception:
-            logging.getLogger("Unmanic.ForwardLogHandler").warning(
-                "Failed to load log buffer state. Starting fresh.")
+            logging.getLogger("Unmanic.ForwardLogHandler").warning("Failed to load log buffer state. Starting fresh.")
             return {}
 
         files = data.get("files", {})
@@ -607,9 +602,7 @@ class ForwardLogHandler(logging.Handler):
         if not os.path.isdir(self.buffer_path):
             return
         existing = {
-            name
-            for name in os.listdir(self.buffer_path)
-            if name.startswith("log_buffer_") and name.endswith(".jsonl")
+            name for name in os.listdir(self.buffer_path) if name.startswith("log_buffer_") and name.endswith(".jsonl")
         }
         with self._state_lock:
             changed = False
@@ -659,25 +652,27 @@ class ForwardLogHandler(logging.Handler):
 
             if status_key not in self._notified_failures:
                 notifications = Notifications()
-                notifications.update({
-                    'uuid':       f'forwardLogHandlerError_{response.status_code}',
-                    'type':       'warning',
-                    'icon':       'report_problem',
-                    'label':      'forwardLogHandlerErrorLabel',
-                    'message':    message_text,
-                    'navigation': {
-                        'push': '/ui/settings-support',
-                    },
-                })
+                notifications.update(
+                    {
+                        "uuid": f"forwardLogHandlerError_{response.status_code}",
+                        "type": "warning",
+                        "icon": "report_problem",
+                        "label": "forwardLogHandlerErrorLabel",
+                        "message": message_text,
+                        "navigation": {
+                            "push": "/ui/settings-support",
+                        },
+                    }
+                )
 
                 frontend_messages = FrontendPushMessages()
                 frontend_messages.add(
                     {
-                        'id':      f'forwardLogHandlerError_{response.status_code}',
-                        'type':    'error',
-                        'code':    'forwardLogHandlerError',
-                        'message': message_text,
-                        'timeout': 20000
+                        "id": f"forwardLogHandlerError_{response.status_code}",
+                        "type": "error",
+                        "code": "forwardLogHandlerError",
+                        "message": message_text,
+                        "timeout": 20000,
                     }
                 )
                 logging.getLogger("Unmanic.ForwardLogHandler").error(message_text)
@@ -696,7 +691,7 @@ class ForwardLogHandler(logging.Handler):
                 exc,
             )
             self.previous_connection_failed = True
-            self._notified_failures.add('EXCEPTION')
+            self._notified_failures.add("EXCEPTION")
         return False
 
     def _create_payload(self, buffer):
@@ -713,7 +708,7 @@ class ForwardLogHandler(logging.Handler):
 
         return {
             "app_id": self.app_id,
-            "data":   {"streams": list(combined_streams.values())},
+            "data": {"streams": list(combined_streams.values())},
         }
 
     def close(self):
@@ -798,10 +793,7 @@ class UnmanicLogging:
             init_logger = logging.getLogger(f"Unmanic.UnmanicLogging")
 
             # Default formatter
-            formatter = logging.Formatter(
-                '%(asctime)s:%(levelname)s:%(name)s - %(message)s',
-                datefmt='%Y-%m-%dT%H:%M:%S'
-            )
+            formatter = logging.Formatter("%(asctime)s:%(levelname)s:%(name)s - %(message)s", datefmt="%Y-%m-%dT%H:%M:%S")
 
             # Set up stream handler
             if self.stream_handler is None:
@@ -852,14 +844,13 @@ class UnmanicLogging:
         if not timestamp:
             timestamp = datetime.now()
         log_record = {
-            'log_type':         'METRIC',
-            'metric_name':      name,
-            'metric_timestamp': f"{int(timestamp.timestamp())}.{timestamp.microsecond}",
-            **kwargs
+            "log_type": "METRIC",
+            "metric_name": name,
+            "metric_timestamp": f"{int(timestamp.timestamp())}.{timestamp.microsecond}",
+            **kwargs,
         }
         log_message = " ".join(
-            f'{key}="{value}"' if " " in str(value) else f"{key}={value}"
-            for key, value in log_record.items() if value
+            f'{key}="{value}"' if " " in str(value) else f"{key}={value}" for key, value in log_record.items() if value
         )
         instance._logger.log(instance.METRIC, log_message, extra=log_record)
 
@@ -873,11 +864,11 @@ class UnmanicLogging:
         if not timestamp:
             timestamp = datetime.now()
         log_record = {
-            'log_type':         'DATA',
-            'data_primary_key': data_primary_key,
-            'data_search_key':  data_search_key,
-            'data_timestamp':   f"{int(timestamp.timestamp())}.{timestamp.microsecond}",
-            **kwargs
+            "log_type": "DATA",
+            "data_primary_key": data_primary_key,
+            "data_search_key": data_search_key,
+            "data_timestamp": f"{int(timestamp.timestamp())}.{timestamp.microsecond}",
+            **kwargs,
         }
         log_message = "DATA STREAM"
         instance._logger.log(instance.DATA, log_message, extra=log_record)

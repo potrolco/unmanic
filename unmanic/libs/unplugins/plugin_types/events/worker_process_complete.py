@@ -52,34 +52,34 @@ class WorkerProcessComplete(PluginType):
     :return:
     """
     data_schema = {
-        "library_id":          {"required": False, "type": int},
-        "task_type":           {"required": False, "type": str},
-        "original_file_path":  {"required": False, "type": str},
-        "final_cache_path":    {"required": False, "type": str},
-        "overall_success":     {"required": False, "type": bool},
+        "library_id": {"required": False, "type": int},
+        "task_type": {"required": False, "type": str},
+        "original_file_path": {"required": False, "type": str},
+        "final_cache_path": {"required": False, "type": str},
+        "overall_success": {"required": False, "type": bool},
         "worker_runners_info": {"required": False, "type": dict},
-        "worker_log":          {"required": False, "type": list},
+        "worker_log": {"required": False, "type": list},
     }
     test_data = {
-        "library_id":          1,
-        "task_type":           "local",
-        "original_file_path":  "/path/to/media/file.mp4",
-        "final_cache_path":    "/path/to/cache/file-processed.mp4",
-        "overall_success":     True,
+        "library_id": 1,
+        "task_type": "local",
+        "original_file_path": "/path/to/media/file.mp4",
+        "final_cache_path": "/path/to/cache/file-processed.mp4",
+        "overall_success": True,
         "worker_runners_info": {
             "video_transcoder": {
-                "plugin_id":   "video_transcoder",
-                "name":        "Transcode Video Files",
-                "author":      "Josh.5",
-                "version":     "0.1.7",
-                "icon":        "https://raw.githubusercontent.com/Unmanic/plugin.video_transcoder/master/icon.png",
+                "plugin_id": "video_transcoder",
+                "name": "Transcode Video Files",
+                "author": "Josh.5",
+                "version": "0.1.7",
+                "icon": "https://raw.githubusercontent.com/Unmanic/plugin.video_transcoder/master/icon.png",
                 "description": "Transcode the video streams of a video file",
-                "status":      "complete",
-                "success":     True
+                "status": "complete",
+                "success": True,
             }
         },
-        "worker_log":          [
+        "worker_log": [
             "RUNNER: Transcode Video Files [Pass #1]",
-            "Plugin runner requested for a command to be executed by Unmanic"
+            "Plugin runner requested for a command to be executed by Unmanic",
         ],
     }

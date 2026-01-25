@@ -1,9 +1,20 @@
-flake8>=5.0.4           # Note: Highest supporting Py 3.7
-pycodestyle>=2.9.1      # Note: Highest supporting Py 3.7
-pytest>=7.4.3           # Note: Highest supporting Py 3.7
-wheel>=0.42.0
-setuptools>=68.0.0      # Note: Highest supporting Py 3.7
-build>=0.10.0           # Note: Highest supporting Py 3.7
+# Code quality tools
+pre-commit>=3.7.0
+black>=24.4.2
+flake8>=7.0.0
+flake8-bugbear>=24.4.0
+mypy>=1.10.0
+types-requests>=2.31.0
+types-PyYAML>=6.0.12
+
+# Testing
+pytest>=8.2.0
+pytest-cov>=5.0.0
+
+# Build tools
+wheel>=0.43.0
+setuptools>=70.0.0
+build>=1.2.0
 
 # API schema exporting
 apispec>=6.3.1

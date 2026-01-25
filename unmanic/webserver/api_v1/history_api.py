@@ -52,18 +52,18 @@ class ApiHistoryHandler(BaseApiHandler):
     routes = [
         {
             "supported_methods": ["GET", "POST"],
-            "call_method":       "fetch_by_id",
-            "path_pattern":      r"/api/v1/history/id/(?P<id>[0-9]+)?",
+            "call_method": "fetch_by_id",
+            "path_pattern": r"/api/v1/history/id/(?P<id>[0-9]+)?",
         },
         {
             "supported_methods": ["POST"],
-            "call_method":       "manage_historic_tasks_list",
-            "path_pattern":      r"/api/v1/history/list",
+            "call_method": "manage_historic_tasks_list",
+            "path_pattern": r"/api/v1/history/list",
         },
     ]
 
     def initialize(self, **kwargs):
-        self.name = 'history_api'
+        self.name = "history_api"
         self.config = config.Config()
         self.params = kwargs.get("params")
 
@@ -115,21 +115,21 @@ class ApiHistoryHandler(BaseApiHandler):
         """
 
         # Generate filters for query
-        draw = request_dict.get('draw')
-        start = request_dict.get('start')
-        length = request_dict.get('length')
+        draw = request_dict.get("draw")
+        start = request_dict.get("start")
+        length = request_dict.get("length")
 
-        search = request_dict.get('search')
+        search = request_dict.get("search")
         search_value = search.get("value")
 
         # Get sort order
-        filter_order = request_dict.get('order')[0]
-        order_direction = filter_order.get('dir')
-        columns = request_dict.get('columns')
-        order_column_name = columns[filter_order.get('column')].get('name')
+        filter_order = request_dict.get("order")[0]
+        order_direction = filter_order.get("dir")
+        columns = request_dict.get("columns")
+        order_column_name = columns[filter_order.get("column")].get("name")
         order = {
             "column": order_column_name,
-            "dir":    order_direction,
+            "dir": order_direction,
         }
 
         # Fetch historical tasks
@@ -137,34 +137,36 @@ class ApiHistoryHandler(BaseApiHandler):
         # Get total count
         records_total_count = history_logging.get_total_historic_task_list_count()
         # Get quantity after filters (without pagination)
-        records_filtered_count = history_logging.get_historic_task_list_filtered_and_sorted(order=order, start=0, length=0,
-                                                                                            search_value=search_value).count()
+        records_filtered_count = history_logging.get_historic_task_list_filtered_and_sorted(
+            order=order, start=0, length=0, search_value=search_value
+        ).count()
         # Get filtered/sorted results
-        task_results = history_logging.get_historic_task_list_filtered_and_sorted(order=order, start=start, length=length,
-                                                                                  search_value=search_value)
+        task_results = history_logging.get_historic_task_list_filtered_and_sorted(
+            order=order, start=start, length=length, search_value=search_value
+        )
 
         # Build return data
         return_data = {
-            "draw":            draw,
-            "recordsTotal":    records_total_count,
+            "draw": draw,
+            "recordsTotal": records_total_count,
             "recordsFiltered": records_filtered_count,
-            "successCount":    0,
-            "failedCount":     0,
-            "data":            []
+            "successCount": 0,
+            "failedCount": 0,
+            "data": [],
         }
 
         # Iterate over historical tasks and append them to the task data
         for task in task_results:
             # Set params as required in template
             item = {
-                'id':           task['id'],
-                'selected':     False,
-                'finish_time':  time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(task['finish_time'])),
-                'task_label':   task['task_label'],
-                'task_success': task['task_success'],
+                "id": task["id"],
+                "selected": False,
+                "finish_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(task["finish_time"])),
+                "task_label": task["task_label"],
+                "task_success": task["task_success"],
             }
             # Increment counters
-            if item['task_success']:
+            if item["task_success"]:
                 return_data["successCount"] += 1
             else:
                 return_data["failedCount"] += 1

@@ -42,6 +42,7 @@ class Installation(BaseModel):
 
     All application installation data
     """
+
     uuid = UUIDField(null=False, default=uuid.uuid4, unique=True)
     # Store session data here to persist restarts
     level = IntegerField(null=False, default=0)

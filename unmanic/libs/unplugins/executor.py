@@ -49,66 +49,66 @@ class PluginExecutor(object):
         # Set plugins directory
         if not plugins_directory:
             home_directory = common.get_home_dir()
-            plugins_directory = os.path.join(home_directory, '.unmanic', 'plugins')
+            plugins_directory = os.path.join(home_directory, ".unmanic", "plugins")
         self.plugins_directory = plugins_directory
         # NOTE: List plugin types in order that they are run against a library
         #       This is listing them in order helps the frontend. Don't order alphabetically
         self.plugin_types = [
             {
-                'id':       'frontend.panel',
-                'has_flow': False,
+                "id": "frontend.panel",
+                "has_flow": False,
             },
             {
-                'id':       'frontend.plugin_api',
-                'has_flow': False,
+                "id": "frontend.plugin_api",
+                "has_flow": False,
             },
             {
-                'id':       'library_management.file_test',
-                'has_flow': True,
+                "id": "library_management.file_test",
+                "has_flow": True,
             },
             {
-                'id':       'events.file_queued',
-                'has_flow': False,
+                "id": "events.file_queued",
+                "has_flow": False,
             },
             {
-                'id':       'events.task_queued',
-                'has_flow': False,
+                "id": "events.task_queued",
+                "has_flow": False,
             },
             {
-                'id':       'events.scan_complete',
-                'has_flow': False,
+                "id": "events.scan_complete",
+                "has_flow": False,
             },
             {
-                'id':       'events.task_scheduled',
-                'has_flow': False,
+                "id": "events.task_scheduled",
+                "has_flow": False,
             },
             {
-                'id':       'events.worker_process_started',
-                'has_flow': False,
+                "id": "events.worker_process_started",
+                "has_flow": False,
             },
             {
-                'id':       'worker.process',
-                'has_flow': True,
+                "id": "worker.process",
+                "has_flow": True,
             },
             {
-                'id':       'events.worker_process_complete',
-                'has_flow': False,
+                "id": "events.worker_process_complete",
+                "has_flow": False,
             },
             {
-                'id':       'events.postprocessor_started',
-                'has_flow': False,
+                "id": "events.postprocessor_started",
+                "has_flow": False,
             },
             {
-                'id':       'postprocessor.file_move',
-                'has_flow': True,
+                "id": "postprocessor.file_move",
+                "has_flow": True,
             },
             {
-                'id':       'postprocessor.task_result',
-                'has_flow': True,
+                "id": "postprocessor.task_result",
+                "has_flow": True,
             },
             {
-                'id':       'events.postprocessor_complete',
-                'has_flow': False,
+                "id": "events.postprocessor_complete",
+                "has_flow": False,
             },
         ]
         self.logger = UnmanicLogging.get_logger(name=__class__.__name__)
@@ -124,7 +124,7 @@ class PluginExecutor(object):
 
     @staticmethod
     def __include_plugin_site_packages(path):
-        plugin_site_packages_dir = os.path.join(path, 'site-packages')
+        plugin_site_packages_dir = os.path.join(path, "site-packages")
         if os.path.exists(plugin_site_packages_dir) and plugin_site_packages_dir not in sys.path:
             sys.path.append(plugin_site_packages_dir)
 
@@ -143,10 +143,10 @@ class PluginExecutor(object):
         :return:
         """
         # Set the module name
-        module_name = '{}.plugin'.format(plugin_id)
+        module_name = "{}.plugin".format(plugin_id)
 
         # Get main module file
-        plugin_module_path = os.path.join(path, 'plugin.py')
+        plugin_module_path = os.path.join(path, "plugin.py")
 
         # Ensure the Unmanic plugins directory to sys path prior to loading it
         self.__include_plugin_directory(self.plugins_directory)
@@ -185,7 +185,7 @@ class PluginExecutor(object):
         :return:
         """
         # Set the module name
-        module_name = '{}.plugin'.format(plugin_id)
+        module_name = "{}.plugin".format(plugin_id)
         # self.logger.debug("Reloading module '{}'".format(module_name))
 
         if module_name in sys.modules:
@@ -218,7 +218,7 @@ class PluginExecutor(object):
         :return:
         """
         # Set the module name
-        module_name = '{}.plugin'.format(plugin_id)
+        module_name = "{}.plugin".format(plugin_id)
 
         if module_name in sys.modules:
             del sys.modules[module_name]
@@ -241,13 +241,13 @@ class PluginExecutor(object):
 
         for plugin_type in self.get_all_plugin_types():
             # Get the called runner function for the given plugin type
-            plugin_type_meta = self.get_plugin_type_meta(plugin_type.get('id'))
+            plugin_type_meta = self.get_plugin_type_meta(plugin_type.get("id"))
             plugin_runner = plugin_type_meta.plugin_runner()
 
             # Check if this module contains the given plugin type runner function
             if hasattr(plugin_module, plugin_runner):
                 # If it does, add it to the plugin_modules list
-                return_plugin_types.append(plugin_type.get('id'))
+                return_plugin_types.append(plugin_type.get("id"))
 
         return return_plugin_types
 
@@ -332,14 +332,14 @@ class PluginExecutor(object):
 
         for plugin_data in plugins_list:
             # Get plugin ID
-            plugin_id = plugin_data.get('plugin_id')
+            plugin_id = plugin_data.get("plugin_id")
 
             # Get plugin metadata
-            plugin_name = plugin_data.get('name')
-            plugin_author = plugin_data.get('author')
-            plugin_version = plugin_data.get('version')
-            plugin_icon = plugin_data.get('icon')
-            plugin_description = plugin_data.get('description')
+            plugin_name = plugin_data.get("name")
+            plugin_author = plugin_data.get("author")
+            plugin_version = plugin_data.get("version")
+            plugin_icon = plugin_data.get("icon")
+            plugin_description = plugin_data.get("description")
 
             # Get the path for this plugin
             plugin_path = self.__get_plugin_directory(plugin_id)
@@ -351,14 +351,14 @@ class PluginExecutor(object):
             if hasattr(plugin_module, plugin_runner):
                 # If it does, add it to the plugin_modules list
                 plugin_runner_data = {
-                    "plugin_id":     plugin_id,
-                    "name":          plugin_name,
-                    "author":        plugin_author,
-                    "version":       plugin_version,
-                    "icon":          plugin_icon,
-                    "description":   plugin_description,
+                    "plugin_id": plugin_id,
+                    "name": plugin_name,
+                    "author": plugin_author,
+                    "version": plugin_version,
+                    "icon": plugin_icon,
+                    "description": plugin_description,
                     "plugin_module": plugin_module,
-                    "plugin_path":   plugin_path,
+                    "plugin_path": plugin_path,
                 }
                 plugin_modules.append(plugin_runner_data)
 
@@ -396,7 +396,7 @@ class PluginExecutor(object):
         # Load this plugin module
         plugin_module = self.__load_plugin_module(plugin_id, plugin_path)
 
-        if not hasattr(plugin_module, 'Settings'):
+        if not hasattr(plugin_module, "Settings"):
             # This plugin does not have a settings class
             return {}, {}
 
@@ -426,6 +426,7 @@ class PluginExecutor(object):
         """
         # Fetch level from session
         from unmanic.libs.session import Session
+
         s = Session()
         s.register_unmanic()
 
@@ -444,7 +445,7 @@ class PluginExecutor(object):
                 value = settings.get(key)
                 # Check option usability level
                 plugin_setting_meta = plugin_form_settings.get(key, {})
-                req_lev = plugin_setting_meta.get('req_lev', 0)
+                req_lev = plugin_setting_meta.get("req_lev", 0)
                 if s.level < req_lev:
                     # Set default
                     self.logger.debug("Option '%s' is reserved for supporters of the project. Resetting to default.", key)
@@ -493,9 +494,9 @@ class PluginExecutor(object):
         changelog = []
         # Get the path for this plugin
         plugin_path = self.__get_plugin_directory(plugin_id)
-        plugin_changelog = os.path.join(plugin_path, 'changelog.md')
+        plugin_changelog = os.path.join(plugin_path, "changelog.md")
         if os.path.exists(plugin_changelog):
-            with open(plugin_changelog, 'r') as f:
+            with open(plugin_changelog, "r") as f:
                 changelog = f.readlines()
 
         return changelog
@@ -510,9 +511,9 @@ class PluginExecutor(object):
         description = []
         # Get the path for this plugin
         plugin_path = self.__get_plugin_directory(plugin_id)
-        plugin_description = os.path.join(plugin_path, 'description.md')
+        plugin_description = os.path.join(plugin_path, "description.md")
         if os.path.exists(plugin_description):
-            with open(plugin_description, 'r') as f:
+            with open(plugin_description, "r") as f:
                 description = f.readlines()
 
         return description

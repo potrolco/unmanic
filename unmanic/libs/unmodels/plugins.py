@@ -38,6 +38,7 @@ class Plugins(BaseModel):
     """
     Plugins
     """
+
     plugin_id = TextField(null=False, unique=True)
     name = TextField(null=False)
     author = TextField(null=False)

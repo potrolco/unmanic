@@ -40,14 +40,15 @@ class Tasks(BaseModel):
     """
     Tasks
     """
+
     abspath = TextField(null=False, unique=True)
     cache_path = TextField(null=True, unique=True)
     priority = BigIntegerField(null=True)
-    type = TextField(null=False, default='local')  # (local, remote)
+    type = TextField(null=False, default="local")  # (local, remote)
     library_id = IntegerField(null=False, default=1)
     status = TextField(null=False)  # (pending, in_progress, processed)
     success = BooleanField(null=True)
     start_time = DateTimeField(null=True, default=datetime.datetime.now)
     finish_time = DateTimeField(null=True, default=datetime.datetime.now)
     processed_by_worker = TextField(null=True)
-    log = TextField(null=False, default='')
+    log = TextField(null=False, default="")

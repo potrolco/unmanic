@@ -49,16 +49,14 @@ class FileQueued(PluginType):
     :return:
     """
     data_schema = {
-        "library_id":     {"required": False, "type": int},
-        "file_path":      {"required": False, "type": str},
+        "library_id": {"required": False, "type": int},
+        "file_path": {"required": False, "type": str},
         "priority_score": {"required": False, "type": int},
-        "issues":         {"required": False, "type": list},
+        "issues": {"required": False, "type": list},
     }
     test_data = {
-        "library_id":     1,
-        "file_path":      "/path/to/media/file.mp4",
+        "library_id": 1,
+        "file_path": "/path/to/media/file.mp4",
         "priority_score": 0,
-        "issues":         [
-            {"id": "format", "message": "File is already in target format."}
-        ],
+        "issues": [{"id": "format", "message": "File is already in target format."}],
     }

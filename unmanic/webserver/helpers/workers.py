@@ -40,7 +40,7 @@ def pause_worker_by_id(worker_id: int):
     :return:
     """
     urt = UnmanicRunningTreads()
-    foreman = urt.get_unmanic_running_thread('foreman')
+    foreman = urt.get_unmanic_running_thread("foreman")
     return foreman.pause_worker_thread(worker_id)
 
 
@@ -51,7 +51,7 @@ def pause_all_workers():
     :return:
     """
     urt = UnmanicRunningTreads()
-    foreman = urt.get_unmanic_running_thread('foreman')
+    foreman = urt.get_unmanic_running_thread("foreman")
     return foreman.pause_all_worker_threads()
 
 
@@ -63,7 +63,7 @@ def resume_worker_by_id(worker_id: int):
     :return:
     """
     urt = UnmanicRunningTreads()
-    foreman = urt.get_unmanic_running_thread('foreman')
+    foreman = urt.get_unmanic_running_thread("foreman")
     return foreman.resume_worker_thread(worker_id)
 
 
@@ -74,7 +74,7 @@ def resume_all_workers():
     :return:
     """
     urt = UnmanicRunningTreads()
-    foreman = urt.get_unmanic_running_thread('foreman')
+    foreman = urt.get_unmanic_running_thread("foreman")
     return foreman.resume_all_worker_threads()
 
 
@@ -86,7 +86,7 @@ def terminate_worker_by_id(worker_id: int):
     :return:
     """
     urt = UnmanicRunningTreads()
-    foreman = urt.get_unmanic_running_thread('foreman')
+    foreman = urt.get_unmanic_running_thread("foreman")
     return foreman.terminate_worker_thread(worker_id)
 
 
@@ -97,5 +97,5 @@ def terminate_all_workers():
     :return:
     """
     urt = UnmanicRunningTreads()
-    foreman = urt.get_unmanic_running_thread('foreman')
+    foreman = urt.get_unmanic_running_thread("foreman")
     return foreman.terminate_all_worker_threads()

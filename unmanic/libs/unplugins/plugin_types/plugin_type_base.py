@@ -42,9 +42,10 @@ class PluginType(object):
 
     Generic configuration and methods used across all plugin types
     """
-    name = ''
-    runner = ''
-    runner_docstring = ''
+
+    name = ""
+    runner = ""
+    runner_docstring = ""
     data_schema = {}
     test_data = {}
 
@@ -121,7 +122,7 @@ class PluginType(object):
             # Everything else should be tested with the isinstance function
             if provided_data is None and expected_data_type is None:
                 return True
-            elif expected_data_type == 'callable':
+            elif expected_data_type == "callable":
                 if callable(provided_data):
                     return True
             elif isinstance(provided_data, expected_data_type):
@@ -136,17 +137,17 @@ class PluginType(object):
             return errors
         for key in data_schema:
             schema_meta = data_schema.get(key)
-            if schema_meta.get('required'):
+            if schema_meta.get("required"):
                 # Ensure the required item is present in result_data
                 if not key in result_data:
-                    error = "Plugin '{0} - {1}()' is missing required key '{2}{3}' in the output data.".format(plugin_id,
-                                                                                                               plugin_runner,
-                                                                                                               data_tree, key)
+                    error = "Plugin '{0} - {1}()' is missing required key '{2}{3}' in the output data.".format(
+                        plugin_id, plugin_runner, data_tree, key
+                    )
                     errors.append(error)
 
             # Ensure that data present is of the correct type
             # Recursively check for children elements
-            data_type = schema_meta.get('type')
+            data_type = schema_meta.get("type")
             if key in result_data:
                 child_data = result_data.get(key)
 
@@ -164,17 +165,20 @@ class PluginType(object):
 
                 # If data is not of the correct type, then append the error message
                 if not correct_type:
-                    error = "Plugin '{0} - {1}()' output data returned incorrect data type in key '{2}{3}'. " \
-                            "Expected '{4}', but received '{5}'.".format(plugin_id, plugin_runner,
-                                                                         data_tree, key, data_type,
-                                                                         type(result_data.get(key)))
+                    error = (
+                        "Plugin '{0} - {1}()' output data returned incorrect data type in key '{2}{3}'. "
+                        "Expected '{4}', but received '{5}'.".format(
+                            plugin_id, plugin_runner, data_tree, key, data_type, type(result_data.get(key))
+                        )
+                    )
                     errors.append(error)
                 # Check if data_schema has children
-                children_data_schema = schema_meta.get('children')
+                children_data_schema = schema_meta.get("children")
                 if children_data_schema:
                     child_data_tree = "{}{}>".format(data_tree, key)
-                    errors += self.__data_schema_test_data(plugin_id, plugin_runner, child_data, children_data_schema,
-                                                           data_tree=child_data_tree)
+                    errors += self.__data_schema_test_data(
+                        plugin_id, plugin_runner, child_data, children_data_schema, data_tree=child_data_tree
+                    )
 
         return errors
 
@@ -217,7 +221,7 @@ class PluginType(object):
             else:
                 plugin_runner_function(test_data_copy)
             # break loop if the plugin did not request to be run again
-            if not test_data_copy.get('repeat', False):
+            if not test_data_copy.get("repeat", False):
                 break
             run_count += 1
 

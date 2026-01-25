@@ -49,14 +49,14 @@ from unmanic.webserver.downloads import DownloadsHandler
 
 public_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "webserver", "public"))
 tornado_settings = {
-    'template_loader': tornado.template.Loader(public_directory),
-    'static_css':      os.path.join(public_directory, "css"),
-    'static_fonts':    os.path.join(public_directory, "fonts"),
-    'static_icons':    os.path.join(public_directory, "icons"),
-    'static_img':      os.path.join(public_directory, "img"),
-    'static_js':       os.path.join(public_directory, "js"),
-    'debug':           True,
-    'autoreload':      False,
+    "template_loader": tornado.template.Loader(public_directory),
+    "static_css": os.path.join(public_directory, "css"),
+    "static_fonts": os.path.join(public_directory, "fonts"),
+    "static_icons": os.path.join(public_directory, "icons"),
+    "static_img": os.path.join(public_directory, "img"),
+    "static_js": os.path.join(public_directory, "js"),
+    "debug": True,
+    "autoreload": False,
 }
 
 
@@ -94,7 +94,7 @@ class UIServer(threading.Thread):
     app = None
 
     def __init__(self, unmanic_data_queues, foreman, developer):
-        super(UIServer, self).__init__(name='UIServer')
+        super(UIServer, self).__init__(name="UIServer")
         self.config = config.Config()
         self.logger = UnmanicLogging.get_logger(name=__class__.__name__)
 
@@ -109,13 +109,9 @@ class UIServer(threading.Thread):
         udq = UnmanicDataQueues()
         udq.set_unmanic_data_queues(unmanic_data_queues)
         urt = UnmanicRunningTreads()
-        urt.set_unmanic_running_threads(
-            {
-                'foreman': foreman
-            }
-        )
+        urt.set_unmanic_running_threads({"foreman": foreman})
 
-    def _log(self, message, message2='', level="info"):
+    def _log(self, message, message2="", level="info"):
         message = common.format_message(message, message2)
         getattr(self.logger, level)(message)
 
@@ -133,9 +129,8 @@ class UIServer(threading.Thread):
                 os.makedirs(self.config.get_log_path())
 
             # Create file handler
-            log_file = os.path.join(self.config.get_log_path(), 'tornado.log')
-            file_handler = logging.handlers.TimedRotatingFileHandler(log_file, when='midnight', interval=1,
-                                                                     backupCount=7)
+            log_file = os.path.join(self.config.get_log_path(), "tornado.log")
+            file_handler = logging.handlers.TimedRotatingFileHandler(log_file, when="midnight", interval=1, backupCount=7)
             file_handler.setLevel(logging.INFO)
 
             # Set tornado.access logging to file. Disable propagation of logs
@@ -168,8 +163,8 @@ class UIServer(threading.Thread):
     def update_tornado_settings(self):
         # Check if this is a development environment or not
         if self.developer:
-            tornado_settings['autoreload'] = True
-            tornado_settings['serve_traceback'] = True
+            tornado_settings["autoreload"] = True
+            tornado_settings["serve_traceback"] = True
 
     def run(self):
         asyncio.set_event_loop(asyncio.new_event_loop())
@@ -192,8 +187,9 @@ class UIServer(threading.Thread):
         try:
             self.server.listen(int(self.config.get_ui_port()))
         except socket.error as e:
-            self._log("Exception when setting WebUI port {}:".format(self.config.get_ui_port()), message2=str(e),
-                      level="warning")
+            self._log(
+                "Exception when setting WebUI port {}:".format(self.config.get_ui_port()), message2=str(e), level="warning"
+            )
             raise SystemExit
 
         self.io_loop = tornado.ioloop.IOLoop.current()
@@ -204,69 +200,63 @@ class UIServer(threading.Thread):
     def make_web_app(self):
         # Start with web application routes
         from unmanic.webserver.websocket import UnmanicWebsocketHandler
-        app = tornado.web.Application([
-            (r"/unmanic/websocket", UnmanicWebsocketHandler),
-            (r"/unmanic/downloads/(.*)", DownloadsHandler),
-            (r"/(.*)", tornado.web.RedirectHandler, dict(
-                url="/unmanic/ui/dashboard/"
-            )),
-        ], **tornado_settings)
+
+        app = tornado.web.Application(
+            [
+                (r"/unmanic/websocket", UnmanicWebsocketHandler),
+                (r"/unmanic/downloads/(.*)", DownloadsHandler),
+                (r"/(.*)", tornado.web.RedirectHandler, dict(url="/unmanic/ui/dashboard/")),
+            ],
+            **tornado_settings
+        )
 
         # Add API routes
         from unmanic.webserver.api_request_router import APIRequestRouter
-        app.add_handlers(r'.*', [
-            (
-                tornado.routing.PathMatches(r"/unmanic/api/.*"),
-                APIRequestRouter(app)
-            ),
-        ])
+
+        app.add_handlers(
+            r".*",
+            [
+                (tornado.routing.PathMatches(r"/unmanic/api/.*"), APIRequestRouter(app)),
+            ],
+        )
 
         # Add frontend routes
         from unmanic.webserver.main import MainUIRequestHandler
-        app.add_handlers(r'.*', [
-            (r"/unmanic/css/(.*)", tornado.web.StaticFileHandler, dict(
-                path=tornado_settings['static_css']
-            )),
-            (r"/unmanic/fonts/(.*)", tornado.web.StaticFileHandler, dict(
-                path=tornado_settings['static_fonts']
-            )),
-            (r"/unmanic/icons/(.*)", tornado.web.StaticFileHandler, dict(
-                path=tornado_settings['static_icons']
-            )),
-            (r"/unmanic/img/(.*)", tornado.web.StaticFileHandler, dict(
-                path=tornado_settings['static_img']
-            )),
-            (r"/unmanic/js/(.*)", tornado.web.StaticFileHandler, dict(
-                path=tornado_settings['static_js']
-            )),
-            (
-                tornado.routing.PathMatches(r"/unmanic/ui/(.*)"),
-                MainUIRequestHandler,
-            ),
-        ])
+
+        app.add_handlers(
+            r".*",
+            [
+                (r"/unmanic/css/(.*)", tornado.web.StaticFileHandler, dict(path=tornado_settings["static_css"])),
+                (r"/unmanic/fonts/(.*)", tornado.web.StaticFileHandler, dict(path=tornado_settings["static_fonts"])),
+                (r"/unmanic/icons/(.*)", tornado.web.StaticFileHandler, dict(path=tornado_settings["static_icons"])),
+                (r"/unmanic/img/(.*)", tornado.web.StaticFileHandler, dict(path=tornado_settings["static_img"])),
+                (r"/unmanic/js/(.*)", tornado.web.StaticFileHandler, dict(path=tornado_settings["static_js"])),
+                (
+                    tornado.routing.PathMatches(r"/unmanic/ui/(.*)"),
+                    MainUIRequestHandler,
+                ),
+            ],
+        )
 
         # Add widgets routes
         from unmanic.webserver.plugins import DataPanelRequestHandler
         from unmanic.webserver.plugins import PluginStaticFileHandler
         from unmanic.webserver.plugins import PluginAPIRequestHandler
-        app.add_handlers(r'.*', [
-            (
-                tornado.routing.PathMatches(r"/unmanic/panel/[^/]+(/(?!static/|assets$).*)?$"),
-                DataPanelRequestHandler
-            ),
-            (
-                tornado.routing.PathMatches(r"/unmanic/plugin_api/[^/]+(/(?!static/|assets$).*)?$"),
-                PluginAPIRequestHandler
-            ),
-            (r"/unmanic/panel/.*/static/(.*)", PluginStaticFileHandler, dict(
-                path=tornado_settings['static_img']
-            )),
-        ])
+
+        app.add_handlers(
+            r".*",
+            [
+                (tornado.routing.PathMatches(r"/unmanic/panel/[^/]+(/(?!static/|assets$).*)?$"), DataPanelRequestHandler),
+                (tornado.routing.PathMatches(r"/unmanic/plugin_api/[^/]+(/(?!static/|assets$).*)?$"), PluginAPIRequestHandler),
+                (r"/unmanic/panel/.*/static/(.*)", PluginStaticFileHandler, dict(path=tornado_settings["static_img"])),
+            ],
+        )
 
         if self.developer:
             self._log("API Docs - Updating...", level="debug")
             try:
                 from unmanic.webserver.api_v2.schema.swagger import generate_swagger_file
+
                 errors = generate_swagger_file()
                 for error in errors:
                     self._log(error, level="warn")
@@ -278,11 +268,12 @@ class UIServer(threading.Thread):
         # Start the Swagger UI. Automatically generated swagger.json can also
         # be served using a separate Swagger-service.
         from swagger_ui import tornado_api_doc
+
         tornado_api_doc(
             app,
             config_path=os.path.join(os.path.dirname(__file__), "..", "webserver", "docs", "api_schema_v2.json"),
             url_prefix="/unmanic/swagger",
-            title="Unmanic application API"
+            title="Unmanic application API",
         )
 
         return app

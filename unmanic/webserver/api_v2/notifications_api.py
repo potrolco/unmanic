@@ -36,8 +36,11 @@ from unmanic.libs import session
 from unmanic.libs.notifications import Notifications
 from unmanic.libs.uiserver import UnmanicDataQueues
 from unmanic.webserver.api_v2.base_api_handler import BaseApiError, BaseApiHandler
-from unmanic.webserver.api_v2.schema.schemas import RequestNotificationsDataSchema, RequestTableUpdateByIdList, \
-    RequestTableUpdateByUuidList
+from unmanic.webserver.api_v2.schema.schemas import (
+    RequestNotificationsDataSchema,
+    RequestTableUpdateByIdList,
+    RequestTableUpdateByUuidList,
+)
 
 
 class ApiNotificationsHandler(BaseApiHandler):
@@ -48,14 +51,14 @@ class ApiNotificationsHandler(BaseApiHandler):
 
     routes = [
         {
-            "path_pattern":      r"/notifications/read",
+            "path_pattern": r"/notifications/read",
             "supported_methods": ["GET"],
-            "call_method":       "get_notifications",
+            "call_method": "get_notifications",
         },
         {
-            "path_pattern":      r"/notifications/remove",
+            "path_pattern": r"/notifications/remove",
             "supported_methods": ["DELETE"],
-            "call_method":       "remove_notifications",
+            "call_method": "remove_notifications",
         },
     ]
 
@@ -112,12 +115,12 @@ class ApiNotificationsHandler(BaseApiHandler):
                 RequestNotificationsDataSchema(),
                 {
                     "notifications": notifications_list_reversed,
-                }
+                },
             )
             self.write_success(response)
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
@@ -171,17 +174,19 @@ class ApiNotificationsHandler(BaseApiHandler):
             json_request = self.read_json_request(RequestTableUpdateByUuidList())
 
             notifications = Notifications()
-            for notification_uuid in json_request.get('uuid_list', []):
+            for notification_uuid in json_request.get("uuid_list", []):
                 if not notifications.remove(notification_uuid):
-                    self.set_status(self.STATUS_ERROR_EXTERNAL,
-                                    reason="Failed to delete the notification with UUID '{}'".format(notification_uuid))
+                    self.set_status(
+                        self.STATUS_ERROR_EXTERNAL,
+                        reason="Failed to delete the notification with UUID '{}'".format(notification_uuid),
+                    )
                     self.write_error()
                     return
 
             self.write_success()
             return
         except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get('call_method'), str(bae)))
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
             return
         except Exception as e:
             self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))

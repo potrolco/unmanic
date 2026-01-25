@@ -45,16 +45,16 @@ from ..plugin_type_base import PluginType
 Import all submodules for this package
 
 """
-for (_, name, _) in pkgutil.iter_modules([os.path.join(Path(__file__).parent)]):
+for _, name, _ in pkgutil.iter_modules([os.path.join(Path(__file__).parent)]):
 
-    imported_module = import_module('.' + name, package=__name__)
+    imported_module = import_module("." + name, package=__name__)
 
     for i in dir(imported_module):
         attribute = getattr(imported_module, i)
 
-        if inspect.isclass(attribute) and issubclass(attribute, PluginType) and attribute.__name__ != 'PluginType':
+        if inspect.isclass(attribute) and issubclass(attribute, PluginType) and attribute.__name__ != "PluginType":
             setattr(sys.modules[__name__], name, attribute)
 
-__author__ = 'Josh.5 (jsunnex@gmail.com)'
+__author__ = "Josh.5 (jsunnex@gmail.com)"
 
 __all__ = ()

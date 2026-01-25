@@ -42,7 +42,7 @@ import pkgutil
 from .plugin_type_base import PluginType
 
 d = os.path.join(Path(__file__).parent)
-type_modules_paths = [os.path.join(d, o) for o in os.listdir(d) if os.path.isdir(os.path.join(d, o)) and not o.startswith('_')]
+type_modules_paths = [os.path.join(d, o) for o in os.listdir(d) if os.path.isdir(os.path.join(d, o)) and not o.startswith("_")]
 
 
 def grab_module(module_name, *args, **kwargs):
@@ -55,19 +55,19 @@ def grab_module(module_name, *args, **kwargs):
     :return:
     """
     try:
-        if '.' in module_name:
-            module_name, class_name = module_name.rsplit('.', 1)
+        if "." in module_name:
+            module_name, class_name = module_name.rsplit(".", 1)
         else:
             class_name = module_name.capitalize()
 
-        module = import_module('.' + module_name, package=__name__)
+        module = import_module("." + module_name, package=__name__)
         module_class = getattr(module, class_name)
         instance = module_class(*args, **kwargs)
 
         return instance
 
     except (AttributeError, AssertionError, ModuleNotFoundError):
-        raise ImportError('{} is not part of our supported plugin types!'.format(module_name))
+        raise ImportError("{} is not part of our supported plugin types!".format(module_name))
 
 
 def get_all_plugin_types():
@@ -81,14 +81,14 @@ def get_all_plugin_types():
 
     for type_modules_path in type_modules_paths:
         plugin_type = os.path.basename(Path(type_modules_path))
-        for (_, module_name, _) in pkgutil.iter_modules([type_modules_path]):
-            instance = grab_module(plugin_type + '.' + module_name)
+        for _, module_name, _ in pkgutil.iter_modules([type_modules_path]):
+            instance = grab_module(plugin_type + "." + module_name)
             return_data = {
                 "name": instance.plugin_type_name(),
                 "runner": instance.plugin_runner(),
                 "runner_docstring": instance.plugin_runner_docstring(),
             }
-            return_dic[plugin_type + '.' + module_name] = return_data
+            return_dic[plugin_type + "." + module_name] = return_data
 
     return return_dic
 
@@ -99,9 +99,9 @@ Import all submodules for this package
 """
 for type_modules_path in type_modules_paths:
     plugin_type = os.path.basename(Path(type_modules_path))
-    for (_, name, _) in pkgutil.iter_modules([type_modules_path]):
+    for _, name, _ in pkgutil.iter_modules([type_modules_path]):
 
-        imported_module = import_module('.' + plugin_type + '.' + name, package=__name__)
+        imported_module = import_module("." + plugin_type + "." + name, package=__name__)
 
         for i in dir(imported_module):
             attribute = getattr(imported_module, i)
@@ -109,8 +109,6 @@ for type_modules_path in type_modules_paths:
             if inspect.isclass(attribute) and issubclass(attribute, PluginType):
                 setattr(sys.modules[__name__], name, attribute)
 
-__author__ = 'Josh.5 (jsunnex@gmail.com)'
+__author__ = "Josh.5 (jsunnex@gmail.com)"
 
-__all__ = (
-    'PluginType',
-)
+__all__ = ("PluginType",)

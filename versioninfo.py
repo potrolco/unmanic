@@ -3,23 +3,23 @@
 
 """
     unmanic.versioninfo.py
- 
+
     Written by:               Josh.5 <jsunnex@gmail.com>
     Date:                     04 May 2020, (10:52 AM)
- 
+
     Copyright:
            Copyright (C) Josh Sunnex - All Rights Reserved
- 
+
            Permission is hereby granted, free of charge, to any person obtaining a copy
            of this software and associated documentation files (the "Software"), to deal
            in the Software without restriction, including without limitation the rights
            to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
            copies of the Software, and to permit persons to whom the Software is
            furnished to do so, subject to the following conditions:
-  
+
            The above copyright notice and this permission notice shall be included in all
            copies or substantial portions of the Software.
-  
+
            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
            EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
            MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -47,7 +47,7 @@ def name():
 def version():
     if is_git_vcs():
         git_version_info = get_git_version_info()
-        return git_version_info['short']
+        return git_version_info["short"]
     else:
         return str(version_info.__version__)
 
@@ -55,7 +55,7 @@ def version():
 def full_version():
     if is_git_vcs():
         git_version_info = get_git_version_info()
-        return git_version_info['long']
+        return git_version_info["long"]
     else:
         return str(version_info.__version__)
 
@@ -103,12 +103,12 @@ def dev_status():
     :return:
     """
     full_version_string = full_version()
-    if 'alpha' in full_version_string.lower():
-        return 'Development Status :: 3 - Alpha'
-    elif 'beta' in full_version_string or 'rc' in full_version_string.lower():
-        return 'Development Status :: 4 - Beta'
+    if "alpha" in full_version_string.lower():
+        return "Development Status :: 3 - Alpha"
+    elif "beta" in full_version_string or "rc" in full_version_string.lower():
+        return "Development Status :: 4 - Beta"
     else:
-        return 'Development Status :: 5 - Production/Stable'
+        return "Development Status :: 5 - Production/Stable"
 
 
 def changes():
@@ -118,17 +118,17 @@ def changes():
     :return:
     """
     _version = version_info.__version__
-    with io.open(os.path.join(get_base_dir(), "CHANGES.txt"), 'r', encoding='utf8') as f:
+    with io.open(os.path.join(get_base_dir(), "CHANGES.txt"), "r", encoding="utf8") as f:
         lines = []
         for line in f:
-            if line.startswith('====='):
+            if line.startswith("====="):
                 if len(lines) > 1:
                     break
             if lines:
                 lines.append(line)
             elif line.startswith(_version):
                 lines.append(line)
-    return ''.join(lines[:-1])
+    return "".join(lines[:-1])
 
 
 def get_base_dir():
@@ -141,7 +141,7 @@ def is_git_vcs():
 
     :return:
     """
-    if subprocess.call(["git", "branch"], stderr=subprocess.STDOUT, stdout=open(os.devnull, 'w')) != 0:
+    if subprocess.call(["git", "branch"], stderr=subprocess.STDOUT, stdout=open(os.devnull, "w")) != 0:
         return False
     else:
         return True
@@ -173,38 +173,37 @@ def get_git_version_info():
     long_version_string = last_tag
 
     # Fetch the amount of commits since the last tag
-    distance_since_last_tag = subprocess.check_output(
-        ["git", "rev-list", last_tag + "..HEAD", "--count"]
-    ).strip().decode("utf-8")
+    distance_since_last_tag = (
+        subprocess.check_output(["git", "rev-list", last_tag + "..HEAD", "--count"]).strip().decode("utf-8")
+    )
 
     # Normalize short version string (saves getting spammed with useless warnings from setuptools about it)
-    if '-alpha' in short_version_string.lower():
+    if "-alpha" in short_version_string.lower():
         short_version_string = short_version_string.replace("-alpha", "a")
-    elif '-beta' in short_version_string.lower():
+    elif "-beta" in short_version_string.lower():
         short_version_string = short_version_string.replace("-beta", "b")
-    elif '-rc' in short_version_string.lower():
+    elif "-rc" in short_version_string.lower():
         short_version_string = short_version_string.replace("-rc", "rc")
 
     # Append a post tag if this is not a clean tagged build
     if int(distance_since_last_tag) > 0:
         # There are commits since the last tag
         # Modify the version strings
-        short_version_string = '{}.post{}'.format(short_version_string, distance_since_last_tag)
-        long_version_string = '{}+{}'.format(long_version_string, current_commit)
+        short_version_string = "{}.post{}".format(short_version_string, distance_since_last_tag)
+        long_version_string = "{}+{}".format(long_version_string, current_commit)
     else:
-        long_version_string = '{}~{}'.format(long_version_string, current_commit)
+        long_version_string = "{}~{}".format(long_version_string, current_commit)
 
     # Check if there are uncommitted changes on the directory
-    git_diff_status = subprocess.check_output(
-        "git diff-index --quiet HEAD -- ':!README.md' || echo 'is_dirty'", shell=True
-    ).strip().decode("utf-8")
-    if git_diff_status == 'is_dirty':
+    git_diff_status = (
+        subprocess.check_output("git diff-index --quiet HEAD -- ':!README.md' || echo 'is_dirty'", shell=True)
+        .strip()
+        .decode("utf-8")
+    )
+    if git_diff_status == "is_dirty":
         # There are commits since the last tag
-        long_version_string = '{}+dirty'.format(long_version_string)
+        long_version_string = "{}+dirty".format(long_version_string)
 
-    return_dic = {
-        'short': short_version_string,
-        'long':  long_version_string
-    }
+    return_dic = {"short": short_version_string, "long": long_version_string}
 
     return return_dic

@@ -60,7 +60,7 @@ def build_tasks_count_query(status):
     return query.count()
 
 
-def build_tasks_query(status, sort_by='id', sort_order='asc', local_only=False, library_names=None, library_tags=None):
+def build_tasks_query(status, sort_by="id", sort_order="asc", local_only=False, library_names=None, library_tags=None):
     """
     Return the first task item in the task list filtered by status
     and sorted by the self.sort_by and self.sort_order variables.
@@ -78,14 +78,14 @@ def build_tasks_query(status, sort_by='id', sort_order='asc', local_only=False, 
 
     # Limit to one result
     if local_only:
-        query = query.where((Tasks.type == 'local'))
+        query = query.where((Tasks.type == "local"))
 
     query = query.join(Libraries, on=(Libraries.id == Tasks.library_id))
     if library_names is not None:
         query = query.where(Libraries.name.in_(library_names))
     if library_tags is not None:
-        query = query.join(LibraryTags, join_type='LEFT OUTER JOIN')
-        query = query.join(Tags, join_type='LEFT OUTER JOIN')
+        query = query.join(LibraryTags, join_type="LEFT OUTER JOIN")
+        query = query.join(Tags, join_type="LEFT OUTER JOIN")
         if library_tags:
             query = query.where(Tags.name.in_(library_tags))
         else:
@@ -94,14 +94,14 @@ def build_tasks_query(status, sort_by='id', sort_order='asc', local_only=False, 
 
     # Limit to one result
     query = query.limit(1)
-    if sort_order == 'asc':
+    if sort_order == "asc":
         query = query.order_by(sort_by.asc())
     else:
         query = query.order_by(sort_by.desc())
     return query.first()
 
 
-def build_tasks_query_full_task_list(status, sort_by='id', sort_order='asc', limit=None):
+def build_tasks_query_full_task_list(status, sort_by="id", sort_order="asc", limit=None):
     """
     Return all task items in the task list filtered by status.
     The query is sorted by the self.sort_by and self.sort_order variables
@@ -116,7 +116,7 @@ def build_tasks_query_full_task_list(status, sort_by='id', sort_order='asc', lim
     query = Tasks.select(Tasks).where((Tasks.status == status))
 
     # Set the sort order
-    if sort_order == 'asc':
+    if sort_order == "asc":
         query = query.order_by(sort_by.asc())
     else:
         query = query.order_by(sort_by.desc())
@@ -129,7 +129,7 @@ def build_tasks_query_full_task_list(status, sort_by='id', sort_order='asc', lim
     return query.dicts()
 
 
-def fetch_next_task_filtered(status, sort_by='id', sort_order='asc', local_only=False, library_names=None, library_tags=None):
+def fetch_next_task_filtered(status, sort_by="id", sort_order="asc", local_only=False, library_names=None, library_tags=None):
     """
     Returns the next task in the task list for a given status
 
@@ -142,8 +142,14 @@ def fetch_next_task_filtered(status, sort_by='id', sort_order='asc', local_only=
     :return:
     """
     # Fetch the task item first (to ensure it exists)
-    task_item = build_tasks_query(status, sort_by=sort_by, sort_order=sort_order, local_only=local_only,
-                                  library_names=library_names, library_tags=library_tags)
+    task_item = build_tasks_query(
+        status,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        local_only=local_only,
+        library_names=library_names,
+        library_tags=library_tags,
+    )
     if not task_item:
         return False
     # Set the task object by the abspath and return it
@@ -165,15 +171,15 @@ class TaskQueue(object):
     """
 
     def __init__(self, data_queues):
-        self.name = 'TaskQueue'
+        self.name = "TaskQueue"
         self.data_queues = data_queues
         self.logger = UnmanicLogging.get_logger(name=__class__.__name__)
 
         # Sort fields
         self.sort_by = Tasks.priority
-        self.sort_order = 'desc'
+        self.sort_order = "desc"
 
-    def _log(self, message, message2='', level="info"):
+    def _log(self, message, message2="", level="info"):
         message = common.format_message(message, message2)
         getattr(self.logger, level)(message)
 
@@ -189,7 +195,7 @@ class TaskQueue(object):
         :param limit:
         :return:
         """
-        results = build_tasks_query_full_task_list('pending', self.sort_by, self.sort_order, limit)
+        results = build_tasks_query_full_task_list("pending", self.sort_by, self.sort_order, limit)
         if results:
             return list(results)
         return []
@@ -202,7 +208,7 @@ class TaskQueue(object):
         :param limit:
         :return:
         """
-        results = build_tasks_query_full_task_list('in_progress', self.sort_by, self.sort_order, limit)
+        results = build_tasks_query_full_task_list("in_progress", self.sort_by, self.sort_order, limit)
         if results:
             return list(results)
         return []
@@ -215,7 +221,7 @@ class TaskQueue(object):
         :param limit:
         :return:
         """
-        results = build_tasks_query_full_task_list('processed', self.sort_by, self.sort_order, limit)
+        results = build_tasks_query_full_task_list("processed", self.sort_by, self.sort_order, limit)
         if results:
             return list(results)
         return []
@@ -235,18 +241,24 @@ class TaskQueue(object):
         :return:
         """
         # Fetch Task item matching the filters specified
-        task_item = fetch_next_task_filtered('pending', sort_by=self.sort_by, sort_order=self.sort_order,
-                                             local_only=local_only, library_names=library_names, library_tags=library_tags)
+        task_item = fetch_next_task_filtered(
+            "pending",
+            sort_by=self.sort_by,
+            sort_order=self.sort_order,
+            local_only=local_only,
+            library_names=library_names,
+            library_tags=library_tags,
+        )
         return task_item
 
     def get_next_processed_tasks(self):
         # Fetch Task item matching the filters specified
-        task_item = fetch_next_task_filtered('processed', sort_by=self.sort_by, sort_order=self.sort_order)
+        task_item = fetch_next_task_filtered("processed", sort_by=self.sort_by, sort_order=self.sort_order)
         return task_item
 
     def requeue_tasks_at_bottom(self, task_id):
         task_handler = task.Task()
-        return task_handler.reorder_tasks([task_id], 'bottom')
+        return task_handler.reorder_tasks([task_id], "bottom")
 
     """
     Check if a particular task list is empty
@@ -255,7 +267,7 @@ class TaskQueue(object):
     @staticmethod
     def task_list_pending_is_empty():
         # Fetch only on result in order to know that there are any at all
-        pending_query_count = build_tasks_count_query('pending')
+        pending_query_count = build_tasks_count_query("pending")
         if pending_query_count > 0:
             return False
         return True
@@ -263,7 +275,7 @@ class TaskQueue(object):
     @staticmethod
     def task_list_in_progress_is_empty():
         # Fetch only on result in order to know that there are any at all
-        pending_query_count = build_tasks_count_query('in_progress')
+        pending_query_count = build_tasks_count_query("in_progress")
         if pending_query_count > 0:
             return False
         return True
@@ -271,7 +283,7 @@ class TaskQueue(object):
     @staticmethod
     def task_list_processed_is_empty():
         # Fetch only on result in order to know that there are any at all
-        pending_query_count = build_tasks_count_query('processed')
+        pending_query_count = build_tasks_count_query("processed")
         if pending_query_count > 0:
             return False
         return True
@@ -289,7 +301,7 @@ class TaskQueue(object):
         :return:
         """
         # Set item as status = 'in_progress'
-        task_item.set_status('in_progress')
+        task_item.set_status("in_progress")
         return task_item
 
     @staticmethod
@@ -301,5 +313,5 @@ class TaskQueue(object):
         :return:
         """
         # Set item as status = 'processed'
-        task_item.set_status('processed')
+        task_item.set_status("processed")
         return task_item

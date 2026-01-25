@@ -70,12 +70,12 @@ class HardwareAccelerationHandle(object):
 
         # If Unmanic has settings configured for enabling 'HW Decoding', then fetch args based on selected HW type
         if self.hardware_device:
-            hwaccel_type = self.hardware_device.get('hwaccel')
+            hwaccel_type = self.hardware_device.get("hwaccel")
             if hwaccel_type is not None:
-                if hwaccel_type == 'vaapi':
+                if hwaccel_type == "vaapi":
                     # Return decoder args for VAAPI
                     self.generate_vaapi_main_args()
-                elif hwaccel_type == 'cuda':
+                elif hwaccel_type == "cuda":
                     # Return decoder args for NVIDIA CUDA device
                     self.generate_cuda_main_args()
         else:
@@ -110,35 +110,40 @@ class HardwareAccelerationHandle(object):
                 # Configure args such that when the input may or may not be hardware decodable we can do:
                 #   REF: https://trac.ffmpeg.org/wiki/Hardware/VAAPI#Encoding
                 self.main_options = [
-                    "-init_hw_device", "vaapi=vaapi0:{}".format(self.hardware_device.get('hwaccel_device')),
-                    "-hwaccel", "vaapi",
-                    "-hwaccel_output_format", "vaapi",
-                    "-hwaccel_device", "vaapi0",
+                    "-init_hw_device",
+                    "vaapi=vaapi0:{}".format(self.hardware_device.get("hwaccel_device")),
+                    "-hwaccel",
+                    "vaapi",
+                    "-hwaccel_output_format",
+                    "vaapi",
+                    "-hwaccel_device",
+                    "vaapi0",
                 ]
                 # Use 'NV12' for hardware surfaces. I would think that 10-bit encoding encoding using
                 #   the P010 input surfaces is an advanced feature
                 self.advanced_options = [
-                    "-filter_hw_device", "vaapi0",
-                    "-vf", "format=nv12|vaapi,hwupload",
+                    "-filter_hw_device",
+                    "vaapi0",
+                    "-vf",
+                    "format=nv12|vaapi,hwupload",
                 ]
             else:
                 # Encode only (no decoding)
                 #   REF: https://trac.ffmpeg.org/wiki/Hardware/VAAPI#Encode-only (sorta)
                 self.main_options = [
-                    "-vaapi_device", self.hardware_device.get('hwaccel_device'),
+                    "-vaapi_device",
+                    self.hardware_device.get("hwaccel_device"),
                 ]
                 # Use 'NV12' for hardware surfaces. I would think that 10-bit encoding encoding using
                 #   the P010 input surfaces is an advanced feature
                 self.advanced_options = [
-                    "-vf", "format=nv12|vaapi,hwupload",
+                    "-vf",
+                    "format=nv12|vaapi,hwupload",
                 ]
         else:
             # Decode an input with hardware if possible, output in normal memory to encode with another encoder not vaapi:
             #   REF: https://trac.ffmpeg.org/wiki/Hardware/VAAPI#Decode-only
-            self.main_options = [
-                "-hwaccel", "vaapi",
-                "-hwaccel_device", self.hardware_device.get('hwaccel_device')
-            ]
+            self.main_options = ["-hwaccel", "vaapi", "-hwaccel_device", self.hardware_device.get("hwaccel_device")]
 
     def generate_cuda_main_args(self):
         """
@@ -146,7 +151,7 @@ class HardwareAccelerationHandle(object):
 
         :return:
         """
-        self.main_options = ["-hwaccel", "cuda", "-hwaccel_device", self.hardware_device.get('hwaccel_device')]
+        self.main_options = ["-hwaccel", "cuda", "-hwaccel_device", self.hardware_device.get("hwaccel_device")]
 
     def list_available_cuda_decoders(self):
         """
@@ -159,7 +164,7 @@ class HardwareAccelerationHandle(object):
         decoders = []
 
         # Search for cuder libs
-        libnames = ('libcuda.so', 'libcuda.dylib', 'cuda.dll')
+        libnames = ("libcuda.so", "libcuda.dylib", "cuda.dll")
         for libname in libnames:
             try:
                 cuda = ctypes.CDLL(libname)
@@ -186,8 +191,8 @@ class HardwareAccelerationHandle(object):
             if result != 0:
                 continue
             device_data = {
-                'hwaccel':        'cuda',
-                'hwaccel_device': "{}".format(i),
+                "hwaccel": "cuda",
+                "hwaccel_device": "{}".format(i),
             }
             decoders.append(device_data)
 
@@ -204,10 +209,10 @@ class HardwareAccelerationHandle(object):
 
         if os.path.exists(dir_path):
             for device in sorted(os.listdir(dir_path)):
-                if device.startswith('render'):
+                if device.startswith("render"):
                     device_data = {
-                        'hwaccel':        'vaapi',
-                        'hwaccel_device': os.path.join("/", "dev", "dri", device),
+                        "hwaccel": "vaapi",
+                        "hwaccel_device": os.path.join("/", "dev", "dri", device),
                     }
                     decoders.append(device_data)
 
@@ -216,7 +221,7 @@ class HardwareAccelerationHandle(object):
 
 
 if __name__ == "__main__":
-    hw_a = HardwareAccelerationHandle('blah')
+    hw_a = HardwareAccelerationHandle("blah")
     print(hw_a.get_hwaccel_devices())
     for hardware_decoder in hw_a.get_hwaccel_devices():
         hw_a.hardware_device = hardware_decoder

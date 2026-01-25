@@ -87,17 +87,17 @@ class Session(object, metaclass=SingletonType):
     """
     picture_uri - The user avatar
     """
-    picture_uri = ''
+    picture_uri = ""
 
     """
     name - The user's name
     """
-    name = ''
+    name = ""
 
     """
     email - The user's email
     """
-    email = ''
+    email = ""
 
     """
     created - The timestamp when the session was created
@@ -127,10 +127,10 @@ class Session(object, metaclass=SingletonType):
     def __init__(self, *args, **kwargs):
         self.logger = UnmanicLogging.get_logger(name=__class__.__name__)
         self.timeout = 30
-        self.dev_api = kwargs.get('dev_api', None)
+        self.dev_api = kwargs.get("dev_api", None)
         self.requests_session = requests.Session()
         self.token_poll_task = None
-        self.logger.info('Initialising new session object')
+        self.logger.info("Initialising new session object")
         self.created = None
         self.last_check = None
 
@@ -139,7 +139,7 @@ class Session(object, metaclass=SingletonType):
             # There is no session created. How did we get here???
             return False
         # (86400 = 24 hours)
-        seconds = (days * 86400)
+        seconds = days * 86400
         # Get session expiration time
         time_now = time.time()
         time_when_session_expires = self.created + seconds
@@ -168,7 +168,7 @@ class Session(object, metaclass=SingletonType):
         if not self.__created_older_than_x_days(days=2):
             # Only try to recreate the session once a day
             return True
-        self.logger.debug('Session no longer valid')
+        self.logger.debug("Session no longer valid")
         return False
 
     def __update_created_timestamp(self):
@@ -183,10 +183,10 @@ class Session(object, metaclass=SingletonType):
         seconds_offset = random.randint(300, 900)
         # Set the created flag with the seconds variable plus a random offset to avoid people joining
         #   together to register if the site goes down
-        self.created = (seconds + seconds_offset)
+        self.created = seconds + seconds_offset
         # Print only the accurate update time in debug log
         created = datetime.datetime.fromtimestamp(seconds)
-        self.logger.debug('Updated session at %s', str(created))
+        self.logger.debug("Updated session at %s", str(created))
 
     def __fetch_installation_data(self):
         """
@@ -201,7 +201,7 @@ class Session(object, metaclass=SingletonType):
             current_installation = db_installation.select().order_by(Installation.id.asc()).limit(1).get()
         except Exception as e:
             # Create settings (defaults will be applied)
-            self.logger.debug('Unmanic session does not yet exist... Creating.')
+            self.logger.debug("Unmanic session does not yet exist... Creating.")
             db_installation.delete().execute()
             current_installation = db_installation.create()
 
@@ -242,17 +242,17 @@ class Session(object, metaclass=SingletonType):
         log_buffer_retention = settings.get_log_buffer_retention()
         if session_valid:
             # Import endpoint from env vars
-            endpoint = os.environ.get('UNMANIC_REMOTE_LOGGING_ENDPOINT', '')
+            endpoint = os.environ.get("UNMANIC_REMOTE_LOGGING_ENDPOINT", "")
             # If not set in env vars, fetch endpoint from unmanic-api
             if not endpoint or not endpoint.startswith("http"):
                 endpoint = None
                 try:
                     # Fetch endpoint from Unmanic site API
-                    response, status_code = self.api_get('unmanic-api', 1, 'central_config/get_datastore_endpoint')
+                    response, status_code = self.api_get("unmanic-api", 1, "central_config/get_datastore_endpoint")
                     if status_code in [200] and response.get("success"):
                         endpoint = response.get("data").get("endpoint")
                 except Exception as e:
-                    self.logger.debug('Exception while fetching Unmanic Central Datastore endpoint - %s', e)
+                    self.logger.debug("Exception while fetching Unmanic Central Datastore endpoint - %s", e)
             if endpoint:
                 UnmanicLogging.enable_remote_logging(endpoint, self.uuid, log_buffer_retention)
                 return
@@ -264,12 +264,12 @@ class Session(object, metaclass=SingletonType):
 
         :return:
         """
-        self.logger.debug('Resetting session installation data.')
+        self.logger.debug("Resetting session installation data.")
         # TARS: Always keep supporter level on reset
         self.level = 100
-        self.picture_uri = ''
-        self.name = ''
-        self.email = ''
+        self.picture_uri = ""
+        self.name = ""
+        self.email = ""
         self.created = time.time()
         self.user_access_token = None
         self.application_token = None
@@ -281,11 +281,11 @@ class Session(object, metaclass=SingletonType):
         # Update session headers
         if access_token:
             self.user_access_token = access_token
-            self.requests_session.headers.update({'Authorization': self.user_access_token})
+            self.requests_session.headers.update({"Authorization": self.user_access_token})
 
     def __clear_session_auth(self):
         self.requests_session.cookies.clear()
-        self.requests_session.headers.update({'Authorization': ''})
+        self.requests_session.headers.update({"Authorization": ""})
 
     def get_installation_uuid(self):
         """
@@ -356,7 +356,7 @@ class Session(object, metaclass=SingletonType):
                     # There is an issue with the remote API
                     raise RemoteApiException(f"GET request still failed for {u}", r.status_code)
             else:
-                self.logger.debug('Failed to verify auth (api_get)')
+                self.logger.debug("Failed to verify auth (api_get)")
         return r.json(), r.status_code
 
     def api_post(self, api_prefix, api_version, api_path, data):
@@ -385,7 +385,7 @@ class Session(object, metaclass=SingletonType):
                     # There is an issue with the remote API
                     raise RemoteApiException(f"POST request still failed for {u}", r.status_code)
             else:
-                self.logger.debug('Failed to verify auth (api_post)')
+                self.logger.debug("Failed to verify auth (api_post)")
         return r.json(), r.status_code
 
     def get_access_token(self):
@@ -393,13 +393,13 @@ class Session(object, metaclass=SingletonType):
             # No application token set
             return False
         d = {"applicationToken": self.application_token, "uuid": self.get_installation_uuid()}
-        u = self.set_full_api_url('support-auth-api', 2, 'app_auth/get_token')
+        u = self.set_full_api_url("support-auth-api", 2, "app_auth/get_token")
         r = self.requests_session.post(u, json=d, timeout=self.timeout)
         if r.status_code in [200, 201, 202]:
             # Token refreshed
             # Store the updated access token
             response = r.json()
-            self.__update_session_auth(access_token=response.get('data', {}).get('accessToken'))
+            self.__update_session_auth(access_token=response.get("data", {}).get("accessToken"))
             self.__store_installation_data()
             self.__configure_log_forwarding(session_valid=True)
             return True
@@ -408,10 +408,10 @@ class Session(object, metaclass=SingletonType):
             raise RemoteApiException(f"Token refresh request failed for {u}", r.status_code)
         elif r.status_code in [403]:
             # Log this failure in the debug logs
-            self.logger.info('Failed to get access token.')
+            self.logger.info("Failed to get access token.")
             response = r.json()
-            for message in response.get('messages', []):
-                self.logger.info('Remote Message: %s', message)
+            for message in response.get("messages", []):
+                self.logger.info("Remote Message: %s", message)
         return False
 
     def verify_token(self):
@@ -422,7 +422,7 @@ class Session(object, metaclass=SingletonType):
             # No valid tokens exist
             return False
         # Check if access token is valid
-        u = self.set_full_api_url('support-auth-api', 1, 'user_auth/verify_token')
+        u = self.set_full_api_url("support-auth-api", 1, "user_auth/verify_token")
         r = self.requests_session.get(u, timeout=self.timeout)
         if r.status_code in [200, 201, 202]:
             # Token is valid
@@ -432,14 +432,14 @@ class Session(object, metaclass=SingletonType):
             raise RemoteApiException(f"Token verification request failed for {u}", r.status_code)
 
         # Access token is not valid. Refresh it.
-        self.logger.debug('Unable to verify access token. Refreshing...')
+        self.logger.debug("Unable to verify access token. Refreshing...")
         if self.get_access_token():
             # Successfully refreshed access token
             return True
         return False
 
     def fetch_user_data(self):
-        response, status_code = self.api_get('support-auth-api', 2, 'user_info/get')
+        response, status_code = self.api_get("support-auth-api", 2, "user_info/get")
         if status_code == 401:
             # TARS: Keep supporter level even on 401
             self.level = 100
@@ -447,9 +447,9 @@ class Session(object, metaclass=SingletonType):
         if status_code > 403:
             # Failed to fetch data from server. Ignore this for now. Will try again later.
             raise RemoteApiException("Failed to fetch user info from user_info/get", status_code)
-        if status_code in [200, 201, 202] and response.get('success'):
+        if status_code in [200, 201, 202] and response.get("success"):
             # Get user data from response data
-            user_data = response.get('data', {}).get('user')
+            user_data = response.get("data", {}).get("user")
             if user_data:
                 # Set name from user data
                 self.name = user_data.get("name", "Valued Supporter")
@@ -463,7 +463,7 @@ class Session(object, metaclass=SingletonType):
     def auth_user_account(self, force_checkin=False):
         # Don't bother if the user has never logged in
         if not self.user_access_token and not force_checkin:
-            self.logger.debug('The user access token is not set add we are not being forced to refresh for one.')
+            self.logger.debug("The user access token is not set add we are not being forced to refresh for one.")
             return False
 
         # Start by verifying the token
@@ -471,7 +471,7 @@ class Session(object, metaclass=SingletonType):
 
         # If that token verification failed but we are not being forced to check in, then just ignore it.
         if not token_verified and not force_checkin:
-            self.logger.debug('The user access token is not valid but we are not being forced to refresh for one.')
+            self.logger.debug("The user access token is not valid but we are not being forced to refresh for one.")
             return False
 
         # If the token was verified and is valid, fetch user info
@@ -486,14 +486,14 @@ class Session(object, metaclass=SingletonType):
     def auth_trial_account(self):
         # Check if access token is valid
         d = {"uuid": self.get_installation_uuid()}
-        u = self.set_full_api_url('support-auth-api', 1, 'user_auth/trial_token')
+        u = self.set_full_api_url("support-auth-api", 1, "user_auth/trial_token")
         r = self.requests_session.post(u, json=d, timeout=self.timeout)
         if r.status_code in [200, 201, 202]:
             # Token refreshed
             # Store the updated access token
             response = r.json()
             self.logger.debug("Updating session with trial token")
-            self.__update_session_auth(access_token=response.get('data', {}).get('accessToken'))
+            self.__update_session_auth(access_token=response.get("data", {}).get("accessToken"))
             # Fetch user data
             self.fetch_user_data()
             # Store the updated session cookies
@@ -532,20 +532,21 @@ class Session(object, metaclass=SingletonType):
         try:
             # Build post data
             from unmanic.libs.system import System
+
             system = System()
             system_info = system.info()
             platform_info = system_info.get("platform", None)
             if platform_info:
                 platform_info = " * ".join(platform_info)
             post_data = {
-                "uuid":              self.get_installation_uuid(),
+                "uuid": self.get_installation_uuid(),
                 "installation_name": settings.get_installation_name(),
-                "version":           settings.read_version(),
-                "python_version":    system_info.get("python", ''),
-                "system":            {
+                "version": settings.read_version(),
+                "python_version": system_info.get("python", ""),
+                "system": {
                     "platform": platform_info,
-                    "devices":  system_info.get("devices", {}),
-                }
+                    "devices": system_info.get("devices", {}),
+                },
             }
 
             # Refresh user auth
@@ -555,7 +556,7 @@ class Session(object, metaclass=SingletonType):
                 result = self.auth_trial_account()
 
             # Register Unmanic
-            registration_response, status_code = self.api_post('unmanic-api', 1, 'installation_auth/register', post_data)
+            registration_response, status_code = self.api_post("unmanic-api", 1, "installation_auth/register", post_data)
 
             # Save data
             if status_code in [200, 201, 202] and registration_response.get("success"):
@@ -601,15 +602,16 @@ class Session(object, metaclass=SingletonType):
                 post_data = {
                     "uuid": self.get_installation_uuid(),
                 }
-                response, status_code = self.api_post('unmanic-api', 1,
-                                                      'installation_auth/remove_installation_registration',
-                                                      post_data)
+                response, status_code = self.api_post(
+                    "unmanic-api", 1, "installation_auth/remove_installation_registration", post_data
+                )
                 # The only way we can now log out is if the auth server response with true
                 # Save data
                 self.logger.debug("Remote registry logout response - Code: %s, Body: %s", status_code, response)
         except RemoteApiException as e:
             self.logger.warning(
-                "Failed to reach remote server to request a logout. This is fine, we can continue to logout the app locally.")
+                "Failed to reach remote server to request a logout. This is fine, we can continue to logout the app locally."
+            )
         self.__reset_session_installation_data()
         return True
 
@@ -631,11 +633,12 @@ class Session(object, metaclass=SingletonType):
         """
         # Try to fetch token if this was the initial login
         post_data = {"uuid": self.get_installation_uuid()}
-        response, status_code = self.api_post('support-auth-api', 2, 'app_auth/request_pin', post_data)
+        response, status_code = self.api_post("support-auth-api", 2, "app_auth/request_pin", post_data)
         if status_code >= 400:
             self.logger.error(
                 "The remote service returned an error (HTTP %s). We are unable to proceed at this time. Please try again later.",
-                status_code)
+                status_code,
+            )
             return False
 
         if status_code != 200:
@@ -656,12 +659,12 @@ class Session(object, metaclass=SingletonType):
 
         # Begin polling for the application token using the device code, interval, and expiry
         return {
-            "user_code":                 user_code,
-            "device_code":               device_code,
-            "interval":                  interval,
-            "expires_in":                expires_in,
-            "verification_uri":          verification_uri,
-            "verification_uri_complete": verification_uri_complete
+            "user_code": user_code,
+            "device_code": device_code,
+            "interval": interval,
+            "expires_in": expires_in,
+            "verification_uri": verification_uri,
+            "verification_uri_complete": verification_uri_complete,
         }
 
     def poll_for_app_token(self, device_code, interval, expires_in):
@@ -677,19 +680,19 @@ class Session(object, metaclass=SingletonType):
 
             # Try to fetch token if this was the initial login
             post_data = {
-                "uuid":        self.get_installation_uuid(),
+                "uuid": self.get_installation_uuid(),
                 "device_code": device_code,
             }
-            response, status_code = self.api_post('support-auth-api', 2, 'app_auth/retrieve_app_token', post_data)
+            response, status_code = self.api_post("support-auth-api", 2, "app_auth/retrieve_app_token", post_data)
             if status_code > 403:
                 # Issue with server... Just carry on with current access token can't fix that here.
                 raise RemoteApiException("App token retrieval request failed for %s", status_code)
-            elif status_code in [200] and response.get('data', {}).get('applicationToken'):
+            elif status_code in [200] and response.get("data", {}).get("applicationToken"):
                 time.sleep(interval)  # Wait for {interval} before we use this new app token
                 # Store the updated access token
                 self.logger.info("Application linked to account")
                 # Store the updated refresh token
-                self.application_token = response.get('data', {}).get('applicationToken')
+                self.application_token = response.get("data", {}).get("applicationToken")
                 self.get_access_token()
                 token_verified = self.verify_token()
                 self.logger.info("Application auth token verified: %s", token_verified)
@@ -731,10 +734,10 @@ class Session(object, metaclass=SingletonType):
         """
         try:
             # Fetch Patreon sponsorship URL from Unmanic site API
-            response, status_code = self.api_get('unmanic-api', 1, 'links/unmanic_patreon_sponsor_page')
+            response, status_code = self.api_get("unmanic-api", 1, "links/unmanic_patreon_sponsor_page")
             if status_code in [200, 201, 202] and response.get("success"):
                 response_data = response.get("data")
                 return response_data
         except Exception as e:
-            self.logger.debug('Exception while fetching Patreon sponsor page - %s', e)
+            self.logger.debug("Exception while fetching Patreon sponsor page - %s", e)
         return False

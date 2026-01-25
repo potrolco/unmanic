@@ -3,23 +3,23 @@
 
 """
     unmanic.history.py
- 
+
     Written by:               Josh.5 <jsunnex@gmail.com>
     Date:                     23 Jun 2019, (10:42 AM)
- 
+
     Copyright:
            Copyright (C) Josh Sunnex - All Rights Reserved
- 
+
            Permission is hereby granted, free of charge, to any person obtaining a copy
            of this software and associated documentation files (the "Software"), to deal
            in the Software without restriction, including without limitation the rights
            to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
            copies of the Software, and to permit persons to whom the Software is
            furnished to do so, subject to the following conditions:
-  
+
            The above copyright notice and this permission notice shall be included in all
            copies or substantial portions of the Software.
-  
+
            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
            EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
            MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -80,10 +80,19 @@ class History(object):
         query = CompletedTasks.select().order_by(CompletedTasks.id.desc())
         return query.count()
 
-    def get_historic_task_list_filtered_and_sorted(self, order=None, start=0, length=None, search_value=None, id_list=None,
-                                                   task_success=None, after_time=None, before_time=None):
+    def get_historic_task_list_filtered_and_sorted(
+        self,
+        order=None,
+        start=0,
+        length=None,
+        search_value=None,
+        id_list=None,
+        task_success=None,
+        after_time=None,
+        before_time=None,
+    ):
         try:
-            query = (CompletedTasks.select())
+            query = CompletedTasks.select()
 
             if id_list:
                 query = query.where(CompletedTasks.id.in_(id_list))
@@ -137,9 +146,8 @@ class History(object):
             FROM completedtasks AS "t1"
             WHERE t1.id IN ( %s)
         """
-        query = (
-            CompletedTasks.select(CompletedTasks.id, CompletedTasks.task_label, CompletedTasks.task_success,
-                                  CompletedTasks.abspath)
+        query = CompletedTasks.select(
+            CompletedTasks.id, CompletedTasks.task_label, CompletedTasks.task_success, CompletedTasks.abspath
         )
 
         if id_list:
@@ -147,8 +155,9 @@ class History(object):
 
         return query.dicts()
 
-    def get_historic_tasks_list_with_source_probe(self, order=None, start=0, length=None, search_value=None, id_list=None,
-                                                  task_success=None, abspath=None):
+    def get_historic_tasks_list_with_source_probe(
+        self, order=None, start=0, length=None, search_value=None, id_list=None, task_success=None, abspath=None
+    ):
         """
         Return a list of matching historic tasks with their source file's ffmpeg probe.
 
@@ -161,9 +170,9 @@ class History(object):
         :param abspath:
         :return:
         """
-        query = (
-            CompletedTasks.select(CompletedTasks.id, CompletedTasks.task_label, CompletedTasks.task_success,
-                                  CompletedTasks.abspath))
+        query = CompletedTasks.select(
+            CompletedTasks.id, CompletedTasks.task_label, CompletedTasks.task_success, CompletedTasks.abspath
+        )
 
         if id_list:
             query = query.where(CompletedTasks.id.in_(id_list))
@@ -209,7 +218,7 @@ class History(object):
             return False
 
         try:
-            query = (CompletedTasks.select())
+            query = CompletedTasks.select()
 
             if id_list:
                 query = query.where(CompletedTasks.id.in_(id_list))
@@ -239,7 +248,7 @@ class History(object):
             # Create the new historical task entry
             new_historic_task = self.create_historic_task_entry(task_data)
             # Create an entry of the data from the source ffprobe
-            self.create_historic_task_ffmpeg_log_entry(new_historic_task, task_data.get('log', ''))
+            self.create_historic_task_ffmpeg_log_entry(new_historic_task, task_data.get("log", ""))
         except Exception as error:
             self.logger.exception("Failed to save historic task entry to database. %s", error)
             return False
@@ -254,10 +263,7 @@ class History(object):
         :param log:
         :return:
         """
-        CompletedTasksCommandLogs.create(
-            completedtask_id=historic_task,
-            dump=log
-        )
+        CompletedTasksCommandLogs.create(completedtask_id=historic_task, dump=log)
 
     def create_historic_task_entry(self, task_data):
         """
@@ -274,13 +280,15 @@ class History(object):
         :return:
         """
         if not task_data:
-            self.logger.debug('Task data param empty: %s', json.dumps(task_data))
-            raise Exception('Task data param empty. This should not happen - Something has gone really wrong.')
+            self.logger.debug("Task data param empty: %s", json.dumps(task_data))
+            raise Exception("Task data param empty. This should not happen - Something has gone really wrong.")
 
-        new_historic_task = CompletedTasks.create(task_label=task_data['task_label'],
-                                                  abspath=task_data['abspath'],
-                                                  task_success=task_data['task_success'],
-                                                  start_time=task_data['start_time'],
-                                                  finish_time=task_data['finish_time'],
-                                                  processed_by_worker=task_data['processed_by_worker'])
+        new_historic_task = CompletedTasks.create(
+            task_label=task_data["task_label"],
+            abspath=task_data["abspath"],
+            task_success=task_data["task_success"],
+            start_time=task_data["start_time"],
+            finish_time=task_data["finish_time"],
+            processed_by_worker=task_data["processed_by_worker"],
+        )
         return new_historic_task

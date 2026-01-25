@@ -66,17 +66,19 @@ class TestClass(object):
         self.task_handler = None
 
         # Create temp config path
-        config_path = tempfile.mkdtemp(prefix='unmanic_tests_')
+        config_path = tempfile.mkdtemp(prefix="unmanic_tests_")
 
         # Create connection to a test DB
         from unmanic.libs import unmodels
+
         app_dir = os.path.dirname(os.path.abspath(__file__))
         database_settings = {
-            "TYPE":           "SQLITE",
-            "FILE":           ':memory:',
-            "MIGRATIONS_DIR": os.path.join(app_dir, 'migrations'),
+            "TYPE": "SQLITE",
+            "FILE": ":memory:",
+            "MIGRATIONS_DIR": os.path.join(app_dir, "migrations"),
         }
         from unmanic.libs.unmodels.lib import Database
+
         self.db_connection = Database.select_database(database_settings)
 
         # Create required tables
@@ -84,8 +86,9 @@ class TestClass(object):
 
         # import config
         from unmanic import config
+
         self.settings = config.Config(config_path=config_path)
-        self.settings.set_config_item('debugging', True, save_settings=False)
+        self.settings.set_config_item("debugging", True, save_settings=False)
 
     def teardown_class(self):
         """
@@ -134,19 +137,19 @@ class TestClass(object):
     @pytest.mark.integrationtest
     @pytest.mark.skip(reason="This test needs to be re-written to work with the TaskHandler DB integration")
     def test_task_handler_can_process_scheduled_tasks_queue(self):
-        test_path_string = 'scheduledtasks'
+        test_path_string = "scheduledtasks"
         self.scheduledtasks.put(test_path_string)
         self.task_handler.process_scheduledtasks_queue()
-        assert (test_path_string == self.task_queue.added_item)
+        assert test_path_string == self.task_queue.added_item
 
     @pytest.mark.integrationtest
     @pytest.mark.skip(reason="This test needs to be re-written to work with the TaskHandler DB integration")
     def test_task_handler_can_process_inotify_tasks_queue(self):
-        test_path_string = '/tests/support_/videos/small/big_buck_bunny_144p_1mb.3gp'
+        test_path_string = "/tests/support_/videos/small/big_buck_bunny_144p_1mb.3gp"
         self.inotifytasks.put(test_path_string)
         self.task_handler.process_inotifytasks_queue()
-        assert (test_path_string == self.task_queue.added_item)
+        assert test_path_string == self.task_queue.added_item
 
 
-if __name__ == '__main__':
-    pytest.main(['-s', '--log-cli-level=INFO', __file__])
+if __name__ == "__main__":
+    pytest.main(["-s", "--log-cli-level=INFO", __file__])
