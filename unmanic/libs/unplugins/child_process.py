@@ -78,12 +78,12 @@ def kill_all_plugin_processes():
             try:
                 # on Unix, unblock with SIGCONT
                 p.send_signal(signal.SIGCONT)
-            except Exception:
+            except (psutil.NoSuchProcess, psutil.AccessDenied, OSError):
                 pass
             try:
                 # on all platforms psutil.resume() works if supported
                 p.resume()
-            except Exception:
+            except (psutil.NoSuchProcess, psutil.AccessDenied, NotImplementedError):
                 pass
 
         # Attempt graceful shutdown

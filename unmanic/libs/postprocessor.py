@@ -382,8 +382,8 @@ class PostProcessor(threading.Thread):
                     cache_path, os.path.join(library_tdir, os.path.basename(cache_path)), [], "DEFAULT", move=True
                 )
                 if not capture_success:
-                    raise Exception("Failed to copy back to network share")
-            except:
+                    raise OSError("Failed to copy back to network share")
+            except OSError:
                 os.mkdir(cache_tdir)
                 self.__copy_file(cache_path, os.path.join(cache_tdir, os.path.basename(cache_path)), [], "DEFAULT", move=True)
                 tdir = cache_tdir

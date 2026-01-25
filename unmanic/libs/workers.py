@@ -95,8 +95,12 @@ class WorkerSubprocessMonitor(threading.Thread):
                     self.subprocess_pid,
                 )
                 self.terminate_proc()
-
+        except psutil.NoSuchProcess:
+            self.logger.debug("Process %s no longer exists", pid)
+        except (psutil.AccessDenied, psutil.ZombieProcess) as e:
+            self.logger.warning("Cannot access process %s: %s", pid, e)
         except Exception:
+            # Fallback: log and continue for daemon resilience
             self.logger.exception("Exception in set_proc()")
 
     def unset_proc(self):
@@ -159,7 +163,12 @@ class WorkerSubprocessMonitor(threading.Thread):
                     self.paused = False
                     break
 
+        except psutil.NoSuchProcess:
+            self.logger.debug("Process no longer exists during suspend")
+        except (psutil.AccessDenied, psutil.ZombieProcess) as e:
+            self.logger.warning("Cannot suspend process: %s", e)
         except Exception:
+            # Fallback: log and continue for daemon resilience
             self.logger.exception("Exception in suspend_proc()")
 
     def terminate_proc(self):
@@ -171,7 +180,13 @@ class WorkerSubprocessMonitor(threading.Thread):
                     self.__terminate_proc_tree(self.subprocess)
                     self.logger.info("Subprocess terminated")
                     self.unset_proc()
+            except psutil.NoSuchProcess:
+                self.logger.debug("Process already terminated")
+                self.unset_proc()
+            except (psutil.AccessDenied, psutil.ZombieProcess) as e:
+                self.logger.warning("Cannot terminate process: %s", e)
             except Exception:
+                # Fallback: log and continue for daemon resilience
                 self.logger.exception("Exception in terminate_proc()")
 
     def __log_proc_terminated(self, proc: psutil.Process):
@@ -221,7 +236,12 @@ class WorkerSubprocessMonitor(threading.Thread):
             # Final wait to reap
             psutil.wait_procs(alive, timeout=3, callback=self.__log_proc_terminated)
 
+        except psutil.NoSuchProcess:
+            self.logger.debug("Process tree already terminated")
+        except (psutil.AccessDenied, psutil.ZombieProcess) as e:
+            self.logger.warning("Cannot terminate process tree: %s", e)
         except Exception:
+            # Fallback: log and continue for daemon resilience
             self.logger.exception("Exception in __terminate_proc_tree()")
 
     def get_subprocess_elapsed(self):
