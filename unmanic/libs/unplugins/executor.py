@@ -301,6 +301,7 @@ class PluginExecutor(object):
 
             run_successfully = True
         except Exception:
+            # Catch-all for plugin resilience: plugins can raise any exception type
             self.logger.exception("Exception while carrying out '%s' plugin runner '%s'", plugin_type, plugin_id)
         finally:
             TaskDataStore.clear_context()

@@ -77,7 +77,7 @@ class ForwardJSONFormatter(JSONFormatter):
             try:
                 ts_float = float(ts_str)
                 extra["time"] = datetime.utcfromtimestamp(ts_float).isoformat()
-            except Exception:
+            except (ValueError, TypeError, OSError):
                 pass  # Ignore this. The default formatter will add a "time" record
         return super(ForwardJSONFormatter, self).json_record(message, extra, record)
 
@@ -335,7 +335,7 @@ class ForwardLogHandler(logging.Handler):
                         continue
                     try:
                         entry = json.loads(stripped.decode("utf-8"))
-                    except Exception:
+                    except (json.JSONDecodeError, UnicodeDecodeError):
                         logging.getLogger("Unmanic.ForwardLogHandler").warning(
                             "Skipping corrupt log entry in %s.",
                             filename,
@@ -558,7 +558,7 @@ class ForwardLogHandler(logging.Handler):
         try:
             with open(self._buffer_state_path, "r", encoding="utf-8") as handle:
                 data = json.load(handle)
-        except Exception:
+        except (OSError, json.JSONDecodeError, ValueError):
             logging.getLogger("Unmanic.ForwardLogHandler").warning("Failed to load log buffer state. Starting fresh.")
             return {}
 

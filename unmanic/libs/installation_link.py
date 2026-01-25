@@ -469,7 +469,8 @@ class Links(object, metaclass=SingletonType):
                     username=local_config.get("username"),
                     password=local_config.get("password"),
                 )
-            except Exception:
+            except (requests.RequestException, ConnectionError, TimeoutError, ValueError):
+                # Network errors or invalid response - remote installation unavailable
                 pass
 
             # Generate updated configured values

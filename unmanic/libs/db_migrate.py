@@ -34,7 +34,7 @@ import inspect
 import os
 import sys
 
-from peewee import Model, SqliteDatabase, Field
+from peewee import Model, SqliteDatabase, Field, DatabaseError, OperationalError, IntegrityError
 from peewee_migrate import Migrator, Router
 
 from unmanic.libs.logs import UnmanicLogging
@@ -102,7 +102,7 @@ class Migrations(object):
                 for model in all_models:
                     self.migrator.create_table(model)
                 self.migrator()
-        except Exception:
+        except (DatabaseError, OperationalError, IntegrityError):
             self.database.rollback()
             self.logger.exception("Initialising tables failed")
             raise
@@ -130,7 +130,7 @@ class Migrations(object):
                                 with self.database.transaction():
                                     self.migrator.add_columns(model, **{field.name: field})
                                     self.migrator()
-                            except Exception:
+                            except (DatabaseError, OperationalError, IntegrityError):
                                 self.database.rollback()
                                 self.logger.exception("Update failed")
                                 raise
