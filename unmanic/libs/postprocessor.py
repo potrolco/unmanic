@@ -116,21 +116,34 @@ class PostProcessor(threading.Thread):
                     except Exception as e:
                         self._log("Exception in fetching task absolute path", message2=str(e), level="exception")
                     if self.current_task.get_task_type() == 'local':
+                        file_move_success = True
                         try:
                             # Post processes the converted file (return it to original directory etc.)
-                            self.post_process_file()
+                            file_move_success = self.post_process_file()
                         except Exception as e:
                             self._log("Exception in post-processing local task file", message2=str(e), level="exception")
-                        try:
-                            # Write source and destination data to historic log
-                            self.write_history_log()
-                        except Exception as e:
-                            self._log("Exception in writing history log", message2=str(e), level="exception")
-                        try:
-                            # Remove file from task queue
-                            self.current_task.delete()
-                        except Exception as e:
-                            self._log("Exception in removing task from task list", message2=str(e), level="exception")
+                            file_move_success = False
+
+                        # Only delete task if file movement was successful
+                        if file_move_success:
+                            try:
+                                # Write source and destination data to historic log
+                                self.write_history_log()
+                            except Exception as e:
+                                self._log("Exception in writing history log", message2=str(e), level="exception")
+                            try:
+                                # Remove file from task queue
+                                self.current_task.delete()
+                            except Exception as e:
+                                self._log("Exception in removing task from task list", message2=str(e), level="exception")
+                        else:
+                            # File movement failed - mark task as failed but keep in queue
+                            self._log("File movement failed - task will remain in queue for retry", level="warning")
+                            try:
+                                self.current_task.task.success = False
+                                self.write_history_log()
+                            except Exception as e:
+                                self._log("Exception in writing failure history log", message2=str(e), level="exception")
                     else:
                         try:
                             # Post processes the remote converted file (return it to original directory etc.)
@@ -297,6 +310,9 @@ class PostProcessor(threading.Thread):
 
         # Cleanup cache files
         self.__cleanup_cache_files(cache_path)
+
+        # Return success status for caller to handle task deletion
+        return file_move_processes_success
 
     def post_process_remote_file(self):
         """
