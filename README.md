@@ -24,6 +24,37 @@ Unmanic - Library Optimiser
 [![GitHub license](https://img.shields.io/github/license/unmanic/unmanic?color=009dc7&style=flat-square)]()
 ---
 
+## TARS Fork
+
+This is **TARS** (Transcoding Automation & Reorganization System), a fork of Unmanic with the following enhancements:
+
+- **Unlimited Libraries**: No artificial limits on the number of libraries
+- **Configurable Paths**: Custom configuration paths via CLI or environment variable
+- **Bulk Operations**: API endpoint for bulk deleting completed tasks
+- **Modern CI/CD**: Pre-commit hooks and GitHub Actions for code quality
+
+### Configuration
+
+TARS supports custom configuration paths (default: `~/.unmanic`):
+
+```bash
+# Via CLI argument
+unmanic --unmanic_path /custom/path
+
+# Via environment variable
+export UNMANIC_PATH=/custom/path
+unmanic
+
+# Individual paths can also be set via environment variables:
+# config_path, log_path, plugins_path, userdata_path
+```
+
+Priority order: defaults → environment variables → CLI arguments (CLI wins)
+
+See [CHANGELOG.md](CHANGELOG.md) for version history.
+
+---
+
 Unmanic is a simple tool for optimising your file library. You can use it to convert your files into a single, uniform format, manage file movements based on timestamps, or execute custom commands against a file based on its file size.
 
 Simply configure Unmanic pointing it at your library and let it automatically manage that library for you.
