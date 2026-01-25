@@ -138,6 +138,37 @@ def remove_completed_tasks(completed_task_ids):
     return task_handler.delete_historic_tasks_recursively(id_list=completed_task_ids)
 
 
+def remove_all_completed_tasks(success_only=False):
+    """
+    Removes all completed tasks from history.
+
+    :param success_only: If True, only delete tasks that completed successfully.
+                         If False, delete all completed tasks.
+    :return: dict with count of deleted tasks
+    """
+    task_handler = history.History()
+
+    # Get all task IDs
+    all_tasks = task_handler.get_historic_task_list()
+
+    if not all_tasks:
+        return {"deleted_count": 0, "success": True}
+
+    # Filter by success status if requested
+    if success_only:
+        task_ids = [t.id for t in all_tasks if t.task_success]
+    else:
+        task_ids = [t.id for t in all_tasks]
+
+    if not task_ids:
+        return {"deleted_count": 0, "success": True}
+
+    # Delete the tasks
+    result = task_handler.delete_historic_tasks_recursively(id_list=task_ids)
+
+    return {"deleted_count": len(task_ids), "success": result}
+
+
 def add_historic_tasks_to_pending_tasks_list(historic_task_ids, library_id=None):
     """
     Adds a list of historical tasks to the pending tasks list.

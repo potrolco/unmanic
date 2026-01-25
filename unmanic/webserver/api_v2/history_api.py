@@ -65,6 +65,11 @@ class ApiHistoryHandler(BaseApiHandler):
             "call_method": "delete_completed_tasks",
         },
         {
+            "path_pattern": r"/history/tasks/all",
+            "supported_methods": ["DELETE"],
+            "call_method": "delete_all_completed_tasks",
+        },
+        {
             "path_pattern": r"/history/reprocess",
             "supported_methods": ["POST"],
             "call_method": "add_completed_tasks_to_pending_list",
@@ -216,6 +221,58 @@ class ApiHistoryHandler(BaseApiHandler):
                 return
 
             self.write_success()
+            return
+        except BaseApiError as bae:
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
+            return
+        except Exception as e:
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+            self.write_error()
+
+    async def delete_all_completed_tasks(self):
+        """
+        History - delete all
+        ---
+        description: Delete all completed tasks from history.
+        parameters:
+            - in: query
+              name: success_only
+              description: If true, only delete tasks that completed successfully
+              required: false
+              schema:
+                type: boolean
+                default: false
+        responses:
+            200:
+                description: 'Successful request; Returns count of deleted tasks'
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                success:
+                                    type: boolean
+                                deleted_count:
+                                    type: integer
+            500:
+                description: Internal error; Check `error` for exception
+                content:
+                    application/json:
+                        schema:
+                            InternalErrorSchema
+        """
+        try:
+            # Check for success_only query parameter
+            success_only = self.get_query_argument("success_only", "false").lower() == "true"
+
+            result = completed_tasks.remove_all_completed_tasks(success_only=success_only)
+
+            if not result.get("success"):
+                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to delete completed tasks")
+                self.write_error()
+                return
+
+            self.write(result)
             return
         except BaseApiError as bae:
             tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
