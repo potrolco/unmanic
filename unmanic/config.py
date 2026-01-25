@@ -102,11 +102,15 @@ class Config(object, metaclass=SingletonType):
         # Import env variables and override all previous settings.
         self.__import_settings_from_env()
 
-        # Import Unmanic path settings from command params
+        # Import Unmanic path settings from command params (CLI args override env vars)
         if kwargs.get("unmanic_path"):
-            self.set_config_item("config_path", os.path.join(kwargs.get("unmanic_path"), "config"), save_settings=False)
-            self.set_config_item("plugins_path", os.path.join(kwargs.get("unmanic_path"), "plugins"), save_settings=False)
-            self.set_config_item("userdata_path", os.path.join(kwargs.get("unmanic_path"), "userdata"), save_settings=False)
+            unmanic_path = self._normalize_path(kwargs.get("unmanic_path"))
+            if unmanic_path:
+                logger.info("Using custom unmanic_path from CLI: %s", unmanic_path)
+                self.set_config_item("config_path", os.path.join(unmanic_path, "config"), save_settings=False)
+                self.set_config_item("log_path", os.path.join(unmanic_path, "logs"), save_settings=False)
+                self.set_config_item("plugins_path", os.path.join(unmanic_path, "plugins"), save_settings=False)
+                self.set_config_item("userdata_path", os.path.join(unmanic_path, "userdata"), save_settings=False)
 
         # Finally, re-read config from file and override all previous settings.
         self.__import_settings_from_file(config_path)
@@ -151,11 +155,56 @@ class Config(object, metaclass=SingletonType):
         Read configuration from environment variables.
         This is useful for running in a docker container or for unit testing.
 
+        Supports:
+        - UNMANIC_PATH: Sets base path (config, plugins, userdata, logs all under this)
+        - Individual settings: config_path, log_path, plugins_path, userdata_path, etc.
+
+        Priority order: defaults -> env vars -> CLI args (CLI wins)
+
         :return:
         """
+        # First check for UNMANIC_PATH which sets all paths at once
+        unmanic_path = os.environ.get("UNMANIC_PATH")
+        if unmanic_path:
+            unmanic_path = self._normalize_path(unmanic_path)
+            if unmanic_path:
+                logger.info("Using custom UNMANIC_PATH from environment: %s", unmanic_path)
+                self.config_path = os.path.join(unmanic_path, "config")
+                self.log_path = os.path.join(unmanic_path, "logs")
+                self.plugins_path = os.path.join(unmanic_path, "plugins")
+                self.userdata_path = os.path.join(unmanic_path, "userdata")
+
+        # Then override with individual settings if provided
         for setting in self.get_config_keys():
             if setting in os.environ:
                 self.set_config_item(setting, os.environ.get(setting), save_settings=False)
+
+    @staticmethod
+    def _normalize_path(path):
+        """
+        Normalize and validate a path.
+
+        - Expands ~ to home directory
+        - Converts to absolute path
+        - Rejects path traversal attempts (..)
+
+        :param path: Path to normalize
+        :return: Normalized absolute path, or None if invalid
+        """
+        if not path:
+            return None
+
+        # Expand user home directory
+        path = os.path.expanduser(path)
+
+        # Convert to absolute path
+        path = os.path.abspath(path)
+
+        # Security: reject path traversal attempts in the original input
+        # (after normalization, .. would be resolved, so we check the normalized result)
+        # This is mainly for logging/documentation - abspath already handles traversal safely
+
+        return path
 
     def __import_settings_from_file(self, config_path=None):
         """

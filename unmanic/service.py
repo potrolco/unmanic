@@ -336,12 +336,15 @@ def main():
     parser.add_argument("--dev", action="store_true", help="Enable developer mode")
     parser.add_argument("--dev-api", nargs="?", help="Enable development against another unmanic support api")
     parser.add_argument("--port", nargs="?", help="Specify the port to run the webserver on")
-    # parser.add_argument('--unmanic_path', nargs='?',
-    #                    help='Specify the unmanic configuration path instead of ~/.unmanic')
+    parser.add_argument(
+        "--unmanic_path",
+        nargs="?",
+        help="Specify the unmanic configuration path instead of ~/.unmanic (can also use UNMANIC_PATH env var)",
+    )
     args = parser.parse_args()
 
     # Configure application from args
-    settings = config.Config(port=args.port, unmanic_path=None)
+    settings = config.Config(port=args.port, unmanic_path=args.unmanic_path)
 
     if args.manage_plugins:
         # Init the DB connection
