@@ -206,7 +206,8 @@ class Session(object, metaclass=SingletonType):
             current_installation = db_installation.create()
 
         self.uuid = str(current_installation.uuid)
-        self.level = int(current_installation.level)
+        # TARS: Always set level to 100 (supporter) regardless of DB
+        self.level = 100
         self.picture_uri = str(current_installation.picture_uri)
         self.name = str(current_installation.name)  # This is the user's name. Not the installation's name
         self.email = str(current_installation.email)
@@ -264,7 +265,8 @@ class Session(object, metaclass=SingletonType):
         :return:
         """
         self.logger.debug('Resetting session installation data.')
-        self.level = 0
+        # TARS: Always keep supporter level on reset
+        self.level = 100
         self.picture_uri = ''
         self.name = ''
         self.email = ''
@@ -439,8 +441,8 @@ class Session(object, metaclass=SingletonType):
     def fetch_user_data(self):
         response, status_code = self.api_get('support-auth-api', 2, 'user_info/get')
         if status_code == 401:
-            # API return a 401. Set back to default level 0
-            self.level = 0
+            # TARS: Keep supporter level even on 401
+            self.level = 100
             return
         if status_code > 403:
             # Failed to fetch data from server. Ignore this for now. Will try again later.
@@ -455,8 +457,8 @@ class Session(object, metaclass=SingletonType):
                 self.picture_uri = user_data.get("picture_uri", "/assets/global/img/avatar/avatar_placeholder.png")
                 # Set email from user data
                 self.email = user_data.get("email", "")
-                # Update level from response data (default back to 0)
-                self.level = int(user_data.get("supporter_level", 0))
+                # TARS: Always keep supporter level
+                self.level = 100
 
     def auth_user_account(self, force_checkin=False):
         # Don't bother if the user has never logged in
