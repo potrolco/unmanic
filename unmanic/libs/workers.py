@@ -41,8 +41,10 @@ from typing import Any, Callable, Dict, List, Optional, Union
 import psutil
 
 from unmanic.libs import common
+from unmanic.libs.health_check import HealthStatus, check_file_integrity, get_file_checksum
 from unmanic.libs.logs import UnmanicLogging
 from unmanic.libs.plugins import PluginsHandler
+from unmanic.libs.settings import UnmanicSettings
 
 
 class WorkerCommandError(Exception):
@@ -634,8 +636,32 @@ class Worker(threading.Thread):
         # Start current task stats
         self.__set_start_task_stats()
 
+        # Run pre-transcode health check (Phase 2)
+        pre_check_passed = self.__run_pre_transcode_health_check()
+        if not pre_check_passed:
+            # File failed pre-check and fail_on_corruption is enabled
+            self.logger.warning(
+                "Skipping job due to pre-transcode health check failure - %s", self.current_task.get_source_abspath()
+            )
+            self.current_task.set_success(False)
+            self.__set_finish_task_stats()
+            self.complete_queue.put(self.current_task)
+            self.__unset_current_task()
+            return
+
         # Process the file. Will return true if success, otherwise false
         success = self.__exec_worker_runners_on_set_task()
+
+        # Run post-transcode health check if processing succeeded (Phase 2)
+        if success:
+            output_path = self.current_task.get_cache_path()
+            if output_path and os.path.exists(output_path):
+                post_check_passed = self.__run_post_transcode_health_check(output_path)
+                if not post_check_passed:
+                    # Output file failed health check
+                    self.logger.error("Post-transcode health check failed - %s", output_path)
+                    success = False
+
         # Mark the task as either success or not
         self.current_task.set_success(success)
 
@@ -671,6 +697,101 @@ class Worker(threading.Thread):
 
         # Set the finish time in the statistics data
         self.current_task.task.finish_time = self.finish_time
+
+    def __run_pre_transcode_health_check(self) -> bool:
+        """
+        Run health check on source file before processing.
+
+        Returns:
+            True if file is healthy or check is disabled, False if corrupted
+        """
+        try:
+            settings = UnmanicSettings()
+            if not settings.enable_pre_transcode_health_check:
+                return True
+
+            source_path = self.current_task.get_source_abspath()
+            self._log(f"Running pre-transcode health check on: {source_path}", level="info")
+
+            result = check_file_integrity(
+                source_path,
+                timeout_seconds=settings.health_check_timeout_seconds,
+            )
+
+            # Store health check result in task
+            self.current_task.task.pre_health_check_status = result.status.value
+            self.current_task.task.pre_health_check_errors = result.errors
+
+            if result.status == HealthStatus.CORRUPTED:
+                self._log(
+                    f"Pre-transcode health check FAILED: {source_path}",
+                    message2=f"Errors: {result.errors}",
+                    level="warning",
+                )
+                if settings.fail_on_pre_check_corruption:
+                    return False
+            elif result.status == HealthStatus.WARNING:
+                self._log(
+                    f"Pre-transcode health check WARNING: {source_path}",
+                    message2=f"Warnings: {result.warnings}",
+                    level="warning",
+                )
+            else:
+                self._log(f"Pre-transcode health check PASSED: {source_path}", level="info")
+
+            return True
+
+        except Exception as e:
+            self._log("Error during pre-transcode health check", message2=str(e), level="exception")
+            return True  # Don't block on health check failures
+
+    def __run_post_transcode_health_check(self, output_path: str) -> bool:
+        """
+        Run health check on output file after processing.
+
+        Args:
+            output_path: Path to the transcoded output file
+
+        Returns:
+            True if file is healthy or check is disabled, False if corrupted
+        """
+        try:
+            settings = UnmanicSettings()
+            if not settings.enable_post_transcode_health_check:
+                return True
+
+            self._log(f"Running post-transcode health check on: {output_path}", level="info")
+
+            result = check_file_integrity(
+                output_path,
+                timeout_seconds=settings.health_check_timeout_seconds,
+            )
+
+            # Store health check result in task
+            self.current_task.task.post_health_check_status = result.status.value
+            self.current_task.task.post_health_check_errors = result.errors
+
+            if result.status == HealthStatus.CORRUPTED:
+                self._log(
+                    f"Post-transcode health check FAILED: {output_path}",
+                    message2=f"Errors: {result.errors}",
+                    level="error",
+                )
+                return False
+            elif result.status == HealthStatus.WARNING:
+                self._log(
+                    f"Post-transcode health check WARNING: {output_path}",
+                    message2=f"Warnings: {result.warnings}",
+                    level="warning",
+                )
+            else:
+                self._log(f"Post-transcode health check PASSED: {output_path}", level="info")
+
+            return True
+
+        except Exception as e:
+            self._log("Error during post-transcode health check", message2=str(e), level="exception")
+            return True  # Don't block on health check failures
 
     def __exec_worker_runners_on_set_task(self) -> bool:
         """
