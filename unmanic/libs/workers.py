@@ -36,6 +36,7 @@ import shutil
 import subprocess
 import threading
 import time
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import psutil
 
@@ -45,39 +46,49 @@ from unmanic.libs.plugins import PluginsHandler
 
 
 class WorkerCommandError(Exception):
-    def __init__(self, command):
+    """Exception raised when a worker command returns non-zero status."""
+
+    def __init__(self, command: Union[str, List[str]]) -> None:
         Exception.__init__(self, "Worker command returned non 0 status. Command: {}".format(command))
         self.command = command
 
 
 class WorkerSubprocessMonitor(threading.Thread):
-    def __init__(self, parent_worker):
+    """Thread that monitors and manages worker subprocesses."""
+
+    def __init__(self, parent_worker: "Worker") -> None:
         super().__init__(daemon=True)
         self.logger = UnmanicLogging.get_logger(name=__class__.__name__)
-        self._stop_event = threading.Event()
-        self._terminate_lock = threading.Lock()
+        self._stop_event: threading.Event = threading.Event()
+        self._terminate_lock: threading.Lock = threading.Lock()
 
-        self.parent_worker = parent_worker
-        self.event = parent_worker.event
-        self.redundant_flag = parent_worker.redundant_flag
-        self.paused_flag = parent_worker.paused_flag
-        self.paused = False
+        self.parent_worker: "Worker" = parent_worker
+        self.event: threading.Event = parent_worker.event
+        self.redundant_flag: threading.Event = parent_worker.redundant_flag
+        self.paused_flag: threading.Event = parent_worker.paused_flag
+        self.paused: bool = False
 
         # Set current subprocess to None
-        self.subprocess_pid = None
-        self.subprocess = None
-        self.subprocess_start_time = 0
-        self.subprocess_pause_time = 0
+        self.subprocess_pid: Optional[int] = None
+        self.subprocess: Optional[psutil.Process] = None
+        self.subprocess_start_time: float = 0
+        self.subprocess_pause_time: float = 0
 
         # Subprocess stats
-        self.subprocess_percent = 0
-        self.subprocess_elapsed = 0
-        self.subprocess_cpu_percent = 0
-        self.subprocess_mem_percent = 0
-        self.subprocess_rss_bytes = 0
-        self.subprocess_vms_bytes = 0
+        self.subprocess_percent: int = 0
+        self.subprocess_elapsed: int = 0
+        self.subprocess_cpu_percent: float = 0
+        self.subprocess_mem_percent: float = 0
+        self.subprocess_rss_bytes: int = 0
+        self.subprocess_vms_bytes: int = 0
 
-    def set_proc(self, pid):
+    def set_proc(self, pid: int) -> None:
+        """
+        Set the process to monitor.
+
+        Args:
+            pid: Process ID to monitor
+        """
         try:
             if pid != self.subprocess_pid:
                 self.subprocess_pid = pid
@@ -103,7 +114,8 @@ class WorkerSubprocessMonitor(threading.Thread):
             # Fallback: log and continue for daemon resilience
             self.logger.exception("Exception in set_proc()")
 
-    def unset_proc(self):
+    def unset_proc(self) -> None:
+        """Unset the current process and reset stats."""
         try:
             self.subprocess_pid = None
             self.subprocess = None
@@ -115,13 +127,25 @@ class WorkerSubprocessMonitor(threading.Thread):
         except Exception:
             self.logger.exception("Exception in unset_proc()")
 
-    def set_proc_resources_in_parent_worker(self, normalised_cpu_percent, rss_bytes, vms_bytes, mem_percent):
+    def set_proc_resources_in_parent_worker(
+        self, normalised_cpu_percent: float, rss_bytes: int, vms_bytes: int, mem_percent: float
+    ) -> None:
+        """
+        Set process resource stats.
+
+        Args:
+            normalised_cpu_percent: CPU usage normalized by CPU count
+            rss_bytes: Resident set size in bytes
+            vms_bytes: Virtual memory size in bytes
+            mem_percent: Memory usage percentage
+        """
         self.subprocess_cpu_percent = normalised_cpu_percent
         self.subprocess_rss_bytes = rss_bytes
         self.subprocess_vms_bytes = vms_bytes
         self.subprocess_mem_percent = mem_percent
 
-    def suspend_proc(self):
+    def suspend_proc(self) -> None:
+        """Suspend the process when the worker is paused, resume when unpaused."""
         # Stop the process if the worker is paused
         # Then resume it when the worker is resumed
         try:
@@ -171,7 +195,8 @@ class WorkerSubprocessMonitor(threading.Thread):
             # Fallback: log and continue for daemon resilience
             self.logger.exception("Exception in suspend_proc()")
 
-    def terminate_proc(self):
+    def terminate_proc(self) -> None:
+        """Terminate the current subprocess and its children."""
         with self._terminate_lock:
             try:
                 # If the process is still running, kill it
@@ -189,21 +214,23 @@ class WorkerSubprocessMonitor(threading.Thread):
                 # Fallback: log and continue for daemon resilience
                 self.logger.exception("Exception in terminate_proc()")
 
-    def __log_proc_terminated(self, proc: psutil.Process):
+    def __log_proc_terminated(self, proc: psutil.Process) -> None:
+        """Log when a process terminates."""
         try:
             self.logger.info("Process %s terminated with exit code %s", proc, proc.returncode)
         except Exception:
             self.logger.exception("Exception in __log_proc_terminated()")
 
-    def __terminate_proc_tree(self, proc: psutil.Process):
+    def __terminate_proc_tree(self, proc: psutil.Process) -> None:
         """
         Terminate the process tree (including grandchildren).
+
         Ensures any suspended processes are first resumed so that
-        terminate() will actually take effect.  Processes that
+        terminate() will actually take effect. Processes that
         fail to stop with terminate() within 3s will be killed.
 
-        :param proc:
-        :return:
+        Args:
+            proc: The parent process to terminate
         """
         try:
             # Build the full tree
@@ -244,7 +271,13 @@ class WorkerSubprocessMonitor(threading.Thread):
             # Fallback: log and continue for daemon resilience
             self.logger.exception("Exception in __terminate_proc_tree()")
 
-    def get_subprocess_elapsed(self):
+    def get_subprocess_elapsed(self) -> int:
+        """
+        Get the elapsed time of the subprocess (excluding pause time).
+
+        Returns:
+            Elapsed time in seconds
+        """
         try:
             subprocess_elapsed = 0
             if self.subprocess is not None:
@@ -260,7 +293,13 @@ class WorkerSubprocessMonitor(threading.Thread):
             self.logger.exception("Exception in get_subprocess_elapsed()")
             return 0
 
-    def get_subprocess_stats(self):
+    def get_subprocess_stats(self) -> Dict[str, Any]:
+        """
+        Get subprocess statistics.
+
+        Returns:
+            Dictionary with pid, percent, elapsed, cpu_percent, mem_percent, rss_bytes, vms_bytes
+        """
         try:
             return {
                 "pid": str(self.subprocess_pid),
@@ -284,19 +323,27 @@ class WorkerSubprocessMonitor(threading.Thread):
                 "vms_bytes": "0",
             }
 
-    def set_subprocess_start_time(self, proc_start_time):
+    def set_subprocess_start_time(self, proc_start_time: float) -> None:
+        """Set the subprocess start time."""
         try:
             self.subprocess_start_time = proc_start_time
         except Exception:
             self.logger.exception("Exception in set_subprocess_start_time()")
 
-    def set_subprocess_percent(self, percent):
+    def set_subprocess_percent(self, percent: int) -> None:
+        """Set the subprocess progress percentage."""
         try:
             self.subprocess_percent = percent
         except Exception:
             self.logger.exception("Exception in set_subprocess_percent()")
 
-    def default_progress_parser(self, line_text, pid=None, proc_start_time=None, unset=False):
+    def default_progress_parser(
+        self,
+        line_text: str,
+        pid: Optional[int] = None,
+        proc_start_time: Optional[float] = None,
+        unset: bool = False,
+    ) -> Dict[str, Any]:
         if unset:
             # Here we provide a plugin with the ability to unset a subprocess (indicating that it completed)
             self.unset_proc()
@@ -329,7 +376,8 @@ class WorkerSubprocessMonitor(threading.Thread):
                 "percent": str(self.subprocess_percent),
             }
 
-    def run(self):
+    def run(self) -> None:
+        """Main thread loop for monitoring subprocess resources."""
         # First fetch the number of CPUs for normalising the CPU percent
         cpu_count = psutil.cpu_count(logical=True)
         # Loop while thread is expected to be running
@@ -396,51 +444,64 @@ class WorkerSubprocessMonitor(threading.Thread):
 
         self.logger.info("Exiting WorkerMonitor loop")
 
-    def stop(self):
+    def stop(self) -> None:
+        """Stop the monitor thread."""
         self.terminate_proc()
         self._stop_event.set()
 
 
 class Worker(threading.Thread):
-    idle = True
-    paused = False
+    """Worker thread that processes transcoding tasks."""
 
-    current_task = None
-    worker_log = None
-    start_time = None
-    finish_time = None
+    idle: bool = True
+    paused: bool = False
 
-    worker_runners_info = {}
+    current_task: Any = None
+    worker_log: Optional[List[str]] = None
+    start_time: Optional[float] = None
+    finish_time: Optional[float] = None
 
-    def __init__(self, thread_id, name, worker_group_id, pending_queue, complete_queue, event):
+    worker_runners_info: Dict[str, Dict[str, Any]] = {}
+
+    def __init__(
+        self,
+        thread_id: int,
+        name: str,
+        worker_group_id: int,
+        pending_queue: "queue.Queue[Any]",
+        complete_queue: "queue.Queue[Any]",
+        event: threading.Event,
+    ) -> None:
         super(Worker, self).__init__(name=name)
-        self.thread_id = thread_id
-        self.name = name
-        self.worker_group_id = worker_group_id
-        self.event = event
+        self.thread_id: int = thread_id
+        self.name: str = name
+        self.worker_group_id: int = worker_group_id
+        self.event: threading.Event = event
 
-        self.current_task = None
-        self.current_command = ""
-        self.pending_queue = pending_queue
-        self.complete_queue = complete_queue
-        self.worker_subprocess_monitor = None
+        self.current_task: Any = None
+        self.current_command: str = ""
+        self.pending_queue: "queue.Queue[Any]" = pending_queue
+        self.complete_queue: "queue.Queue[Any]" = complete_queue
+        self.worker_subprocess_monitor: Optional[WorkerSubprocessMonitor] = None
 
         # Create 'redundancy' flag. When this is set, the worker should die
-        self.redundant_flag = threading.Event()
+        self.redundant_flag: threading.Event = threading.Event()
         self.redundant_flag.clear()
 
         # Create 'paused' flag. When this is set, the worker should be paused
-        self.paused_flag = threading.Event()
+        self.paused_flag: threading.Event = threading.Event()
         self.paused_flag.clear()
 
         # Create logger for this worker
         self.logger = UnmanicLogging.get_logger(name=__class__.__name__)
 
-    def _log(self, message, message2="", level="info"):
+    def _log(self, message: str, message2: str = "", level: str = "info") -> None:
+        """Log a message with optional second message."""
         message = common.format_message(message, message2)
         getattr(self.logger, level)(message)
 
-    def run(self):
+    def run(self) -> None:
+        """Main worker thread loop."""
         self.logger.info("Starting worker")
 
         # Create proc monitor
@@ -478,8 +539,13 @@ class Worker(threading.Thread):
         self.worker_subprocess_monitor.join()
         self.worker_subprocess_monitor = None
 
-    def set_task(self, new_task):
-        """Sets the given task to the worker class"""
+    def set_task(self, new_task: Any) -> None:
+        """
+        Set the given task for this worker.
+
+        Args:
+            new_task: Task object to process
+        """
         # Ensure only one task can be set for a worker
         if self.current_task:
             return
@@ -488,11 +554,12 @@ class Worker(threading.Thread):
         self.worker_log = []
         self.idle = False
 
-    def get_status(self):
+    def get_status(self) -> Dict[str, Any]:
         """
         Fetch the status of this worker.
 
-        :return:
+        Returns:
+            Dictionary with worker status information
         """
         subprocess_stats = None
         if self.worker_subprocess_monitor:
@@ -547,17 +614,14 @@ class Worker(threading.Thread):
                 self._log("Exception in runners info of worker {}:".format(self.name), message2=str(e), level="exception")
         return status
 
-    def __unset_current_task(self):
+    def __unset_current_task(self) -> None:
+        """Reset current task state."""
         self.current_task = None
         self.worker_runners_info = {}
         self.worker_log = []
 
-    def __process_task_queue_item(self):
-        """
-        Processes the set task.
-
-        :return:
-        """
+    def __process_task_queue_item(self) -> None:
+        """Process the set task."""
         # Mark worker as not idle now that it is processing a task
         self.idle = False
 
@@ -587,8 +651,8 @@ class Worker(threading.Thread):
         # Reset the current file info for the next task
         self.__unset_current_task()
 
-    def __set_start_task_stats(self):
-        """Sets the initial stats for the start of a task"""
+    def __set_start_task_stats(self) -> None:
+        """Set the initial stats for the start of a task."""
         # Set the start time to now
         self.start_time = time.time()
 
@@ -600,19 +664,20 @@ class Worker(threading.Thread):
         self.current_task.task.start_time = self.start_time
         self.current_task.task.finish_time = self.finish_time
 
-    def __set_finish_task_stats(self):
-        """Sets the final stats for the end of a task"""
+    def __set_finish_task_stats(self) -> None:
+        """Set the final stats for the end of a task."""
         # Set the finish time to now
         self.finish_time = time.time()
 
         # Set the finish time in the statistics data
         self.current_task.task.finish_time = self.finish_time
 
-    def __exec_worker_runners_on_set_task(self):
+    def __exec_worker_runners_on_set_task(self) -> bool:
         """
-        Executes the configured plugin runners against the set task.
+        Execute the configured plugin runners against the set task.
 
-        :return:
+        Returns:
+            True if all runners succeeded, False otherwise
         """
         # Init plugins
         library_id = self.current_task.get_task_library_id()
@@ -920,13 +985,17 @@ class Worker(threading.Thread):
             self._log("Failed to process task for file '{}'".format(original_abspath), level="warning")
         return overall_success
 
-    def __exec_command_subprocess(self, data):
+    def __exec_command_subprocess(self, data: Dict[str, Any]) -> bool:
         """
-        Executes a command as a shell subprocess.
+        Execute a command as a shell subprocess.
+
         Uses the given parser to record progress data from the shell STDOUT.
 
-        :param data:
-        :return:
+        Args:
+            data: Dictionary with exec_command, file_in, file_out, etc.
+
+        Returns:
+            True if command succeeded (exit code 0), False otherwise
         """
         # Fetch command to execute.
         exec_command = data.get("exec_command", [])
