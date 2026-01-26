@@ -741,5 +741,1236 @@ class TestWorkerSubprocessMonitorGetElapsed(unittest.TestCase):
         self.assertEqual(result, 100)  # 1000 - 900 = 100 seconds
 
 
+class TestWorkerSubprocessMonitorSetProc(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor set_proc method."""
+
+    @patch("unmanic.libs.workers.psutil.Process")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_set_proc_new_process(self, mock_logging, mock_psutil_process):
+        """Test set_proc sets a new process to monitor."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_process = MagicMock()
+        mock_psutil_process.return_value = mock_process
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+
+        monitor.set_proc(12345)
+
+        self.assertEqual(monitor.subprocess_pid, 12345)
+        self.assertEqual(monitor.subprocess, mock_process)
+        self.assertEqual(monitor.subprocess_percent, 0)
+
+    @patch("unmanic.libs.workers.psutil.Process")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_set_proc_same_pid_no_change(self, mock_logging, mock_psutil_process):
+        """Test set_proc with same pid doesn't recreate process."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+        existing_process = MagicMock()
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess_pid = 12345
+        monitor.subprocess = existing_process
+
+        monitor.set_proc(12345)
+
+        # psutil.Process should not be called since pid is same
+        mock_psutil_process.assert_not_called()
+        self.assertEqual(monitor.subprocess, existing_process)
+
+    @patch("unmanic.libs.workers.psutil.Process")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_set_proc_terminates_on_redundant(self, mock_logging, mock_psutil_process):
+        """Test set_proc terminates process if redundant flag set."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_process = MagicMock()
+        mock_psutil_process.return_value = mock_process
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.redundant_flag.set()  # Set redundant flag
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+
+        with patch.object(monitor, "terminate_proc") as mock_terminate:
+            monitor.set_proc(12345)
+            mock_terminate.assert_called_once()
+
+    @patch("unmanic.libs.workers.psutil.Process")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_set_proc_no_such_process(self, mock_logging, mock_psutil_process):
+        """Test set_proc handles NoSuchProcess exception."""
+        import psutil
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_psutil_process.side_effect = psutil.NoSuchProcess(12345)
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+
+        # Should not raise exception
+        monitor.set_proc(12345)
+
+        # Process should not be set
+        self.assertIsNone(monitor.subprocess)
+
+
+class TestWorkerSubprocessMonitorTerminateProc(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor terminate_proc method."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_terminate_proc_no_subprocess(self, mock_logging):
+        """Test terminate_proc does nothing when no subprocess."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess = None
+
+        # Should not raise exception
+        monitor.terminate_proc()
+
+    @patch("unmanic.libs.workers.psutil.wait_procs")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_terminate_proc_kills_process_tree(self, mock_logging, mock_wait_procs):
+        """Test terminate_proc terminates process and children."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_wait_procs.return_value = ([], [])  # All gone
+
+        mock_subprocess = MagicMock()
+        mock_child = MagicMock()
+        mock_subprocess.children.return_value = [mock_child]
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess = mock_subprocess
+        monitor.subprocess_pid = 12345
+
+        monitor.terminate_proc()
+
+        # Both parent and child should have terminate called
+        mock_subprocess.terminate.assert_called_once()
+        mock_child.terminate.assert_called_once()
+
+    @patch("unmanic.libs.workers.psutil.wait_procs")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_terminate_proc_kills_stubborn_procs(self, mock_logging, mock_wait_procs):
+        """Test terminate_proc force kills processes that don't terminate."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_subprocess = MagicMock()
+        mock_subprocess.children.return_value = []
+        stubborn_proc = MagicMock()
+        mock_wait_procs.side_effect = [
+            ([], [stubborn_proc]),  # First call: stubborn_proc still alive
+            ([stubborn_proc], []),  # Second call: all gone after kill
+        ]
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess = mock_subprocess
+        monitor.subprocess_pid = 12345
+
+        monitor.terminate_proc()
+
+        # Stubborn proc should be killed
+        stubborn_proc.kill.assert_called_once()
+
+
+class TestWorkerSubprocessMonitorSetProcResources(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor set_proc_resources_in_parent_worker."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_set_proc_resources(self, mock_logging):
+        """Test set_proc_resources_in_parent_worker sets all values."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+
+        monitor.set_proc_resources_in_parent_worker(50.0, 1024000, 2048000, 25.5)
+
+        self.assertEqual(monitor.subprocess_cpu_percent, 50.0)
+        self.assertEqual(monitor.subprocess_rss_bytes, 1024000)
+        self.assertEqual(monitor.subprocess_vms_bytes, 2048000)
+        self.assertEqual(monitor.subprocess_mem_percent, 25.5)
+
+
+class TestWorkerLogTail(unittest.TestCase):
+    """Tests for Worker get_status worker_log_tail."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_get_status_short_log(self, mock_logging):
+        """Test get_status returns full log when under 20 entries."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+        worker.worker_subprocess_monitor = None
+
+        mock_task = MagicMock()
+        mock_task.get_task_id.return_value = 1
+        mock_task.get_source_basename.return_value = "test.mkv"
+        worker.current_task = mock_task
+        worker.worker_log = ["line1", "line2", "line3"]
+
+        status = worker.get_status()
+
+        self.assertEqual(status["worker_log_tail"], ["line1", "line2", "line3"])
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_get_status_long_log_truncated(self, mock_logging):
+        """Test get_status truncates log when over 20 entries."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+        worker.worker_subprocess_monitor = None
+
+        mock_task = MagicMock()
+        mock_task.get_task_id.return_value = 1
+        mock_task.get_source_basename.return_value = "test.mkv"
+        worker.current_task = mock_task
+        # Create 25 log entries
+        worker.worker_log = [f"line{i}" for i in range(25)]
+
+        status = worker.get_status()
+
+        # Should get last 19 entries
+        self.assertEqual(len(status["worker_log_tail"]), 19)
+        self.assertEqual(status["worker_log_tail"][0], "line6")  # 25 - 19 = 6
+
+
+class TestWorkerRunnersInfo(unittest.TestCase):
+    """Tests for Worker runners_info in get_status."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_get_status_includes_runners_info(self, mock_logging):
+        """Test get_status includes worker_runners_info."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+        worker.worker_subprocess_monitor = None
+
+        mock_task = MagicMock()
+        mock_task.get_task_id.return_value = 1
+        mock_task.get_source_basename.return_value = "test.mkv"
+        worker.current_task = mock_task
+        worker.worker_log = []
+        worker.worker_runners_info = {"plugin1": {"status": "running"}}
+
+        status = worker.get_status()
+
+        self.assertEqual(status["runners_info"], {"plugin1": {"status": "running"}})
+
+
+class TestWorkerGetCurrentGPU(unittest.TestCase):
+    """Tests for Worker.get_current_gpu method."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_get_current_gpu_method_exists(self, mock_logging):
+        """Test Worker has get_current_gpu method."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        # Method should exist
+        self.assertTrue(hasattr(worker, "get_current_gpu"))
+        self.assertIsNone(worker.get_current_gpu())
+
+
+class TestWorkerHealthCheck(unittest.TestCase):
+    """Tests for Worker health check methods."""
+
+    @patch("unmanic.libs.workers.check_file_integrity")
+    @patch("unmanic.libs.workers.UnmanicSettings")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_run_pre_transcode_health_check_disabled(self, mock_logging, mock_settings_class, mock_check):
+        """Test pre-transcode health check when disabled."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_settings = MagicMock()
+        mock_settings.enable_pre_transcode_health_check = False
+        mock_settings_class.return_value = mock_settings
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        mock_task = MagicMock()
+        mock_task.get_source_abspath.return_value = "/path/to/file.mkv"
+        worker.current_task = mock_task
+
+        # Call private method
+        result = worker._Worker__run_pre_transcode_health_check()
+
+        self.assertTrue(result)
+        mock_check.assert_not_called()
+
+    @patch("unmanic.libs.workers.check_file_integrity")
+    @patch("unmanic.libs.workers.UnmanicSettings")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_run_pre_transcode_health_check_healthy(self, mock_logging, mock_settings_class, mock_check):
+        """Test pre-transcode health check passes for healthy file."""
+        from unmanic.libs.workers import Worker
+        from unmanic.libs.health_check import HealthStatus
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_settings = MagicMock()
+        mock_settings.enable_pre_transcode_health_check = True
+        mock_settings.health_check_timeout_seconds = 30
+        mock_settings_class.return_value = mock_settings
+
+        mock_result = MagicMock()
+        mock_result.status = HealthStatus.HEALTHY
+        mock_check.return_value = mock_result
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        mock_task = MagicMock()
+        mock_task.get_source_abspath.return_value = "/path/to/file.mkv"
+        worker.current_task = mock_task
+
+        result = worker._Worker__run_pre_transcode_health_check()
+
+        self.assertTrue(result)
+        mock_check.assert_called_once()
+
+    @patch("unmanic.libs.workers.check_file_integrity")
+    @patch("unmanic.libs.workers.UnmanicSettings")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_run_pre_transcode_health_check_corrupted_fail_on(self, mock_logging, mock_settings_class, mock_check):
+        """Test pre-transcode health check fails for corrupted file when fail_on enabled."""
+        from unmanic.libs.workers import Worker
+        from unmanic.libs.health_check import HealthStatus
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_settings = MagicMock()
+        mock_settings.enable_pre_transcode_health_check = True
+        mock_settings.health_check_timeout_seconds = 30
+        mock_settings.fail_on_pre_check_corruption = True
+        mock_settings_class.return_value = mock_settings
+
+        mock_result = MagicMock()
+        mock_result.status = HealthStatus.CORRUPTED
+        mock_result.errors = ["File is corrupted"]
+        mock_check.return_value = mock_result
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        mock_task = MagicMock()
+        mock_task.get_source_abspath.return_value = "/path/to/file.mkv"
+        mock_task.task = MagicMock()
+        worker.current_task = mock_task
+
+        result = worker._Worker__run_pre_transcode_health_check()
+
+        self.assertFalse(result)
+
+    @patch("unmanic.libs.workers.check_file_integrity")
+    @patch("unmanic.libs.workers.UnmanicSettings")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_run_pre_transcode_health_check_warning(self, mock_logging, mock_settings_class, mock_check):
+        """Test pre-transcode health check continues on warning."""
+        from unmanic.libs.workers import Worker
+        from unmanic.libs.health_check import HealthStatus
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_settings = MagicMock()
+        mock_settings.enable_pre_transcode_health_check = True
+        mock_settings.health_check_timeout_seconds = 30
+        mock_settings_class.return_value = mock_settings
+
+        mock_result = MagicMock()
+        mock_result.status = HealthStatus.WARNING
+        mock_result.warnings = ["Minor issue detected"]
+        mock_check.return_value = mock_result
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        mock_task = MagicMock()
+        mock_task.get_source_abspath.return_value = "/path/to/file.mkv"
+        mock_task.task = MagicMock()
+        worker.current_task = mock_task
+
+        result = worker._Worker__run_pre_transcode_health_check()
+
+        self.assertTrue(result)  # Warning doesn't fail the check
+
+    @patch("unmanic.libs.workers.UnmanicSettings")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_run_pre_transcode_health_check_exception(self, mock_logging, mock_settings_class):
+        """Test pre-transcode health check handles exceptions gracefully."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_settings_class.side_effect = Exception("Settings error")
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        mock_task = MagicMock()
+        worker.current_task = mock_task
+
+        result = worker._Worker__run_pre_transcode_health_check()
+
+        # Should return True (don't block) even on exception
+        self.assertTrue(result)
+
+
+class TestWorkerPostHealthCheck(unittest.TestCase):
+    """Tests for Worker post-transcode health check."""
+
+    @patch("unmanic.libs.workers.check_file_integrity")
+    @patch("unmanic.libs.workers.UnmanicSettings")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_run_post_transcode_health_check_disabled(self, mock_logging, mock_settings_class, mock_check):
+        """Test post-transcode health check when disabled."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_settings = MagicMock()
+        mock_settings.enable_post_transcode_health_check = False
+        mock_settings_class.return_value = mock_settings
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        result = worker._Worker__run_post_transcode_health_check("/output/file.mkv")
+
+        self.assertTrue(result)
+        mock_check.assert_not_called()
+
+    @patch("unmanic.libs.workers.check_file_integrity")
+    @patch("unmanic.libs.workers.UnmanicSettings")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_run_post_transcode_health_check_corrupted(self, mock_logging, mock_settings_class, mock_check):
+        """Test post-transcode health check fails for corrupted output."""
+        from unmanic.libs.workers import Worker
+        from unmanic.libs.health_check import HealthStatus
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_settings = MagicMock()
+        mock_settings.enable_post_transcode_health_check = True
+        mock_settings.health_check_timeout_seconds = 30
+        mock_settings_class.return_value = mock_settings
+
+        mock_result = MagicMock()
+        mock_result.status = HealthStatus.CORRUPTED
+        mock_result.errors = ["Output file corrupted"]
+        mock_check.return_value = mock_result
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        mock_task = MagicMock()
+        mock_task.task = MagicMock()
+        worker.current_task = mock_task
+
+        result = worker._Worker__run_post_transcode_health_check("/output/file.mkv")
+
+        self.assertFalse(result)
+
+
+class TestWorkerGPUAllocation(unittest.TestCase):
+    """Tests for Worker GPU allocation methods."""
+
+    @patch("unmanic.libs.workers.get_gpu_manager")
+    @patch("unmanic.libs.workers.UnmanicSettings")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_acquire_gpu_disabled(self, mock_logging, mock_settings_class, mock_get_manager):
+        """Test GPU acquisition when GPU is disabled."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_settings = MagicMock()
+        mock_settings.gpu_enabled = False
+        mock_settings_class.return_value = mock_settings
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        worker._Worker__acquire_gpu()
+
+        self.assertIsNone(worker.current_gpu)
+        mock_get_manager.assert_not_called()
+
+    @patch("unmanic.libs.workers.get_gpu_manager")
+    @patch("unmanic.libs.workers.UnmanicSettings")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_acquire_gpu_success(self, mock_logging, mock_settings_class, mock_get_manager):
+        """Test successful GPU acquisition."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_settings = MagicMock()
+        mock_settings.gpu_enabled = True
+        mock_settings.max_workers_per_gpu = 2
+        mock_settings.gpu_assignment_strategy = "round_robin"
+        mock_settings_class.return_value = mock_settings
+
+        mock_gpu = MagicMock()
+        mock_gpu.device_id = "0"
+        mock_gpu.display_name = "NVIDIA GPU 0"
+
+        mock_manager = MagicMock()
+        mock_manager.allocate.return_value = mock_gpu
+        mock_get_manager.return_value = mock_manager
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        worker._Worker__acquire_gpu()
+
+        self.assertEqual(worker.current_gpu, mock_gpu)
+        mock_manager.allocate.assert_called_once_with("Worker-1")
+
+    @patch("unmanic.libs.workers.get_gpu_manager")
+    @patch("unmanic.libs.workers.UnmanicSettings")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_acquire_gpu_no_available(self, mock_logging, mock_settings_class, mock_get_manager):
+        """Test GPU acquisition when no GPUs available."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_settings = MagicMock()
+        mock_settings.gpu_enabled = True
+        mock_settings.max_workers_per_gpu = 2
+        mock_settings.gpu_assignment_strategy = "round_robin"
+        mock_settings_class.return_value = mock_settings
+
+        mock_manager = MagicMock()
+        mock_manager.allocate.return_value = None
+        mock_get_manager.return_value = mock_manager
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        worker._Worker__acquire_gpu()
+
+        self.assertIsNone(worker.current_gpu)
+
+    @patch("unmanic.libs.workers.get_gpu_manager")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_release_gpu_no_gpu(self, mock_logging, mock_get_manager):
+        """Test GPU release when no GPU was allocated."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+        worker.current_gpu = None
+
+        worker._Worker__release_gpu()
+
+        mock_get_manager.assert_not_called()
+
+    @patch("unmanic.libs.workers.get_gpu_manager")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_release_gpu_success(self, mock_logging, mock_get_manager):
+        """Test successful GPU release."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_gpu = MagicMock()
+        mock_gpu.display_name = "NVIDIA GPU 0"
+
+        mock_manager = MagicMock()
+        mock_manager.release.return_value = True
+        mock_get_manager.return_value = mock_manager
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+        worker.current_gpu = mock_gpu
+
+        worker._Worker__release_gpu()
+
+        self.assertIsNone(worker.current_gpu)
+        mock_manager.release.assert_called_once_with("Worker-1")
+
+
+class TestWorkerTaskStats(unittest.TestCase):
+    """Tests for Worker task statistics methods."""
+
+    @patch("unmanic.libs.workers.time.time")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_set_start_task_stats(self, mock_logging, mock_time):
+        """Test __set_start_task_stats sets initial values."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_time.return_value = 1234567890.0
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        mock_task = MagicMock()
+        mock_task.task = MagicMock()
+        worker.current_task = mock_task
+
+        worker._Worker__set_start_task_stats()
+
+        self.assertEqual(worker.start_time, 1234567890.0)
+        self.assertIsNone(worker.finish_time)
+        self.assertEqual(mock_task.task.processed_by_worker, "Worker-1")
+        self.assertEqual(mock_task.task.start_time, 1234567890.0)
+
+    @patch("unmanic.libs.workers.time.time")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_set_finish_task_stats(self, mock_logging, mock_time):
+        """Test __set_finish_task_stats sets final values."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_time.return_value = 1234567990.0  # 100 seconds after start
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        mock_task = MagicMock()
+        mock_task.task = MagicMock()
+        worker.current_task = mock_task
+        worker.start_time = 1234567890.0
+
+        worker._Worker__set_finish_task_stats()
+
+        self.assertEqual(worker.finish_time, 1234567990.0)
+        self.assertEqual(mock_task.task.finish_time, 1234567990.0)
+
+
+class TestWorkerUnsetCurrentTask(unittest.TestCase):
+    """Tests for Worker __unset_current_task method."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_unset_current_task_clears_state(self, mock_logging):
+        """Test __unset_current_task clears all task-related state."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        # Set up state
+        worker.current_task = MagicMock()
+        worker.worker_runners_info = {"plugin1": {"status": "done"}}
+        worker.worker_log = ["log entry 1", "log entry 2"]
+        worker.current_gpu = MagicMock()
+
+        worker._Worker__unset_current_task()
+
+        self.assertIsNone(worker.current_task)
+        self.assertEqual(worker.worker_runners_info, {})
+        self.assertEqual(worker.worker_log, [])
+        self.assertIsNone(worker.current_gpu)
+
+
+class TestWorkerGetStatusExceptions(unittest.TestCase):
+    """Tests for Worker get_status exception handling."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_get_status_task_id_exception(self, mock_logging):
+        """Test get_status handles exception when getting task ID."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+        worker.worker_subprocess_monitor = None
+
+        mock_task = MagicMock()
+        mock_task.get_task_id.side_effect = Exception("Task ID error")
+        mock_task.get_source_basename.return_value = "test.mkv"
+        worker.current_task = mock_task
+        worker.worker_log = []
+
+        status = worker.get_status()
+
+        # Should not crash, current_task should be None in status
+        self.assertIsNone(status["current_task"])
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_get_status_source_basename_exception(self, mock_logging):
+        """Test get_status handles exception when getting source basename."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+        worker.worker_subprocess_monitor = None
+
+        mock_task = MagicMock()
+        mock_task.get_task_id.return_value = 123
+        mock_task.get_source_basename.side_effect = Exception("Basename error")
+        worker.current_task = mock_task
+        worker.worker_log = []
+
+        status = worker.get_status()
+
+        # Should not crash
+        self.assertEqual(status["current_task"], 123)
+        self.assertEqual(status["current_file"], "")
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_get_status_log_tail_exception(self, mock_logging):
+        """Test get_status handles exception when getting log tail."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+        worker.worker_subprocess_monitor = None
+
+        mock_task = MagicMock()
+        mock_task.get_task_id.return_value = 123
+        mock_task.get_source_basename.return_value = "test.mkv"
+        worker.current_task = mock_task
+
+        # Create a mock that raises exception when sliced
+        mock_log = MagicMock()
+        mock_log.__len__ = MagicMock(side_effect=Exception("Log error"))
+        worker.worker_log = mock_log
+
+        status = worker.get_status()
+
+        # Should not crash
+        self.assertEqual(status["current_task"], 123)
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_get_status_runners_info_exception(self, mock_logging):
+        """Test get_status handles exception when getting runners info."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+        worker.worker_subprocess_monitor = None
+
+        mock_task = MagicMock()
+        mock_task.get_task_id.return_value = 123
+        mock_task.get_source_basename.return_value = "test.mkv"
+        worker.current_task = mock_task
+        worker.worker_log = []
+
+        # Mock worker_runners_info to raise exception
+        class BrokenDict:
+            def __getitem__(self, key):
+                raise Exception("Runners error")
+
+        worker.worker_runners_info = BrokenDict()
+
+        # Should not crash
+        status = worker.get_status()
+        self.assertEqual(status["current_task"], 123)
+
+
+class TestWorkerPostHealthCheckPaths(unittest.TestCase):
+    """Tests for Worker post-transcode health check additional paths."""
+
+    @patch("unmanic.libs.workers.check_file_integrity")
+    @patch("unmanic.libs.workers.UnmanicSettings")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_run_post_transcode_health_check_healthy(self, mock_logging, mock_settings_class, mock_check):
+        """Test post-transcode health check passes for healthy file."""
+        from unmanic.libs.workers import Worker
+        from unmanic.libs.health_check import HealthStatus
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_settings = MagicMock()
+        mock_settings.enable_post_transcode_health_check = True
+        mock_settings.health_check_timeout_seconds = 30
+        mock_settings_class.return_value = mock_settings
+
+        mock_result = MagicMock()
+        mock_result.status = HealthStatus.HEALTHY
+        mock_check.return_value = mock_result
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        mock_task = MagicMock()
+        mock_task.task = MagicMock()
+        worker.current_task = mock_task
+
+        result = worker._Worker__run_post_transcode_health_check("/output/file.mkv")
+
+        self.assertTrue(result)
+
+    @patch("unmanic.libs.workers.check_file_integrity")
+    @patch("unmanic.libs.workers.UnmanicSettings")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_run_post_transcode_health_check_warning(self, mock_logging, mock_settings_class, mock_check):
+        """Test post-transcode health check continues on warning."""
+        from unmanic.libs.workers import Worker
+        from unmanic.libs.health_check import HealthStatus
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_settings = MagicMock()
+        mock_settings.enable_post_transcode_health_check = True
+        mock_settings.health_check_timeout_seconds = 30
+        mock_settings_class.return_value = mock_settings
+
+        mock_result = MagicMock()
+        mock_result.status = HealthStatus.WARNING
+        mock_result.warnings = ["Minor issue detected"]
+        mock_check.return_value = mock_result
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        mock_task = MagicMock()
+        mock_task.task = MagicMock()
+        worker.current_task = mock_task
+
+        result = worker._Worker__run_post_transcode_health_check("/output/file.mkv")
+
+        self.assertTrue(result)  # Warning doesn't fail the check
+
+    @patch("unmanic.libs.workers.UnmanicSettings")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_run_post_transcode_health_check_exception(self, mock_logging, mock_settings_class):
+        """Test post-transcode health check handles exceptions gracefully."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_settings_class.side_effect = Exception("Settings error")
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        result = worker._Worker__run_post_transcode_health_check("/output/file.mkv")
+
+        # Should return True (don't block) even on exception
+        self.assertTrue(result)
+
+
+class TestWorkerGPUAcquireStrategies(unittest.TestCase):
+    """Tests for Worker GPU acquisition with different strategies."""
+
+    @patch("unmanic.libs.workers.get_gpu_manager")
+    @patch("unmanic.libs.workers.UnmanicSettings")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_acquire_gpu_least_used_strategy(self, mock_logging, mock_settings_class, mock_get_manager):
+        """Test GPU acquisition with least_used strategy."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_settings = MagicMock()
+        mock_settings.gpu_enabled = True
+        mock_settings.max_workers_per_gpu = 2
+        mock_settings.gpu_assignment_strategy = "least_used"
+        mock_settings_class.return_value = mock_settings
+
+        mock_gpu = MagicMock()
+        mock_manager = MagicMock()
+        mock_manager.allocate.return_value = mock_gpu
+        mock_get_manager.return_value = mock_manager
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        worker._Worker__acquire_gpu()
+
+        # Verify strategy was set
+        mock_manager.set_strategy.assert_called_once()
+
+    @patch("unmanic.libs.workers.get_gpu_manager")
+    @patch("unmanic.libs.workers.UnmanicSettings")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_acquire_gpu_manual_strategy(self, mock_logging, mock_settings_class, mock_get_manager):
+        """Test GPU acquisition with manual strategy."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_settings = MagicMock()
+        mock_settings.gpu_enabled = True
+        mock_settings.max_workers_per_gpu = 2
+        mock_settings.gpu_assignment_strategy = "manual"
+        mock_settings_class.return_value = mock_settings
+
+        mock_gpu = MagicMock()
+        mock_manager = MagicMock()
+        mock_manager.allocate.return_value = mock_gpu
+        mock_get_manager.return_value = mock_manager
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        worker._Worker__acquire_gpu()
+
+        mock_manager.set_strategy.assert_called_once()
+
+    @patch("unmanic.libs.workers.get_gpu_manager")
+    @patch("unmanic.libs.workers.UnmanicSettings")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_acquire_gpu_exception(self, mock_logging, mock_settings_class, mock_get_manager):
+        """Test GPU acquisition handles exceptions."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_settings = MagicMock()
+        mock_settings.gpu_enabled = True
+        mock_settings_class.return_value = mock_settings
+
+        mock_get_manager.side_effect = Exception("GPU manager error")
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        worker._Worker__acquire_gpu()
+
+        self.assertIsNone(worker.current_gpu)
+
+    @patch("unmanic.libs.workers.get_gpu_manager")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_release_gpu_exception(self, mock_logging, mock_get_manager):
+        """Test GPU release handles exceptions."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_gpu = MagicMock()
+        mock_manager = MagicMock()
+        mock_manager.release.side_effect = Exception("Release error")
+        mock_get_manager.return_value = mock_manager
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+        worker.current_gpu = mock_gpu
+
+        worker._Worker__release_gpu()
+
+        # Should clear GPU even on exception
+        self.assertIsNone(worker.current_gpu)
+
+
+class TestWorkerSubprocessMonitorException(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor exception handling in various methods."""
+
+    @patch("unmanic.libs.workers.psutil.Process")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_set_proc_access_denied(self, mock_logging, mock_psutil_process):
+        """Test set_proc handles AccessDenied exception."""
+        import psutil
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_psutil_process.side_effect = psutil.AccessDenied(12345)
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+
+        # Should not raise
+        monitor.set_proc(12345)
+        self.assertIsNone(monitor.subprocess)
+
+    @patch("unmanic.libs.workers.psutil.wait_procs")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_terminate_proc_access_denied(self, mock_logging, mock_wait_procs):
+        """Test terminate_proc handles AccessDenied on child termination."""
+        import psutil
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_wait_procs.return_value = ([], [])
+
+        mock_subprocess = MagicMock()
+        mock_child = MagicMock()
+        mock_child.terminate.side_effect = psutil.NoSuchProcess(12346)
+        mock_subprocess.children.return_value = [mock_child]
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess = mock_subprocess
+        monitor.subprocess_pid = 12345
+
+        # Should not raise
+        monitor.terminate_proc()
+
+
+class TestWorkerGetSubprocessStatsException(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor get_subprocess_stats exception handling."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_get_subprocess_stats_exception_returns_default(self, mock_logging):
+        """Test get_subprocess_stats returns defaults on exception."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+
+        # Force an exception by making get_subprocess_elapsed fail
+        original_method = monitor.get_subprocess_elapsed
+        monitor.get_subprocess_elapsed = MagicMock(side_effect=Exception("Test error"))
+
+        stats = monitor.get_subprocess_stats()
+
+        # Should return default values
+        self.assertEqual(stats["pid"], "0")
+        self.assertEqual(stats["percent"], "0")
+
+        # Restore
+        monitor.get_subprocess_elapsed = original_method
+
+
 if __name__ == "__main__":
     unittest.main()
