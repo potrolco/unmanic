@@ -264,3 +264,264 @@ class TestTaskDataStoreThreadSafety:
         for task_id in range(10):
             state = TaskDataStore.export_task_state(task_id)
             assert len(state) == 100
+
+
+class TestTaskClass:
+    """Tests for the Task class."""
+
+    def create_mock_task_model(self):
+        """Create a mock Tasks model instance."""
+        mock_task = MagicMock()
+        mock_task.id = 1
+        mock_task.type = "local"
+        mock_task.library_id = 1
+        mock_task.status = "pending"
+        mock_task.abspath = "/media/movies/test.mkv"
+        mock_task.priority = 100
+        mock_task.success = False
+        mock_task.cache_path = ""
+        mock_task.destination_abspath = ""
+        mock_task.destination_basename = ""
+        mock_task.start_time = 0
+        mock_task.finish_time = 0
+        return mock_task
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_init(self, mock_logging, mock_config):
+        """Test Task initialization."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+
+        assert task.task is None
+        assert task.task_dict is None
+        assert task.errors == []
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_task_type(self, mock_logging, mock_config):
+        """Test Task.get_task_type returns correct type."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+        task.task.type = "remote"
+
+        assert task.get_task_type() == "remote"
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_task_library_id(self, mock_logging, mock_config):
+        """Test Task.get_task_library_id returns library ID."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+        task.task.library_id = 42
+
+        assert task.get_task_library_id() == 42
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_source_abspath(self, mock_logging, mock_config):
+        """Test Task.get_source_abspath returns full path."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+        task.task.abspath = "/media/movies/my file.mkv"
+
+        assert task.get_source_abspath() == "/media/movies/my file.mkv"
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_source_basename(self, mock_logging, mock_config):
+        """Test Task.get_source_basename returns file name."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+        task.task.abspath = "/media/movies/my file.mkv"
+
+        assert task.get_source_basename() == "my file.mkv"
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_task_success_default(self, mock_logging, mock_config):
+        """Test Task.get_task_success returns False by default."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+        task.task.success = False
+
+        assert task.get_task_success() is False
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_set_success(self, mock_logging, mock_config):
+        """Test Task.set_success updates success flag."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+
+        task.set_success(True)
+
+        assert task.task.success is True
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_destination_data(self, mock_logging, mock_config):
+        """Test Task.get_destination_data returns destination info based on source and cache."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+        task.task.abspath = "/media/movies/test.mkv"
+        task.task.cache_path = "/tmp/cache/test-abc123.mp4"  # .mp4 extension
+
+        dest = task.get_destination_data()
+
+        # Destination should use source dir + source filename + cache extension
+        assert dest["basename"] == "test.mp4"  # Original name with new extension
+        assert dest["abspath"].endswith("/test.mp4")
+        assert "/media/movies/" in dest["abspath"]
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_task_id(self, mock_logging, mock_config):
+        """Test Task.get_task_id returns task ID."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+        task.task.id = 123
+
+        assert task.get_task_id() == 123
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_cache_path(self, mock_logging, mock_config):
+        """Test Task.get_cache_path returns cache path."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+        task.task.cache_path = "/tmp/cache/test-123.mkv"
+
+        assert task.get_cache_path() == "/tmp/cache/test-123.mkv"
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_start_time(self, mock_logging, mock_config):
+        """Test Task.get_start_time returns start time."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+        task.task.start_time = 1234567890.0
+
+        assert task.get_start_time() == 1234567890.0
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_finish_time(self, mock_logging, mock_config):
+        """Test Task.get_finish_time returns finish time."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+        task.task.finish_time = 1234567899.0
+
+        assert task.get_finish_time() == 1234567899.0
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_set_status_valid(self, mock_logging, mock_config):
+        """Test Task.set_status with valid status."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+
+        # Should not raise for valid status
+        task.set_status("in_progress")
+
+        assert task.task.status == "in_progress"
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_set_status_invalid(self, mock_logging, mock_config):
+        """Test Task.set_status raises for invalid status."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+
+        with pytest.raises(Exception, match="Unable to set status"):
+            task.set_status("invalid_status")
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_set_status_no_task(self, mock_logging, mock_config):
+        """Test Task.set_status raises when no task set."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+        # task.task is None
+
+        with pytest.raises(Exception, match="Task has not been set"):
+            task.set_status("pending")
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_source_data(self, mock_logging, mock_config):
+        """Test Task.get_source_data returns source info."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+        task.task.abspath = "/media/movies/test.mkv"
+
+        source = task.get_source_data()
+
+        assert source["abspath"] == "/media/movies/test.mkv"
+        assert source["basename"] == "test.mkv"
+
+    @patch("unmanic.libs.task.Library")
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_task_library_name(self, mock_logging, mock_config, mock_library):
+        """Test Task.get_task_library_name returns library name."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+        mock_lib_instance = MagicMock()
+        mock_lib_instance.get_name.return_value = "Movies"
+        mock_library.return_value = mock_lib_instance
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+        task.task.library_id = 1
+
+        name = task.get_task_library_name()
+
+        assert name == "Movies"
+        mock_library.assert_called_once_with(1)
