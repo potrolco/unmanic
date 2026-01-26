@@ -599,5 +599,265 @@ class TestSessionSignOut(unittest.TestCase):
         mock_requests_instance.post.assert_not_called()
 
 
+class TestSessionApiGet(unittest.TestCase):
+    """Tests for Session.api_get method."""
+
+    def setUp(self):
+        """Clear singleton before each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.session import Session
+
+        if Session in SingletonType._instances:
+            del SingletonType._instances[Session]
+
+    def tearDown(self):
+        """Clear singleton after each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.session import Session
+
+        if Session in SingletonType._instances:
+            del SingletonType._instances[Session]
+
+    @patch("unmanic.libs.session.Installation")
+    @patch("unmanic.libs.session.UnmanicLogging")
+    @patch("unmanic.libs.session.requests.Session")
+    def test_api_get_success(self, mock_requests, mock_logging, mock_installation):
+        """Test api_get returns json and status code on success."""
+        from unmanic.libs.session import Session
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"data": "test"}
+
+        mock_requests_instance = MagicMock()
+        mock_requests_instance.get.return_value = mock_response
+        mock_requests.return_value = mock_requests_instance
+
+        mock_install = MagicMock()
+        mock_install.uuid = "test-uuid"
+        mock_installation.get_or_none.return_value = mock_install
+
+        session = Session()
+        result, status = session.api_get("api", 1, "/test")
+
+        self.assertEqual(result, {"data": "test"})
+        self.assertEqual(status, 200)
+
+    @patch("unmanic.libs.session.Installation")
+    @patch("unmanic.libs.session.UnmanicLogging")
+    @patch("unmanic.libs.session.requests.Session")
+    def test_api_get_raises_on_error_status(self, mock_requests, mock_logging, mock_installation):
+        """Test api_get raises RemoteApiException on status > 403."""
+        from unmanic.libs.session import Session, RemoteApiException
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+
+        mock_requests_instance = MagicMock()
+        mock_requests_instance.get.return_value = mock_response
+        mock_requests.return_value = mock_requests_instance
+
+        mock_install = MagicMock()
+        mock_install.uuid = "test-uuid"
+        mock_installation.get_or_none.return_value = mock_install
+
+        session = Session()
+
+        with self.assertRaises(RemoteApiException):
+            session.api_get("api", 1, "/test")
+
+
+class TestSessionApiPost(unittest.TestCase):
+    """Tests for Session.api_post method."""
+
+    def setUp(self):
+        """Clear singleton before each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.session import Session
+
+        if Session in SingletonType._instances:
+            del SingletonType._instances[Session]
+
+    def tearDown(self):
+        """Clear singleton after each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.session import Session
+
+        if Session in SingletonType._instances:
+            del SingletonType._instances[Session]
+
+    @patch("unmanic.libs.session.Installation")
+    @patch("unmanic.libs.session.UnmanicLogging")
+    @patch("unmanic.libs.session.requests.Session")
+    def test_api_post_success(self, mock_requests, mock_logging, mock_installation):
+        """Test api_post returns json and status code on success."""
+        from unmanic.libs.session import Session
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_response = MagicMock()
+        mock_response.status_code = 201
+        mock_response.json.return_value = {"created": True}
+
+        mock_requests_instance = MagicMock()
+        mock_requests_instance.post.return_value = mock_response
+        mock_requests.return_value = mock_requests_instance
+
+        mock_install = MagicMock()
+        mock_install.uuid = "test-uuid"
+        mock_installation.get_or_none.return_value = mock_install
+
+        session = Session()
+        result, status = session.api_post("api", 1, "/test", {"key": "value"})
+
+        self.assertEqual(result, {"created": True})
+        self.assertEqual(status, 201)
+        mock_requests_instance.post.assert_called_once()
+
+    @patch("unmanic.libs.session.Installation")
+    @patch("unmanic.libs.session.UnmanicLogging")
+    @patch("unmanic.libs.session.requests.Session")
+    def test_api_post_raises_on_error_status(self, mock_requests, mock_logging, mock_installation):
+        """Test api_post raises RemoteApiException on status > 403."""
+        from unmanic.libs.session import Session, RemoteApiException
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+
+        mock_requests_instance = MagicMock()
+        mock_requests_instance.post.return_value = mock_response
+        mock_requests.return_value = mock_requests_instance
+
+        mock_install = MagicMock()
+        mock_install.uuid = "test-uuid"
+        mock_installation.get_or_none.return_value = mock_install
+
+        session = Session()
+
+        with self.assertRaises(RemoteApiException):
+            session.api_post("api", 1, "/test", {})
+
+
+class TestSessionGetAccessToken(unittest.TestCase):
+    """Tests for Session.get_access_token method."""
+
+    def setUp(self):
+        """Clear singleton before each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.session import Session
+
+        if Session in SingletonType._instances:
+            del SingletonType._instances[Session]
+
+    def tearDown(self):
+        """Clear singleton after each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.session import Session
+
+        if Session in SingletonType._instances:
+            del SingletonType._instances[Session]
+
+    @patch("unmanic.libs.session.Installation")
+    @patch("unmanic.libs.session.UnmanicLogging")
+    @patch("unmanic.libs.session.requests.Session")
+    def test_returns_false_without_application_token(self, mock_requests, mock_logging, mock_installation):
+        """Test get_access_token returns False when no application token."""
+        from unmanic.libs.session import Session
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_requests.return_value = MagicMock()
+
+        mock_install = MagicMock()
+        mock_install.uuid = "test-uuid"
+        mock_installation.get_or_none.return_value = mock_install
+
+        session = Session()
+        session.application_token = None
+
+        result = session.get_access_token()
+
+        self.assertFalse(result)
+
+    @patch("unmanic.libs.session.Installation")
+    @patch("unmanic.libs.session.UnmanicLogging")
+    @patch("unmanic.libs.session.requests.Session")
+    def test_returns_true_on_success(self, mock_requests, mock_logging, mock_installation):
+        """Test get_access_token returns True on successful token refresh."""
+        from unmanic.libs.session import Session
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"access_token": "new-token"}
+
+        mock_requests_instance = MagicMock()
+        mock_requests_instance.post.return_value = mock_response
+        mock_requests.return_value = mock_requests_instance
+
+        mock_install = MagicMock()
+        mock_install.uuid = "test-uuid"
+        mock_installation.get_or_none.return_value = mock_install
+
+        session = Session()
+        session.application_token = "app-token"
+        session.uuid = "test-uuid"
+
+        result = session.get_access_token()
+
+        self.assertTrue(result)
+
+
+class TestSessionUpdateCreatedTimestamp(unittest.TestCase):
+    """Tests for Session.__update_created_timestamp method."""
+
+    def setUp(self):
+        """Clear singleton before each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.session import Session
+
+        if Session in SingletonType._instances:
+            del SingletonType._instances[Session]
+
+    def tearDown(self):
+        """Clear singleton after each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.session import Session
+
+        if Session in SingletonType._instances:
+            del SingletonType._instances[Session]
+
+    @patch("unmanic.libs.session.random.randint")
+    @patch("unmanic.libs.session.time.time")
+    @patch("unmanic.libs.session.Installation")
+    @patch("unmanic.libs.session.UnmanicLogging")
+    @patch("unmanic.libs.session.requests.Session")
+    def test_sets_created_timestamp(self, mock_requests, mock_logging, mock_installation, mock_time, mock_random):
+        """Test __update_created_timestamp sets created attribute."""
+        from unmanic.libs.session import Session
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_requests.return_value = MagicMock()
+
+        mock_install = MagicMock()
+        mock_install.uuid = "test-uuid"
+        mock_installation.get_or_none.return_value = mock_install
+
+        mock_time.return_value = 1000000
+        mock_random.return_value = 500
+
+        session = Session()
+        session._Session__update_created_timestamp()
+
+        # Should be time + random offset
+        self.assertEqual(session.created, 1000500)
+
+
 if __name__ == "__main__":
     unittest.main()
