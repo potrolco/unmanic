@@ -601,5 +601,212 @@ class TestLibraryGetAllLibraries(unittest.TestCase):
         self.assertEqual(result[0]["path"], "/default/library")
 
 
+class TestLibrarySetTags(unittest.TestCase):
+    """Tests for Library.set_tags method."""
+
+    @patch("unmanic.libs.library.Tags")
+    @patch("unmanic.libs.library.Libraries")
+    def test_set_tags_creates_missing_tags(self, mock_libraries, mock_tags):
+        """Test set_tags creates tags that don't exist."""
+        from unmanic.libs.library import Library
+
+        mock_model = MagicMock()
+        mock_libraries.get_or_none.return_value = mock_model
+
+        # Mock the insert chain: Tags.insert().on_conflict_ignore().execute()
+        mock_insert = MagicMock()
+        mock_insert.on_conflict_ignore.return_value.execute.return_value = None
+        mock_tags.insert.return_value = mock_insert
+        mock_tags.select.return_value.where.return_value = []
+
+        library = Library(1)
+        library.set_tags(["tag1", "tag2"])
+
+        # Should insert each tag
+        self.assertEqual(mock_tags.insert.call_count, 2)
+
+    @patch("unmanic.libs.library.Tags")
+    @patch("unmanic.libs.library.Libraries")
+    def test_set_tags_updates_model_tags(self, mock_libraries, mock_tags):
+        """Test set_tags updates model's tags with clear_existing."""
+        from unmanic.libs.library import Library
+
+        mock_model = MagicMock()
+        mock_libraries.get_or_none.return_value = mock_model
+
+        # Mock the insert chain
+        mock_insert = MagicMock()
+        mock_insert.on_conflict_ignore.return_value.execute.return_value = None
+        mock_tags.insert.return_value = mock_insert
+        mock_tags_query = MagicMock()
+        mock_tags.select.return_value.where.return_value = mock_tags_query
+
+        library = Library(1)
+        library.set_tags(["tag1"])
+
+        mock_model.tags.add.assert_called_once_with(mock_tags_query, clear_existing=True)
+
+    @patch("unmanic.libs.library.Tags")
+    @patch("unmanic.libs.library.Libraries")
+    def test_set_tags_empty_list(self, mock_libraries, mock_tags):
+        """Test set_tags with empty list clears tags."""
+        from unmanic.libs.library import Library
+
+        mock_model = MagicMock()
+        mock_libraries.get_or_none.return_value = mock_model
+
+        mock_tags_query = MagicMock()
+        mock_tags.select.return_value.where.return_value = mock_tags_query
+
+        library = Library(1)
+        library.set_tags([])
+
+        mock_model.tags.add.assert_called_once_with(mock_tags_query, clear_existing=True)
+
+
+class TestLibraryGetAllLibrariesWithTags(unittest.TestCase):
+    """Tests for Library.get_all_libraries with tags."""
+
+    @patch("unmanic.libs.library.Libraries")
+    @patch("unmanic.config.Config")
+    def test_library_with_tags_appends_to_config(self, mock_config, mock_libraries):
+        """Test get_all_libraries includes tags in library config."""
+        from unmanic.libs.library import Library
+
+        mock_config_instance = MagicMock()
+        mock_config_instance.get_library_path.return_value = "/library"
+        mock_config.return_value = mock_config_instance
+
+        # Create mock tag
+        mock_tag = MagicMock()
+        mock_tag.name = "tag1"
+
+        mock_lib = MagicMock()
+        mock_lib.id = 1
+        mock_lib.name = "Library"
+        mock_lib.path = "/library"
+        mock_lib.locked = False
+        mock_lib.enable_remote_only = False
+        mock_lib.enable_scanner = True
+        mock_lib.enable_inotify = False
+        mock_lib.tags.order_by.return_value = [mock_tag]
+
+        mock_libraries.select.return_value = [mock_lib]
+
+        result = Library.get_all_libraries()
+
+        self.assertEqual(result[0]["tags"], ["tag1"])
+
+    @patch("unmanic.libs.library.Libraries")
+    @patch("unmanic.config.Config")
+    def test_library_path_update_saves(self, mock_config, mock_libraries):
+        """Test default library path gets updated when different."""
+        from unmanic.libs.library import Library
+
+        mock_config_instance = MagicMock()
+        mock_config_instance.get_library_path.return_value = "/new/library"
+        mock_config.return_value = mock_config_instance
+
+        mock_lib = MagicMock()
+        mock_lib.id = 1
+        mock_lib.name = "Library"
+        mock_lib.path = "/old/library"  # Different path
+        mock_lib.locked = False
+        mock_lib.enable_remote_only = False
+        mock_lib.enable_scanner = True
+        mock_lib.enable_inotify = False
+        mock_lib.tags.order_by.return_value = []
+
+        mock_libraries.select.return_value = [mock_lib]
+
+        Library.get_all_libraries()
+
+        # Should update path and save
+        self.assertEqual(mock_lib.path, "/new/library")
+        mock_lib.save.assert_called_once()
+
+    @patch("unmanic.libs.library.Libraries")
+    @patch("unmanic.config.Config")
+    def test_non_default_libraries_sorted_by_name(self, mock_config, mock_libraries):
+        """Test non-default libraries are sorted by name."""
+        from unmanic.libs.library import Library
+
+        mock_config_instance = MagicMock()
+        mock_config_instance.get_library_path.return_value = "/library"
+        mock_config.return_value = mock_config_instance
+
+        # Create multiple libraries
+        mock_default = MagicMock()
+        mock_default.id = 1
+        mock_default.name = "Default"
+        mock_default.path = "/library"
+        mock_default.locked = False
+        mock_default.enable_remote_only = False
+        mock_default.enable_scanner = True
+        mock_default.enable_inotify = False
+        mock_default.tags.order_by.return_value = []
+
+        mock_lib_z = MagicMock()
+        mock_lib_z.id = 2
+        mock_lib_z.name = "Zebra Library"
+        mock_lib_z.path = "/zebra"
+        mock_lib_z.locked = False
+        mock_lib_z.enable_remote_only = False
+        mock_lib_z.enable_scanner = True
+        mock_lib_z.enable_inotify = False
+        mock_lib_z.tags.order_by.return_value = []
+
+        mock_lib_a = MagicMock()
+        mock_lib_a.id = 3
+        mock_lib_a.name = "Alpha Library"
+        mock_lib_a.path = "/alpha"
+        mock_lib_a.locked = False
+        mock_lib_a.enable_remote_only = False
+        mock_lib_a.enable_scanner = True
+        mock_lib_a.enable_inotify = False
+        mock_lib_a.tags.order_by.return_value = []
+
+        mock_libraries.select.return_value = [mock_default, mock_lib_z, mock_lib_a]
+
+        result = Library.get_all_libraries()
+
+        # Default first, then sorted by name
+        self.assertEqual(result[0]["name"], "Default")
+        self.assertEqual(result[1]["name"], "Alpha Library")
+        self.assertEqual(result[2]["name"], "Zebra Library")
+
+
+class TestLibraryExport(unittest.TestCase):
+    """Tests for Library.export method."""
+
+    @patch("unmanic.libs.plugins.PluginsHandler")
+    @patch("unmanic.libs.library.Libraries")
+    def test_export_returns_expected_structure(self, mock_libraries, mock_plugins_handler):
+        """Test export returns proper structure."""
+        from unmanic.libs.library import Library
+
+        mock_model = MagicMock()
+        mock_model.enabled_plugins.select.return_value.join.return_value.order_by.return_value.dicts.return_value = []
+        mock_model.tags.order_by.return_value = []
+        mock_model.name = "Test"
+        mock_model.path = "/test"
+        mock_model.enable_remote_only = False
+        mock_model.enable_scanner = True
+        mock_model.enable_inotify = False
+        mock_libraries.get_or_none.return_value = mock_model
+
+        mock_handler = MagicMock()
+        mock_handler.get_plugin_types_with_flows.return_value = ["type1"]
+        mock_handler.get_enabled_plugin_flows_for_plugin_type.return_value = []
+        mock_plugins_handler.return_value = mock_handler
+
+        result = Library.export(1)
+
+        self.assertIn("plugins", result)
+        self.assertIn("library_config", result)
+        self.assertIn("enabled_plugins", result["plugins"])
+        self.assertIn("plugin_flow", result["plugins"])
+
+
 if __name__ == "__main__":
     unittest.main()
