@@ -36,7 +36,7 @@ from tornado.ioloop import IOLoop
 from unmanic.libs import session
 from unmanic.libs.logs import UnmanicLogging
 from unmanic.libs.uiserver import UnmanicDataQueues
-from unmanic.webserver.api_v2.base_api_handler import BaseApiHandler, BaseApiError
+from unmanic.webserver.api_v2.base_api_handler import BaseApiHandler, BaseApiError, api_error_handler
 from unmanic.webserver.api_v2.schema.schemas import SessionAuthCodeSchema, SessionStateSuccessSchema
 
 

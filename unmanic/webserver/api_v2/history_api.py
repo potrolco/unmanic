@@ -35,7 +35,7 @@ import tornado.log
 from unmanic import config
 from unmanic.libs import session
 from unmanic.libs.uiserver import UnmanicDataQueues
-from unmanic.webserver.api_v2.base_api_handler import BaseApiError, BaseApiHandler
+from unmanic.webserver.api_v2.base_api_handler import BaseApiError, BaseApiHandler, api_error_handler
 from unmanic.webserver.api_v2.schema.schemas import (
     CompletedTasksLogRequestSchema,
     CompletedTasksLogSchema,
@@ -88,6 +88,7 @@ class ApiHistoryHandler(BaseApiHandler):
         self.unmanic_data_queues = udq.get_unmanic_data_queues()
         self.config = config.Config()
 
+    @api_error_handler
     async def get_completed_tasks(self):
         """
         History - list tasks
@@ -132,42 +133,35 @@ class ApiHistoryHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            json_request = self.read_json_request(RequestHistoryTableDataSchema())
+        json_request = self.read_json_request(RequestHistoryTableDataSchema())
 
-            params = {
-                "start": json_request.get("start"),
-                "length": json_request.get("length"),
-                "search_value": json_request.get("search_value"),
-                "status": json_request.get("status"),
-                "after": json_request.get("after"),
-                "before": json_request.get("before"),
-                "order": {
-                    "column": json_request.get("order_by", "finish_time"),
-                    "dir": json_request.get("order_direction", "desc"),
-                },
-            }
-            task_list = completed_tasks.prepare_filtered_completed_tasks(params)
+        params = {
+            "start": json_request.get("start"),
+            "length": json_request.get("length"),
+            "search_value": json_request.get("search_value"),
+            "status": json_request.get("status"),
+            "after": json_request.get("after"),
+            "before": json_request.get("before"),
+            "order": {
+                "column": json_request.get("order_by", "finish_time"),
+                "dir": json_request.get("order_direction", "desc"),
+            },
+        }
+        task_list = completed_tasks.prepare_filtered_completed_tasks(params)
 
-            response = self.build_response(
-                CompletedTasksSchema(),
-                {
-                    "recordsTotal": task_list.get("recordsTotal"),
-                    "recordsFiltered": task_list.get("recordsFiltered"),
-                    "successCount": task_list.get("successCount"),
-                    "failedCount": task_list.get("failedCount"),
-                    "results": task_list.get("results"),
-                },
-            )
-            self.write_success(response)
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
-            self.write_error()
+        response = self.build_response(
+            CompletedTasksSchema(),
+            {
+                "recordsTotal": task_list.get("recordsTotal"),
+                "recordsFiltered": task_list.get("recordsFiltered"),
+                "successCount": task_list.get("successCount"),
+                "failedCount": task_list.get("failedCount"),
+                "results": task_list.get("results"),
+            },
+        )
+        self.write_success(response)
 
+    @api_error_handler
     async def delete_completed_tasks(self):
         """
         History - delete
@@ -212,23 +206,16 @@ class ApiHistoryHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            json_request = self.read_json_request(RequestTableUpdateByIdList())
+        json_request = self.read_json_request(RequestTableUpdateByIdList())
 
-            if not completed_tasks.remove_completed_tasks(json_request.get("id_list", [])):
-                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to delete the completed tasks by their IDs")
-                self.write_error()
-                return
-
-            self.write_success()
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+        if not completed_tasks.remove_completed_tasks(json_request.get("id_list", [])):
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to delete the completed tasks by their IDs")
             self.write_error()
+            return
 
+        self.write_success()
+
+    @api_error_handler
     async def delete_all_completed_tasks(self):
         """
         History - delete all
@@ -261,26 +248,19 @@ class ApiHistoryHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            # Check for success_only query parameter
-            success_only = self.get_query_argument("success_only", "false").lower() == "true"
+        # Check for success_only query parameter
+        success_only = self.get_query_argument("success_only", "false").lower() == "true"
 
-            result = completed_tasks.remove_all_completed_tasks(success_only=success_only)
+        result = completed_tasks.remove_all_completed_tasks(success_only=success_only)
 
-            if not result.get("success"):
-                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to delete completed tasks")
-                self.write_error()
-                return
-
-            self.write(result)
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+        if not result.get("success"):
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to delete completed tasks")
             self.write_error()
+            return
 
+        self.write(result)
+
+    @api_error_handler
     async def add_completed_tasks_to_pending_list(self):
         """
         History - reprocess
@@ -325,35 +305,28 @@ class ApiHistoryHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            json_request = self.read_json_request(RequestAddCompletedToPendingTasksSchema())
-            id_list = json_request.get("id_list", [])
-            library_id = json_request.get("library_id")
+        json_request = self.read_json_request(RequestAddCompletedToPendingTasksSchema())
+        id_list = json_request.get("id_list", [])
+        library_id = json_request.get("library_id")
 
-            errors = completed_tasks.add_historic_tasks_to_pending_tasks_list(id_list, library_id=library_id)
-            if errors:
-                failed_ids = ""
-                for task_id in errors:
-                    failed_ids += " {}".format(task_id)
-                    tornado.log.app_log.error(
-                        "ApiHistoryHandler.{}: {}".format(self.route.get("call_method"), errors.get(task_id))
-                    )
-                self.set_status(
-                    self.STATUS_ERROR_INTERNAL,
-                    reason="Failed to add the provided completed tasks to the pending task list: '{}'".format(failed_ids),
+        errors = completed_tasks.add_historic_tasks_to_pending_tasks_list(id_list, library_id=library_id)
+        if errors:
+            failed_ids = ""
+            for task_id in errors:
+                failed_ids += " {}".format(task_id)
+                tornado.log.app_log.error(
+                    "ApiHistoryHandler.{}: {}".format(self.route.get("call_method"), errors.get(task_id))
                 )
-                self.write_error()
-                return
-
-            self.write_success()
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+            self.set_status(
+                self.STATUS_ERROR_INTERNAL,
+                reason="Failed to add the provided completed tasks to the pending task list: '{}'".format(failed_ids),
+            )
             self.write_error()
+            return
 
+        self.write_success()
+
+    @api_error_handler
     async def get_completed_task_log(self):
         """
         History - details
@@ -398,23 +371,15 @@ class ApiHistoryHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            json_request = self.read_json_request(CompletedTasksLogRequestSchema())
+        json_request = self.read_json_request(CompletedTasksLogRequestSchema())
 
-            command_log = completed_tasks.read_command_log_for_task(json_request.get("task_id"))
+        command_log = completed_tasks.read_command_log_for_task(json_request.get("task_id"))
 
-            response = self.build_response(
-                CompletedTasksLogSchema(),
-                {
-                    "command_log": command_log.get("command_log", ""),
-                    "command_log_lines": command_log.get("command_log_lines", []),
-                },
-            )
-            self.write_success(response)
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
-            self.write_error()
+        response = self.build_response(
+            CompletedTasksLogSchema(),
+            {
+                "command_log": command_log.get("command_log", ""),
+                "command_log_lines": command_log.get("command_log_lines", []),
+            },
+        )
+        self.write_success(response)

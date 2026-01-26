@@ -34,7 +34,7 @@ import tornado.log
 from unmanic import config
 from unmanic.libs import session
 from unmanic.libs.uiserver import UnmanicDataQueues
-from unmanic.webserver.api_v2.base_api_handler import BaseApiError, BaseApiHandler
+from unmanic.webserver.api_v2.base_api_handler import BaseApiError, BaseApiHandler, api_error_handler
 from unmanic.webserver.api_v2.schema.schemas import VersionReadSuccessSchema
 
 
@@ -59,6 +59,7 @@ class ApiVersionHandler(BaseApiHandler):
         self.unmanic_data_queues = udq.get_unmanic_data_queues()
         self.config = config.Config()
 
+    @api_error_handler
     async def get_unmanic_version(self):
         """
         Version - read
@@ -96,19 +97,11 @@ class ApiVersionHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            version = self.config.read_version()
-            response = self.build_response(
-                VersionReadSuccessSchema(),
-                {
-                    "version": version,
-                },
-            )
-            self.write_success(response)
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
-            self.write_error()
+        version = self.config.read_version()
+        response = self.build_response(
+            VersionReadSuccessSchema(),
+            {
+                "version": version,
+            },
+        )
+        self.write_success(response)

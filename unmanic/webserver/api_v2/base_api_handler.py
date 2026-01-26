@@ -33,9 +33,12 @@ import json
 import re
 import sys
 import traceback
+from functools import wraps
 from json import JSONDecodeError
 from typing import (
     Any,
+    Callable,
+    TypeVar,
 )
 
 import tornado.web
@@ -45,6 +48,67 @@ from marshmallow import Schema, exceptions
 from tornado.ioloop import IOLoop
 
 from tornado.web import RequestHandler
+
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def api_error_handler(func: F) -> F:
+    """
+    Decorator for API handlers that provides consistent error handling.
+
+    Catches exceptions and converts them to appropriate HTTP responses:
+    - BaseApiError: Already handled, just log
+    - ValidationError: 400 Bad Request
+    - FileNotFoundError: 404 Not Found
+    - PermissionError: 403 Forbidden
+    - ValueError: 400 Bad Request
+    - OSError: 500 Internal Server Error (with specific logging)
+    - Exception: 500 Internal Server Error (logged with traceback)
+    """
+
+    @wraps(func)
+    async def wrapper(self: "BaseApiHandler", *args: Any, **kwargs: Any) -> Any:
+        try:
+            return await func(self, *args, **kwargs)
+        except BaseApiError as bae:
+            tornado.log.app_log.error("BaseApiError in %s.%s: %s", self.__class__.__name__, func.__name__, str(bae))
+            return
+        except exceptions.ValidationError as ve:
+            tornado.log.app_log.warning("ValidationError in %s.%s: %s", self.__class__.__name__, func.__name__, str(ve))
+            self.error_messages = ve.messages if hasattr(ve, "messages") else {"validation": str(ve)}
+            self.set_status(self.STATUS_ERROR_EXTERNAL, reason="Validation error")
+            self.write_error()
+            return
+        except FileNotFoundError as fnf:
+            tornado.log.app_log.warning("FileNotFoundError in %s.%s: %s", self.__class__.__name__, func.__name__, str(fnf))
+            self.set_status(self.STATUS_ERROR_ENDPOINT_NOT_FOUND, reason=str(fnf))
+            self.write_error()
+            return
+        except PermissionError as pe:
+            tornado.log.app_log.warning("PermissionError in %s.%s: %s", self.__class__.__name__, func.__name__, str(pe))
+            self.set_status(403, reason="Permission denied")
+            self.write_error()
+            return
+        except ValueError as ve:
+            tornado.log.app_log.warning("ValueError in %s.%s: %s", self.__class__.__name__, func.__name__, str(ve))
+            self.set_status(self.STATUS_ERROR_EXTERNAL, reason=str(ve))
+            self.write_error()
+            return
+        except OSError as ose:
+            tornado.log.app_log.error("OSError in %s.%s: %s", self.__class__.__name__, func.__name__, str(ose), exc_info=True)
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="System error")
+            self.write_error()
+            return
+        except Exception as e:
+            # Log with full traceback for unexpected errors
+            tornado.log.app_log.error(
+                "Unexpected error in %s.%s: %s", self.__class__.__name__, func.__name__, str(e), exc_info=True
+            )
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+            self.write_error()
+            return
+
+    return wrapper  # type: ignore
 
 
 class BaseApiError(Exception):

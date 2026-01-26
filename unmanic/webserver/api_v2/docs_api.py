@@ -34,7 +34,7 @@ import os
 import tornado.log
 from unmanic.libs import session
 from unmanic.libs.uiserver import UnmanicDataQueues
-from unmanic.webserver.api_v2.base_api_handler import BaseApiHandler, BaseApiError
+from unmanic.webserver.api_v2.base_api_handler import BaseApiHandler, BaseApiError, api_error_handler
 from unmanic.webserver.api_v2.schema.schemas import DocumentContentSuccessSchema
 from unmanic.webserver.helpers import documents
 
@@ -64,6 +64,7 @@ class ApiDocsHandler(BaseApiHandler):
         udq = UnmanicDataQueues()
         self.unmanic_data_queues = udq.get_unmanic_data_queues()
 
+    @api_error_handler
     async def get_privacy_policy(self):
         """
         Docs - read privacy policy
@@ -101,32 +102,25 @@ class ApiDocsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            privacy_policy_content = []
-            privacy_policy_file = os.path.join(os.path.dirname(__file__), "..", "docs", "privacy_policy.md")
-            if os.path.exists(privacy_policy_file):
-                with open(privacy_policy_file, "r") as f:
-                    privacy_policy_content = f.readlines()
-            if not privacy_policy_content:
-                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Unable to read privacy policy.")
-                self.write_error()
-                return
-            else:
-                response = self.build_response(
-                    DocumentContentSuccessSchema(),
-                    {
-                        "content": privacy_policy_content,
-                    },
-                )
-                self.write_success(response)
-                return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+        privacy_policy_content = []
+        privacy_policy_file = os.path.join(os.path.dirname(__file__), "..", "docs", "privacy_policy.md")
+        if os.path.exists(privacy_policy_file):
+            with open(privacy_policy_file, "r") as f:
+                privacy_policy_content = f.readlines()
+        if not privacy_policy_content:
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="Unable to read privacy policy.")
             self.write_error()
+            return
+        else:
+            response = self.build_response(
+                DocumentContentSuccessSchema(),
+                {
+                    "content": privacy_policy_content,
+                },
+            )
+            self.write_success(response)
 
+    @api_error_handler
     async def get_logs_as_zip(self):
         """
         Docs - get log files as zip
@@ -165,19 +159,11 @@ class ApiDocsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            log_files_zip_path = documents.generate_log_files_zip()
+        log_files_zip_path = documents.generate_log_files_zip()
 
-            with open(log_files_zip_path, "rb") as f:
-                for chunk in iter(lambda: f.read(8192), b""):
-                    self.write(chunk)
+        with open(log_files_zip_path, "rb") as f:
+            for chunk in iter(lambda: f.read(8192), b""):
+                self.write(chunk)
 
-            self.set_header("Content-Type", "application/octet-stream")
-            self.set_header("Content-Disposition", "attachment; filename=UnmanicLogs.zip")
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
-            self.write_error()
+        self.set_header("Content-Type", "application/octet-stream")
+        self.set_header("Content-Disposition", "attachment; filename=UnmanicLogs.zip")

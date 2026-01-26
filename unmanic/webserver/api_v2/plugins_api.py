@@ -33,7 +33,7 @@
 import tornado.log
 from unmanic.libs import session
 from unmanic.libs.uiserver import UnmanicDataQueues
-from unmanic.webserver.api_v2.base_api_handler import BaseApiHandler, BaseApiError
+from unmanic.webserver.api_v2.base_api_handler import BaseApiHandler, BaseApiError, api_error_handler
 from unmanic.webserver.api_v2.schema.schemas import (
     PluginFlowResultsSchema,
     PluginReposListResultsSchema,
@@ -155,6 +155,7 @@ class ApiPluginsHandler(BaseApiHandler):
         udq = UnmanicDataQueues()
         self.unmanic_data_queues = udq.get_unmanic_data_queues()
 
+    @api_error_handler
     async def get_installed_plugins(self):
         """
         Plugins - list installed plugins
@@ -199,37 +200,30 @@ class ApiPluginsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            json_request = self.read_json_request(RequestPluginsTableDataSchema())
+        json_request = self.read_json_request(RequestPluginsTableDataSchema())
 
-            params = {
-                "start": json_request.get("start", "0"),
-                "length": json_request.get("length", "10"),
-                "search_value": json_request.get("search_value", ""),
-                "order": {
-                    "column": json_request.get("order_by", "name"),
-                    "dir": json_request.get("order_direction", "asc"),
-                },
-            }
-            plugins_list = plugins.prepare_filtered_plugins(params)
+        params = {
+            "start": json_request.get("start", "0"),
+            "length": json_request.get("length", "10"),
+            "search_value": json_request.get("search_value", ""),
+            "order": {
+                "column": json_request.get("order_by", "name"),
+                "dir": json_request.get("order_direction", "asc"),
+            },
+        }
+        plugins_list = plugins.prepare_filtered_plugins(params)
 
-            response = self.build_response(
-                PluginsDataSchema(),
-                {
-                    "recordsTotal": plugins_list.get("recordsTotal"),
-                    "recordsFiltered": plugins_list.get("recordsFiltered"),
-                    "results": plugins_list.get("results"),
-                },
-            )
-            self.write_success(response)
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
-            self.write_error()
+        response = self.build_response(
+            PluginsDataSchema(),
+            {
+                "recordsTotal": plugins_list.get("recordsTotal"),
+                "recordsFiltered": plugins_list.get("recordsFiltered"),
+                "results": plugins_list.get("results"),
+            },
+        )
+        self.write_success(response)
 
+    @api_error_handler
     async def enable_plugins(self):
         """
         Plugins - enable
@@ -274,15 +268,9 @@ class ApiPluginsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            raise Exception("Endpoint is deprecated. Plugins are now enabled by assigning them to a library")
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
-            self.write_error()
+        raise ValueError("Endpoint is deprecated. Plugins are now enabled by assigning them to a library")
 
+    @api_error_handler
     async def disable_plugins(self):
         """
         Plugins - disable
@@ -327,15 +315,9 @@ class ApiPluginsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            raise Exception("Endpoint is deprecated. Plugins are now enabled by assigning them to a library")
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
-            self.write_error()
+        raise Exception("Endpoint is deprecated. Plugins are now enabled by assigning them to a library")
 
+    @api_error_handler
     async def update_plugins(self):
         """
         Plugins - update
@@ -380,23 +362,16 @@ class ApiPluginsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            json_request = self.read_json_request(RequestTableUpdateByIdList())
+        json_request = self.read_json_request(RequestTableUpdateByIdList())
 
-            if not plugins.update_plugins(json_request.get("id_list", [])):
-                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to update the plugins by their IDs")
-                self.write_error()
-                return
-
-            self.write_success()
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+        if not plugins.update_plugins(json_request.get("id_list", [])):
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to update the plugins by their IDs")
             self.write_error()
+            return
 
+        self.write_success()
+
+    @api_error_handler
     async def remove_plugins(self):
         """
         Plugins - remove
@@ -441,23 +416,16 @@ class ApiPluginsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            json_request = self.read_json_request(RequestTableUpdateByIdList())
+        json_request = self.read_json_request(RequestTableUpdateByIdList())
 
-            if not plugins.remove_plugins(json_request.get("id_list", [])):
-                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to remove the plugins by their IDs")
-                self.write_error()
-                return
-
-            self.write_success()
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+        if not plugins.remove_plugins(json_request.get("id_list", [])):
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to remove the plugins by their IDs")
             self.write_error()
+            return
 
+        self.write_success()
+
+    @api_error_handler
     async def get_plugin_info(self):
         """
         Plugins - return a requested plugin's metadata and settings
@@ -502,41 +470,32 @@ class ApiPluginsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            json_request = self.read_json_request(RequestPluginsInfoSchema())
+        json_request = self.read_json_request(RequestPluginsInfoSchema())
 
-            plugin_id = json_request.get("plugin_id")
-            prefer_local = json_request.get("prefer_local")
-            library_id = json_request.get("library_id")
+        plugin_id = json_request.get("plugin_id")
+        prefer_local = json_request.get("prefer_local")
+        library_id = json_request.get("library_id")
 
-            plugins_info = plugins.prepare_plugin_info_and_settings(
-                plugin_id, prefer_local=prefer_local, library_id=library_id
-            )
+        plugins_info = plugins.prepare_plugin_info_and_settings(plugin_id, prefer_local=prefer_local, library_id=library_id)
 
-            response = self.build_response(
-                PluginsInfoResultsSchema(),
-                {
-                    "plugin_id": plugins_info.get("plugin_id"),
-                    "icon": plugins_info.get("icon"),
-                    "name": plugins_info.get("name"),
-                    "description": plugins_info.get("description"),
-                    "tags": plugins_info.get("tags"),
-                    "author": plugins_info.get("author"),
-                    "version": plugins_info.get("version"),
-                    "changelog": plugins_info.get("changelog"),
-                    "status": plugins_info.get("status"),
-                    "settings": plugins_info.get("settings"),
-                },
-            )
-            self.write_success(response)
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
-            self.write_error()
+        response = self.build_response(
+            PluginsInfoResultsSchema(),
+            {
+                "plugin_id": plugins_info.get("plugin_id"),
+                "icon": plugins_info.get("icon"),
+                "name": plugins_info.get("name"),
+                "description": plugins_info.get("description"),
+                "tags": plugins_info.get("tags"),
+                "author": plugins_info.get("author"),
+                "version": plugins_info.get("version"),
+                "changelog": plugins_info.get("changelog"),
+                "status": plugins_info.get("status"),
+                "settings": plugins_info.get("settings"),
+            },
+        )
+        self.write_success(response)
 
+    @api_error_handler
     async def update_plugin_settings(self):
         """
         Plugins - Save the settings of a single plugin
@@ -581,27 +540,20 @@ class ApiPluginsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            json_request = self.read_json_request(RequestPluginsSettingsSaveSchema())
+        json_request = self.read_json_request(RequestPluginsSettingsSaveSchema())
 
-            plugin_id = json_request.get("plugin_id")
-            settings = json_request.get("settings")
-            library_id = json_request.get("library_id")
+        plugin_id = json_request.get("plugin_id")
+        settings = json_request.get("settings")
+        library_id = json_request.get("library_id")
 
-            if not plugins.update_plugin_settings(plugin_id, settings, library_id=library_id):
-                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to save plugins settings")
-                self.write_error()
-                return
-
-            self.write_success()
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+        if not plugins.update_plugin_settings(plugin_id, settings, library_id=library_id):
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to save plugins settings")
             self.write_error()
+            return
 
+        self.write_success()
+
+    @api_error_handler
     async def reset_plugin_settings(self):
         """
         Plugins - Reset the settings of a single plugin
@@ -646,26 +598,19 @@ class ApiPluginsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            json_request = self.read_json_request(RequestPluginsSettingsResetSchema())
+        json_request = self.read_json_request(RequestPluginsSettingsResetSchema())
 
-            plugin_id = json_request.get("plugin_id")
-            library_id = json_request.get("library_id")
+        plugin_id = json_request.get("plugin_id")
+        library_id = json_request.get("library_id")
 
-            if not plugins.reset_plugin_settings(plugin_id, library_id=library_id):
-                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to reset plugins settings")
-                self.write_error()
-                return
-
-            self.write_success()
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+        if not plugins.reset_plugin_settings(plugin_id, library_id=library_id):
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to reset plugins settings")
             self.write_error()
+            return
 
+        self.write_success()
+
+    @api_error_handler
     async def get_installable_plugin_list(self):
         """
         Plugins - Read all installable plugins
@@ -703,19 +648,12 @@ class ApiPluginsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            installable_plugins_list = plugins.prepare_installable_plugins_list()
+        installable_plugins_list = plugins.prepare_installable_plugins_list()
 
-            response = self.build_response(PluginsInstallableResultsSchema(), {"plugins": installable_plugins_list})
-            self.write_success(response)
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
-            self.write_error()
+        response = self.build_response(PluginsInstallableResultsSchema(), {"plugins": installable_plugins_list})
+        self.write_success(response)
 
+    @api_error_handler
     async def install_plugin_by_id(self):
         """
         Plugins - Install a single plugin by its Plugin ID
@@ -760,23 +698,16 @@ class ApiPluginsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            json_request = self.read_json_request(RequestPluginsByIdSchema())
+        json_request = self.read_json_request(RequestPluginsByIdSchema())
 
-            if not plugins.install_plugin_by_id(json_request.get("plugin_id"), json_request.get("repo_id")):
-                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to install/update plugin")
-                self.write_error()
-                return
-
-            self.write_success()
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+        if not plugins.install_plugin_by_id(json_request.get("plugin_id"), json_request.get("repo_id")):
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to install/update plugin")
             self.write_error()
+            return
 
+        self.write_success()
+
+    @api_error_handler
     async def get_plugin_types_with_flows(self):
         """
         Plugins - Get a list of all plugin types that have flows
@@ -814,23 +745,16 @@ class ApiPluginsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            results = plugins.get_plugin_types_with_flows()
-            response = self.build_response(
-                PluginTypesResultsSchema(),
-                {
-                    "results": results,
-                },
-            )
-            self.write_success(response)
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
-            self.write_error()
+        results = plugins.get_plugin_types_with_flows()
+        response = self.build_response(
+            PluginTypesResultsSchema(),
+            {
+                "results": results,
+            },
+        )
+        self.write_success(response)
 
+    @api_error_handler
     async def get_enabled_plugins_flow_by_type(self):
         """
         Plugins - Get the plugin flow for a requested plugin type
@@ -875,27 +799,20 @@ class ApiPluginsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            json_request = self.read_json_request(RequestPluginsFlowByPluginTypeSchema())
+        json_request = self.read_json_request(RequestPluginsFlowByPluginTypeSchema())
 
-            results = plugins.get_enabled_plugin_flows_for_plugin_type(
-                json_request.get("plugin_type"), json_request.get("library_id")
-            )
-            response = self.build_response(
-                PluginFlowResultsSchema(),
-                {
-                    "results": results,
-                },
-            )
-            self.write_success(response)
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
-            self.write_error()
+        results = plugins.get_enabled_plugin_flows_for_plugin_type(
+            json_request.get("plugin_type"), json_request.get("library_id")
+        )
+        response = self.build_response(
+            PluginFlowResultsSchema(),
+            {
+                "results": results,
+            },
+        )
+        self.write_success(response)
 
+    @api_error_handler
     async def save_enabled_plugin_flow(self):
         """
         Plugins - Save the plugin flow for a requested plugin type
@@ -940,25 +857,18 @@ class ApiPluginsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            json_request = self.read_json_request(RequestSavingPluginsFlowByPluginTypeSchema())
+        json_request = self.read_json_request(RequestSavingPluginsFlowByPluginTypeSchema())
 
-            if not plugins.save_enabled_plugin_flows_for_plugin_type(
-                json_request.get("plugin_type"), json_request.get("library_id"), json_request.get("plugin_flow")
-            ):
-                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to update plugin flow by type")
-                self.write_error()
-                return
-
-            self.write_success()
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+        if not plugins.save_enabled_plugin_flows_for_plugin_type(
+            json_request.get("plugin_type"), json_request.get("library_id"), json_request.get("plugin_flow")
+        ):
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to update plugin flow by type")
             self.write_error()
+            return
 
+        self.write_success()
+
+    @api_error_handler
     async def update_repo_list(self):
         """
         Plugins - Update the plugin repo list
@@ -1003,23 +913,16 @@ class ApiPluginsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            json_request = self.read_json_request(RequestUpdatePluginReposListSchema())
+        json_request = self.read_json_request(RequestUpdatePluginReposListSchema())
 
-            if not plugins.save_plugin_repos_list(json_request.get("repos_list")):
-                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to update plugin repo list")
-                self.write_error()
-                return
-
-            self.write_success()
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+        if not plugins.save_plugin_repos_list(json_request.get("repos_list")):
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to update plugin repo list")
             self.write_error()
+            return
 
+        self.write_success()
+
+    @api_error_handler
     async def get_repo_list(self):
         """
         Plugins - Read all configured plugin repos
@@ -1057,19 +960,12 @@ class ApiPluginsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            plugin_repos_list = plugins.prepare_plugin_repos_list()
+        plugin_repos_list = plugins.prepare_plugin_repos_list()
 
-            response = self.build_response(PluginReposListResultsSchema(), {"repos": plugin_repos_list})
-            self.write_success(response)
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
-            self.write_error()
+        response = self.build_response(PluginReposListResultsSchema(), {"repos": plugin_repos_list})
+        self.write_success(response)
 
+    @api_error_handler
     async def reload_repo_data(self):
         """
         Plugins - Reload plugin repositories remote data
@@ -1107,21 +1003,14 @@ class ApiPluginsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            if not plugins.reload_plugin_repos_data():
-                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to pull latest plugin repo data")
-                self.write_error()
-                return
-
-            self.write_success()
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+        if not plugins.reload_plugin_repos_data():
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to pull latest plugin repo data")
             self.write_error()
+            return
 
+        self.write_success()
+
+    @api_error_handler
     async def get_enabled_panel_plugins_list(self):
         """
         Plugins - Read all enabled "data panel" type plugins
@@ -1159,29 +1048,21 @@ class ApiPluginsHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            data_panel_plugins = plugins.get_enabled_plugin_data_panels()
+        data_panel_plugins = plugins.get_enabled_plugin_data_panels()
 
-            # Only return the data that we need
-            plugin_list = []
-            for data_panel_plugin in data_panel_plugins:
-                plugin_list.append(
-                    {
-                        "plugin_id": data_panel_plugin.get("plugin_id"),
-                        "name": data_panel_plugin.get("name", ""),
-                        "author": data_panel_plugin.get("author", ""),
-                        "description": data_panel_plugin.get("description", ""),
-                        "version": data_panel_plugin.get("version", ""),
-                        "icon": data_panel_plugin.get("icon", ""),
-                    }
-                )
+        # Only return the data that we need
+        plugin_list = []
+        for data_panel_plugin in data_panel_plugins:
+            plugin_list.append(
+                {
+                    "plugin_id": data_panel_plugin.get("plugin_id"),
+                    "name": data_panel_plugin.get("name", ""),
+                    "author": data_panel_plugin.get("author", ""),
+                    "description": data_panel_plugin.get("description", ""),
+                    "version": data_panel_plugin.get("version", ""),
+                    "icon": data_panel_plugin.get("icon", ""),
+                }
+            )
 
-            response = self.build_response(PluginsDataPanelTypesDataSchema(), {"results": plugin_list})
-            self.write_success(response)
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
-            self.write_error()
+        response = self.build_response(PluginsDataPanelTypesDataSchema(), {"results": plugin_list})
+        self.write_success(response)

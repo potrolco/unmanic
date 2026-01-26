@@ -38,7 +38,7 @@ import tornado.web
 from unmanic import config
 from unmanic.libs import common, session
 from unmanic.libs.frontend_push_messages import FrontendPushMessages
-from unmanic.webserver.api_v2.base_api_handler import BaseApiHandler, BaseApiError
+from unmanic.webserver.api_v2.base_api_handler import BaseApiHandler, BaseApiError, api_error_handler
 from unmanic.webserver.api_v2.schema.schemas import PendingTasksTableResultsSchema
 from unmanic.webserver.helpers import pending_tasks
 

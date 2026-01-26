@@ -32,7 +32,7 @@
 
 import tornado.log
 from unmanic.libs.uiserver import UnmanicDataQueues, UnmanicRunningTreads
-from unmanic.webserver.api_v2.base_api_handler import BaseApiHandler, BaseApiError
+from unmanic.webserver.api_v2.base_api_handler import BaseApiHandler, BaseApiError, api_error_handler
 from unmanic.webserver.api_v2.schema.schemas import RequestWorkerByIdSchema, WorkerStatusSuccessSchema
 from unmanic.webserver.helpers import workers
 
@@ -87,6 +87,7 @@ class ApiWorkersHandler(BaseApiHandler):
         self.unmanic_data_queues = udq.get_unmanic_data_queues()
         self.foreman = urt.get_unmanic_running_thread("foreman")
 
+    @api_error_handler
     async def pause_worker(self):
         """
         Workers - Pause worker by ID
@@ -131,23 +132,16 @@ class ApiWorkersHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            json_request = self.read_json_request(RequestWorkerByIdSchema())
+        json_request = self.read_json_request(RequestWorkerByIdSchema())
 
-            if not workers.pause_worker_by_id(json_request.get("worker_id")):
-                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to pause worker")
-                self.write_error()
-                return
-
-            self.write_success()
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+        if not workers.pause_worker_by_id(json_request.get("worker_id")):
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to pause worker")
             self.write_error()
+            return
 
+        self.write_success()
+
+    @api_error_handler
     async def pause_all_workers(self):
         """
         Workers - Pause all workers
@@ -185,21 +179,14 @@ class ApiWorkersHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            if not workers.pause_all_workers():
-                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to pause all workers")
-                self.write_error()
-                return
-
-            self.write_success()
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+        if not workers.pause_all_workers():
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to pause all workers")
             self.write_error()
+            return
 
+        self.write_success()
+
+    @api_error_handler
     async def resume_worker(self):
         """
         Workers - Resume worker by ID
@@ -244,23 +231,16 @@ class ApiWorkersHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            json_request = self.read_json_request(RequestWorkerByIdSchema())
+        json_request = self.read_json_request(RequestWorkerByIdSchema())
 
-            if not workers.resume_worker_by_id(json_request.get("worker_id")):
-                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to resume worker")
-                self.write_error()
-                return
-
-            self.write_success()
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+        if not workers.resume_worker_by_id(json_request.get("worker_id")):
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to resume worker")
             self.write_error()
+            return
 
+        self.write_success()
+
+    @api_error_handler
     async def resume_all_workers(self):
         """
         Workers - Resume all workers
@@ -298,21 +278,14 @@ class ApiWorkersHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            if not workers.resume_all_workers():
-                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to resume all workers")
-                self.write_error()
-                return
-
-            self.write_success()
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+        if not workers.resume_all_workers():
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to resume all workers")
             self.write_error()
+            return
 
+        self.write_success()
+
+    @api_error_handler
     async def terminate_worker(self):
         """
         Workers - Terminate worker by ID
@@ -357,23 +330,16 @@ class ApiWorkersHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            json_request = self.read_json_request(RequestWorkerByIdSchema())
+        json_request = self.read_json_request(RequestWorkerByIdSchema())
 
-            if not workers.terminate_worker_by_id(json_request.get("worker_id")):
-                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to resume worker")
-                self.write_error()
-                return
-
-            self.write_success()
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+        if not workers.terminate_worker_by_id(json_request.get("worker_id")):
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to resume worker")
             self.write_error()
+            return
 
+        self.write_success()
+
+    @api_error_handler
     async def terminate_all_workers(self):
         """
         Workers - Terminate all workers
@@ -411,21 +377,14 @@ class ApiWorkersHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            if not workers.terminate_all_workers():
-                self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to terminate all workers")
-                self.write_error()
-                return
-
-            self.write_success()
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+        if not workers.terminate_all_workers():
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason="Failed to terminate all workers")
             self.write_error()
+            return
 
+        self.write_success()
+
+    @api_error_handler
     async def workers_status(self):
         """
         Workers - Return the status of all workers
@@ -463,20 +422,12 @@ class ApiWorkersHandler(BaseApiHandler):
                         schema:
                             InternalErrorSchema
         """
-        try:
-            workers_status = self.foreman.get_all_worker_status()
+        workers_status = self.foreman.get_all_worker_status()
 
-            response = self.build_response(
-                WorkerStatusSuccessSchema(),
-                {
-                    "workers_status": workers_status,
-                },
-            )
-            self.write_success(response)
-            return
-        except BaseApiError as bae:
-            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
-            return
-        except Exception as e:
-            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
-            self.write_error()
+        response = self.build_response(
+            WorkerStatusSuccessSchema(),
+            {
+                "workers_status": workers_status,
+            },
+        )
+        self.write_success(response)
