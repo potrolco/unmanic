@@ -163,5 +163,65 @@ class TestBaseModelMeta(unittest.TestCase):
         self.assertEqual(BaseModel._meta.database, db)
 
 
+class TestDatabaseSelectDatabase(unittest.TestCase):
+    """Tests for Database.select_database method."""
+
+    @patch("unmanic.libs.unmodels.lib.basemodel.db")
+    @patch("unmanic.libs.unmodels.lib.basemodel.SqliteQueueDatabase")
+    def test_select_database_sqlite(self, mock_sqlite_db, mock_db_proxy):
+        """Test select_database creates SQLite database."""
+        from unmanic.libs.unmodels.lib.basemodel import Database
+
+        mock_database = MagicMock()
+        mock_sqlite_db.return_value = mock_database
+
+        config = {"TYPE": "SQLITE", "FILE": "/tmp/test.db"}
+        result = Database.select_database(config)
+
+        mock_sqlite_db.assert_called_once()
+        mock_db_proxy.initialize.assert_called_once_with(mock_database)
+        mock_db_proxy.connect.assert_called_once()
+
+    @patch("unmanic.libs.unmodels.lib.basemodel.db")
+    @patch("unmanic.libs.unmodels.lib.basemodel.SqliteQueueDatabase")
+    def test_select_database_returns_db_proxy(self, mock_sqlite_db, mock_db_proxy):
+        """Test select_database returns the database proxy."""
+        from unmanic.libs.unmodels.lib.basemodel import Database
+
+        mock_sqlite_db.return_value = MagicMock()
+
+        config = {"TYPE": "SQLITE", "FILE": "/tmp/test.db"}
+        result = Database.select_database(config)
+
+        self.assertEqual(result, mock_db_proxy)
+
+    @patch("unmanic.libs.unmodels.lib.basemodel.db")
+    @patch("unmanic.libs.unmodels.lib.basemodel.SqliteQueueDatabase")
+    def test_select_database_uses_wal_mode(self, mock_sqlite_db, mock_db_proxy):
+        """Test select_database enables WAL mode."""
+        from unmanic.libs.unmodels.lib.basemodel import Database
+
+        mock_sqlite_db.return_value = MagicMock()
+
+        config = {"TYPE": "SQLITE", "FILE": "/tmp/test.db"}
+        Database.select_database(config)
+
+        # Check that WAL mode is in pragmas
+        call_args = mock_sqlite_db.call_args
+        pragmas = call_args[1]["pragmas"]
+        pragma_dict = dict(pragmas)
+        self.assertEqual(pragma_dict.get("journal_mode"), "wal")
+
+
+class TestDatabaseClass(unittest.TestCase):
+    """Tests for Database class."""
+
+    def test_database_class_exists(self):
+        """Test Database class is defined."""
+        from unmanic.libs.unmodels.lib.basemodel import Database
+
+        self.assertTrue(hasattr(Database, "select_database"))
+
+
 if __name__ == "__main__":
     unittest.main()
