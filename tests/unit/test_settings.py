@@ -269,3 +269,92 @@ class TestHealthCheckSettings:
         monkeypatch.setenv("UNMANIC_HEALTH_CHECK_ALGORITHM", "SHA256")
         settings = UnmanicSettings()
         assert settings.health_check_algorithm == "sha256"
+
+
+class TestGPUSettings:
+    """Test GPU settings (Phase 3)."""
+
+    def test_default_gpu_enabled(self):
+        """GPU should be enabled by default."""
+        settings = UnmanicSettings()
+        assert settings.gpu_enabled is True
+
+    def test_default_gpu_assignment_strategy(self):
+        """GPU assignment strategy should default to round_robin."""
+        settings = UnmanicSettings()
+        assert settings.gpu_assignment_strategy == "round_robin"
+
+    def test_default_max_workers_per_gpu(self):
+        """Max workers per GPU should default to 2."""
+        settings = UnmanicSettings()
+        assert settings.max_workers_per_gpu == 2
+
+    def test_default_gpu_allowlist_empty(self):
+        """GPU allowlist should default to empty."""
+        settings = UnmanicSettings()
+        assert settings.gpu_allowlist == ""
+
+    def test_default_gpu_blocklist_empty(self):
+        """GPU blocklist should default to empty."""
+        settings = UnmanicSettings()
+        assert settings.gpu_blocklist == ""
+
+    def test_gpu_enabled_env_override(self, monkeypatch):
+        """GPU enabled should be overridable via env var."""
+        monkeypatch.setenv("UNMANIC_GPU_ENABLED", "false")
+        settings = UnmanicSettings()
+        assert settings.gpu_enabled is False
+
+    def test_gpu_assignment_strategy_env_override(self, monkeypatch):
+        """GPU assignment strategy should be overridable via env var."""
+        monkeypatch.setenv("UNMANIC_GPU_ASSIGNMENT_STRATEGY", "least_used")
+        settings = UnmanicSettings()
+        assert settings.gpu_assignment_strategy == "least_used"
+
+    def test_max_workers_per_gpu_env_override(self, monkeypatch):
+        """Max workers per GPU should be overridable via env var."""
+        monkeypatch.setenv("UNMANIC_MAX_WORKERS_PER_GPU", "4")
+        settings = UnmanicSettings()
+        assert settings.max_workers_per_gpu == 4
+
+    def test_gpu_allowlist_env_override(self, monkeypatch):
+        """GPU allowlist should be overridable via env var."""
+        monkeypatch.setenv("UNMANIC_GPU_ALLOWLIST", "cuda:0,cuda:1")
+        settings = UnmanicSettings()
+        assert settings.gpu_allowlist == "cuda:0,cuda:1"
+
+    def test_gpu_blocklist_env_override(self, monkeypatch):
+        """GPU blocklist should be overridable via env var."""
+        monkeypatch.setenv("UNMANIC_GPU_BLOCKLIST", "vaapi:/dev/dri/renderD129")
+        settings = UnmanicSettings()
+        assert settings.gpu_blocklist == "vaapi:/dev/dri/renderD129"
+
+    def test_max_workers_per_gpu_min_validation(self, monkeypatch):
+        """Max workers per GPU should reject values below 1."""
+        monkeypatch.setenv("UNMANIC_MAX_WORKERS_PER_GPU", "0")
+        with pytest.raises(ValidationError, match="max_workers_per_gpu"):
+            UnmanicSettings()
+
+    def test_max_workers_per_gpu_max_validation(self, monkeypatch):
+        """Max workers per GPU should reject values above 10."""
+        monkeypatch.setenv("UNMANIC_MAX_WORKERS_PER_GPU", "15")
+        with pytest.raises(ValidationError, match="max_workers_per_gpu"):
+            UnmanicSettings()
+
+    def test_gpu_assignment_strategy_validation_invalid(self, monkeypatch):
+        """GPU assignment strategy should reject invalid values."""
+        monkeypatch.setenv("UNMANIC_GPU_ASSIGNMENT_STRATEGY", "invalid_strategy")
+        with pytest.raises(ValidationError, match="Invalid strategy"):
+            UnmanicSettings()
+
+    def test_gpu_assignment_strategy_case_insensitive(self, monkeypatch):
+        """GPU assignment strategy should be case insensitive."""
+        monkeypatch.setenv("UNMANIC_GPU_ASSIGNMENT_STRATEGY", "LEAST_USED")
+        settings = UnmanicSettings()
+        assert settings.gpu_assignment_strategy == "least_used"
+
+    def test_gpu_assignment_strategy_manual_valid(self, monkeypatch):
+        """GPU assignment strategy should accept manual."""
+        monkeypatch.setenv("UNMANIC_GPU_ASSIGNMENT_STRATEGY", "manual")
+        settings = UnmanicSettings()
+        assert settings.gpu_assignment_strategy == "manual"

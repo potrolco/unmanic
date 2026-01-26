@@ -106,6 +106,15 @@ class UnmanicSettings(BaseSettings):
     )
     health_check_algorithm: str = Field(default="md5", description="Checksum algorithm for health checks (md5, sha256, sha1)")
 
+    # GPU settings (Phase 3)
+    gpu_enabled: bool = Field(default=True, description="Enable GPU hardware acceleration for transcoding")
+    gpu_assignment_strategy: str = Field(
+        default="round_robin", description="GPU assignment strategy: round_robin, least_used, manual"
+    )
+    max_workers_per_gpu: int = Field(default=2, ge=1, le=10, description="Maximum concurrent workers per GPU (1-10)")
+    gpu_allowlist: str = Field(default="", description="Comma-separated list of GPU device IDs to use (empty = use all)")
+    gpu_blocklist: str = Field(default="", description="Comma-separated list of GPU device IDs to exclude")
+
     @field_validator("health_check_algorithm")
     @classmethod
     def validate_algorithm(cls, v: str) -> str:
@@ -113,6 +122,15 @@ class UnmanicSettings(BaseSettings):
         valid = {"md5", "sha256", "sha1"}
         if v.lower() not in valid:
             raise ValueError(f"Invalid algorithm '{v}'. Must be one of: {', '.join(valid)}")
+        return v.lower()
+
+    @field_validator("gpu_assignment_strategy")
+    @classmethod
+    def validate_gpu_strategy(cls, v: str) -> str:
+        """Validate GPU assignment strategy."""
+        valid = {"round_robin", "least_used", "manual"}
+        if v.lower() not in valid:
+            raise ValueError(f"Invalid strategy '{v}'. Must be one of: {', '.join(valid)}")
         return v.lower()
 
     @field_validator("config_path", "log_path", "plugins_path", "userdata_path", "cache_path", "library_path")
