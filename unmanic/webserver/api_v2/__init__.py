@@ -44,6 +44,7 @@ from .session_api import ApiSessionHandler
 from .settings_api import ApiSettingsHandler
 from .upload_api import ApiUploadHandler
 from .version_api import ApiVersionHandler
+from .worker_auth_api import ApiWorkerAuthHandler
 from .workers_api import ApiWorkersHandler
 
 __author__ = "Josh.5 (jsunnex@gmail.com)"
@@ -60,6 +61,7 @@ __all__ = (
     "ApiSettingsHandler",
     "ApiUploadHandler",
     "ApiVersionHandler",
+    "ApiWorkerAuthHandler",
     "ApiWorkersHandler",
 )
 
