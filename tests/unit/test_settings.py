@@ -186,3 +186,86 @@ class TestGetSettings:
         # They should have the same values but be different objects
         assert settings1.ui_port == settings2.ui_port
         # Note: In Pydantic, instances with same values may not be the same object
+
+
+class TestHealthCheckSettings:
+    """Test health check settings (Phase 2)."""
+
+    def test_default_pre_transcode_check_disabled(self):
+        """Pre-transcode health check should be disabled by default."""
+        settings = UnmanicSettings()
+        assert settings.enable_pre_transcode_health_check is False
+
+    def test_default_post_transcode_check_disabled(self):
+        """Post-transcode health check should be disabled by default."""
+        settings = UnmanicSettings()
+        assert settings.enable_post_transcode_health_check is False
+
+    def test_default_fail_on_corruption_enabled(self):
+        """Fail on pre-check corruption should be enabled by default."""
+        settings = UnmanicSettings()
+        assert settings.fail_on_pre_check_corruption is True
+
+    def test_default_health_check_timeout(self):
+        """Health check timeout should default to 300 seconds."""
+        settings = UnmanicSettings()
+        assert settings.health_check_timeout_seconds == 300
+
+    def test_default_health_check_algorithm(self):
+        """Health check algorithm should default to md5."""
+        settings = UnmanicSettings()
+        assert settings.health_check_algorithm == "md5"
+
+    def test_enable_pre_transcode_check_env_override(self, monkeypatch):
+        """Pre-transcode check should be overridable via env var."""
+        monkeypatch.setenv("UNMANIC_ENABLE_PRE_TRANSCODE_HEALTH_CHECK", "true")
+        settings = UnmanicSettings()
+        assert settings.enable_pre_transcode_health_check is True
+
+    def test_enable_post_transcode_check_env_override(self, monkeypatch):
+        """Post-transcode check should be overridable via env var."""
+        monkeypatch.setenv("UNMANIC_ENABLE_POST_TRANSCODE_HEALTH_CHECK", "true")
+        settings = UnmanicSettings()
+        assert settings.enable_post_transcode_health_check is True
+
+    def test_health_check_timeout_env_override(self, monkeypatch):
+        """Health check timeout should be overridable via env var."""
+        monkeypatch.setenv("UNMANIC_HEALTH_CHECK_TIMEOUT_SECONDS", "600")
+        settings = UnmanicSettings()
+        assert settings.health_check_timeout_seconds == 600
+
+    def test_health_check_algorithm_env_override(self, monkeypatch):
+        """Health check algorithm should be overridable via env var."""
+        monkeypatch.setenv("UNMANIC_HEALTH_CHECK_ALGORITHM", "sha256")
+        settings = UnmanicSettings()
+        assert settings.health_check_algorithm == "sha256"
+
+    def test_health_check_timeout_min_validation(self, monkeypatch):
+        """Health check timeout should reject values below 30 seconds."""
+        monkeypatch.setenv("UNMANIC_HEALTH_CHECK_TIMEOUT_SECONDS", "10")
+        with pytest.raises(ValidationError, match="health_check_timeout_seconds"):
+            UnmanicSettings()
+
+    def test_health_check_timeout_max_validation(self, monkeypatch):
+        """Health check timeout should reject values above 3600 seconds."""
+        monkeypatch.setenv("UNMANIC_HEALTH_CHECK_TIMEOUT_SECONDS", "7200")
+        with pytest.raises(ValidationError, match="health_check_timeout_seconds"):
+            UnmanicSettings()
+
+    def test_health_check_algorithm_validation_invalid(self, monkeypatch):
+        """Health check algorithm should reject invalid values."""
+        monkeypatch.setenv("UNMANIC_HEALTH_CHECK_ALGORITHM", "invalid_algo")
+        with pytest.raises(ValidationError, match="Invalid algorithm"):
+            UnmanicSettings()
+
+    def test_health_check_algorithm_sha1_valid(self, monkeypatch):
+        """Health check algorithm should accept sha1."""
+        monkeypatch.setenv("UNMANIC_HEALTH_CHECK_ALGORITHM", "sha1")
+        settings = UnmanicSettings()
+        assert settings.health_check_algorithm == "sha1"
+
+    def test_health_check_algorithm_case_insensitive(self, monkeypatch):
+        """Health check algorithm should be case insensitive."""
+        monkeypatch.setenv("UNMANIC_HEALTH_CHECK_ALGORITHM", "SHA256")
+        settings = UnmanicSettings()
+        assert settings.health_check_algorithm == "sha256"

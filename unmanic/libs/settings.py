@@ -95,6 +95,26 @@ class UnmanicSettings(BaseSettings):
     first_run: bool = Field(default=False, description="First run flag")
     release_notes_viewed: Optional[str] = Field(default=None, description="Last viewed release notes version")
 
+    # Health check settings (Phase 2)
+    enable_pre_transcode_health_check: bool = Field(default=False, description="Run health check before processing a file")
+    enable_post_transcode_health_check: bool = Field(default=False, description="Run health check after processing a file")
+    fail_on_pre_check_corruption: bool = Field(
+        default=True, description="Block processing of files that fail pre-transcode health check"
+    )
+    health_check_timeout_seconds: int = Field(
+        default=300, ge=30, le=3600, description="Timeout for FFmpeg health check in seconds"
+    )
+    health_check_algorithm: str = Field(default="md5", description="Checksum algorithm for health checks (md5, sha256, sha1)")
+
+    @field_validator("health_check_algorithm")
+    @classmethod
+    def validate_algorithm(cls, v: str) -> str:
+        """Validate checksum algorithm."""
+        valid = {"md5", "sha256", "sha1"}
+        if v.lower() not in valid:
+            raise ValueError(f"Invalid algorithm '{v}'. Must be one of: {', '.join(valid)}")
+        return v.lower()
+
     @field_validator("config_path", "log_path", "plugins_path", "userdata_path", "cache_path", "library_path")
     @classmethod
     def validate_path(cls, v: str) -> str:
