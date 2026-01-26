@@ -292,7 +292,7 @@ class TestGetFileChecksum:
         """Different content should produce different checksum."""
         paths = []
 
-        for i, content in enumerate([b"content A", b"content B"]):
+        for content in [b"content A", b"content B"]:
             with tempfile.NamedTemporaryFile(delete=False) as f:
                 f.write(content)
                 f.flush()
