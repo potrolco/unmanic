@@ -69,7 +69,7 @@ class Foreman(threading.Thread):
         self.event: threading.Event = event
         self.task_queue: Any = task_queue
         self.data_queues: Dict[str, Any] = data_queues
-        self.logger = UnmanicLogging.get_logger(name=__class__.__name__)
+        self.logger = UnmanicLogging.get_logger(name=self.__class__.__name__)
         self.workers_pending_task_queue: "queue.Queue[Any]" = queue.Queue(maxsize=1)
         self.remote_workers_pending_task_queue: "queue.Queue[Any]" = queue.Queue(maxsize=1)
         self.complete_queue: "queue.Queue[Any]" = queue.Queue()
@@ -117,12 +117,14 @@ class Foreman(threading.Thread):
             worker_count += worker_group.get("number_of_workers", 0)
         return int(worker_count)
 
-    def save_current_config(self, settings: Optional[Dict[str, Any]] = None, settings_hash: Optional[str] = None) -> None:
+    def save_current_config(
+        self, settings: Optional[Dict[int, Dict[str, Any]]] = None, settings_hash: Optional[str] = None
+    ) -> None:
         """
         Save current configuration.
 
         Args:
-            settings: Configuration settings dictionary
+            settings: Configuration settings dictionary (library_id -> settings)
             settings_hash: MD5 hash of settings for change detection
         """
         if settings:

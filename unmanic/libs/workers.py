@@ -61,7 +61,7 @@ class WorkerSubprocessMonitor(threading.Thread):
 
     def __init__(self, parent_worker: "Worker") -> None:
         super().__init__(daemon=True)
-        self.logger = UnmanicLogging.get_logger(name=__class__.__name__)
+        self.logger = UnmanicLogging.get_logger(name=self.__class__.__name__)
         self._stop_event: threading.Event = threading.Event()
         self._terminate_lock: threading.Lock = threading.Lock()
 
@@ -471,7 +471,7 @@ class Worker(threading.Thread):
 
     def __init__(
         self,
-        thread_id: int,
+        thread_id: str,
         name: str,
         worker_group_id: int,
         pending_queue: "queue.Queue[Any]",
@@ -479,7 +479,7 @@ class Worker(threading.Thread):
         event: threading.Event,
     ) -> None:
         super(Worker, self).__init__(name=name)
-        self.thread_id: int = thread_id
+        self.thread_id: str = thread_id
         self.name: str = name
         self.worker_group_id: int = worker_group_id
         self.event: threading.Event = event
@@ -499,7 +499,7 @@ class Worker(threading.Thread):
         self.paused_flag.clear()
 
         # Create logger for this worker
-        self.logger = UnmanicLogging.get_logger(name=__class__.__name__)
+        self.logger = UnmanicLogging.get_logger(name=self.__class__.__name__)
 
     def _log(self, message: str, message2: str = "", level: str = "info") -> None:
         """Log a message with optional second message."""

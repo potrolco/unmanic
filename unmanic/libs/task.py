@@ -44,7 +44,8 @@ from unmanic import config
 from unmanic.libs import common
 from unmanic.libs.library import Library
 from unmanic.libs.logs import UnmanicLogging
-from unmanic.libs.unmodels.tasks import IntegrityError, Tasks
+from peewee import IntegrityError
+from unmanic.libs.unmodels.tasks import Tasks
 
 
 def prepare_file_destination_data(pathname: str, file_extension: str) -> Dict[str, str]:
@@ -83,7 +84,7 @@ class Task:
         self.task: Optional[Tasks] = None
         self.task_dict: Optional[Dict[str, Any]] = None
         self.settings = config.Config()
-        self.logger = UnmanicLogging.get_logger(name=__class__.__name__)
+        self.logger = UnmanicLogging.get_logger(name=self.__class__.__name__)
         self.statistics: Dict[str, Any] = {}
         self.errors: List[str] = []
 
