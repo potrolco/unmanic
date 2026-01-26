@@ -978,5 +978,137 @@ class TestForemanGetCurrentLibraryConfiguration(unittest.TestCase):
         self.assertEqual(result[1]["enabled_plugins"][0]["plugin_id"], "video_encoder")
 
 
+class TestForemanPauseAllWorkerThreads(unittest.TestCase):
+    """Tests for pause_all_worker_threads method."""
+
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_pause_all_worker_threads(self, mock_logging, mock_link):
+        """Test pause_all_worker_threads pauses all workers."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        mock_worker1 = MagicMock()
+        mock_worker1.paused_flag = threading.Event()
+        mock_worker1.worker_group_id = 1
+
+        mock_worker2 = MagicMock()
+        mock_worker2.paused_flag = threading.Event()
+        mock_worker2.worker_group_id = 1
+
+        foreman.worker_threads = {"main-0": mock_worker1, "main-1": mock_worker2}
+        foreman.paused_worker_threads = []
+
+        result = foreman.pause_all_worker_threads()
+
+        self.assertTrue(result)
+        self.assertTrue(mock_worker1.paused_flag.is_set())
+        self.assertTrue(mock_worker2.paused_flag.is_set())
+
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_pause_all_worker_threads_by_group(self, mock_logging, mock_link):
+        """Test pause_all_worker_threads filters by worker group."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        mock_worker1 = MagicMock()
+        mock_worker1.paused_flag = threading.Event()
+        mock_worker1.worker_group_id = 1
+
+        mock_worker2 = MagicMock()
+        mock_worker2.paused_flag = threading.Event()
+        mock_worker2.worker_group_id = 2
+
+        foreman.worker_threads = {"main-0": mock_worker1, "main-1": mock_worker2}
+        foreman.paused_worker_threads = []
+
+        result = foreman.pause_all_worker_threads(worker_group_id=1)
+
+        self.assertTrue(result)
+        self.assertTrue(mock_worker1.paused_flag.is_set())  # Group 1 - paused
+        self.assertFalse(mock_worker2.paused_flag.is_set())  # Group 2 - not paused
+
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_pause_all_worker_threads_with_record(self, mock_logging, mock_link):
+        """Test pause_all_worker_threads with record_paused flag."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        mock_worker = MagicMock()
+        mock_worker.paused_flag = threading.Event()
+        mock_worker.worker_group_id = 1
+
+        foreman.worker_threads = {"main-0": mock_worker}
+        foreman.paused_worker_threads = []
+
+        result = foreman.pause_all_worker_threads(record_paused=True)
+
+        self.assertTrue(result)
+        self.assertIn("main-0", foreman.paused_worker_threads)
+
+
+class TestForemanCheckIdleWorkers(unittest.TestCase):
+    """Tests for check_for_idle_workers method."""
+
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_check_for_idle_workers_paused(self, mock_logging, mock_link):
+        """Test check_for_idle_workers returns False when workers are paused."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        mock_worker = MagicMock()
+        mock_worker.idle = True
+        mock_worker.paused_flag = threading.Event()
+        mock_worker.paused_flag.set()  # Worker is paused
+
+        foreman.worker_threads = {"main-0": mock_worker}
+
+        result = foreman.check_for_idle_workers()
+
+        self.assertFalse(result)
+
+
+class TestForemanMarkRemoteTaskManagerRedundant(unittest.TestCase):
+    """Tests for mark_remote_task_manager_thread_as_redundant method."""
+
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_mark_remote_task_manager_thread_as_redundant(self, mock_logging, mock_link):
+        """Test marking remote task manager as redundant."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        mock_manager = MagicMock()
+        mock_manager.redundant_flag = threading.Event()
+        foreman.remote_task_manager_threads = {"remote-0": mock_manager}
+
+        foreman.mark_remote_task_manager_thread_as_redundant("remote-0")
+
+        self.assertTrue(mock_manager.redundant_flag.is_set())
+
+
 if __name__ == "__main__":
     unittest.main()
