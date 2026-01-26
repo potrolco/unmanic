@@ -25,10 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Pre-transcode validation with configurable fail behavior
   - Post-transcode validation of output files
   - Health status stored in task object
-- **Unit tests**: 180 tests (up from 118)
+- **Health check API endpoint**: POST `/api/v2/health/file`
+  - Check video file integrity on demand
+  - Optional checksum generation
+  - Returns status, errors, warnings, file metadata
+- **Unit tests**: 186 tests (up from 118)
   - `tests/unit/test_health_check.py` - Health check module tests
   - `tests/unit/test_workers_health.py` - Worker integration tests
   - Additional settings tests for health check configuration
+  - API endpoint tests for file health check
 
 ## [Unreleased] - Phase 1 Modernization
 
