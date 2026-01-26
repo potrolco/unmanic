@@ -15,6 +15,8 @@ import os
 import pytest
 from unittest.mock import patch
 
+from pydantic import ValidationError
+
 from unmanic.libs.settings import UnmanicSettings, get_settings
 
 
@@ -129,25 +131,25 @@ class TestUnmanicSettingsValidation:
     def test_ui_port_min_value(self, monkeypatch):
         """UI port should reject values below 1."""
         monkeypatch.setenv("UNMANIC_UI_PORT", "0")
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError, match="ui_port"):
             UnmanicSettings()
 
     def test_ui_port_max_value(self, monkeypatch):
         """UI port should reject values above 65535."""
         monkeypatch.setenv("UNMANIC_UI_PORT", "65536")
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError, match="ui_port"):
             UnmanicSettings()
 
     def test_concurrent_file_testers_min(self, monkeypatch):
         """Concurrent file testers should reject values below 1."""
         monkeypatch.setenv("UNMANIC_CONCURRENT_FILE_TESTERS", "0")
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError, match="concurrent_file_testers"):
             UnmanicSettings()
 
     def test_concurrent_file_testers_max(self, monkeypatch):
         """Concurrent file testers should reject values above 16."""
         monkeypatch.setenv("UNMANIC_CONCURRENT_FILE_TESTERS", "17")
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError, match="concurrent_file_testers"):
             UnmanicSettings()
 
 

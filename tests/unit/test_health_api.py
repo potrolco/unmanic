@@ -61,7 +61,7 @@ class TestHealthChecks:
 
     def test_check_database_healthy(self, handler):
         """Database check should return healthy when accessible."""
-        with patch("unmanic.webserver.api_v2.health_api.Database") as mock_db:
+        with patch("unmanic.libs.unmodels.lib.Database") as mock_db:
             mock_db.get_database.return_value = MagicMock()
             result = handler._check_database()
             assert result["status"] == "healthy"
@@ -69,7 +69,7 @@ class TestHealthChecks:
 
     def test_check_database_unhealthy_not_initialized(self, handler):
         """Database check should return unhealthy when not initialized."""
-        with patch("unmanic.webserver.api_v2.health_api.Database") as mock_db:
+        with patch("unmanic.libs.unmodels.lib.Database") as mock_db:
             mock_db.get_database.return_value = None
             result = handler._check_database()
             assert result["status"] == "unhealthy"
@@ -77,7 +77,7 @@ class TestHealthChecks:
 
     def test_check_database_unhealthy_on_exception(self, handler):
         """Database check should return unhealthy on exception."""
-        with patch("unmanic.webserver.api_v2.health_api.Database") as mock_db:
+        with patch("unmanic.libs.unmodels.lib.Database") as mock_db:
             mock_db.get_database.side_effect = Exception("Connection failed")
             result = handler._check_database()
             assert result["status"] == "unhealthy"
