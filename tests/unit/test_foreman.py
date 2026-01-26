@@ -1110,5 +1110,162 @@ class TestForemanMarkRemoteTaskManagerRedundant(unittest.TestCase):
         self.assertTrue(mock_manager.redundant_flag.is_set())
 
 
+class TestForemanManageEventSchedules(unittest.TestCase):
+    """Tests for manage_event_schedules method."""
+
+    @patch("unmanic.libs.foreman.datetime")
+    @patch("unmanic.libs.foreman.WorkerGroup")
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_manage_event_schedules_skips_if_already_run(self, mock_logging, mock_link, mock_worker_group, mock_datetime):
+        """Test manage_event_schedules skips if already run this minute."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_datetime.today.return_value.today.return_value.weekday.return_value = 0  # Monday
+        mock_datetime.today.return_value.strftime.return_value = "12:00"
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        foreman.last_schedule_run = "12:00"  # Already ran at this time
+
+        foreman.manage_event_schedules()
+
+        # Should not call get_all_worker_groups since we already ran
+        mock_worker_group.get_all_worker_groups.assert_not_called()
+
+    @patch("unmanic.libs.foreman.datetime")
+    @patch("unmanic.libs.foreman.WorkerGroup")
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_manage_event_schedules_daily(self, mock_logging, mock_link, mock_worker_group, mock_datetime):
+        """Test manage_event_schedules runs daily task."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_datetime.today.return_value.today.return_value.weekday.return_value = 0  # Monday
+        mock_datetime.today.return_value.strftime.return_value = "12:00"
+
+        mock_wg_instance = MagicMock()
+        mock_wg_instance.get_worker_event_schedules.return_value = [
+            {"schedule_time": "12:00", "repetition": "daily", "schedule_task": "pause", "schedule_worker_count": 0}
+        ]
+        mock_worker_group.get_all_worker_groups.return_value = [{"id": 1}]
+        mock_worker_group.return_value = mock_wg_instance
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        foreman.last_schedule_run = "11:59"  # Different time
+
+        with patch.object(foreman, "run_task") as mock_run_task:
+            foreman.manage_event_schedules()
+            mock_run_task.assert_called_once()
+
+    @patch("unmanic.libs.foreman.datetime")
+    @patch("unmanic.libs.foreman.WorkerGroup")
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_manage_event_schedules_no_schedule_time(self, mock_logging, mock_link, mock_worker_group, mock_datetime):
+        """Test manage_event_schedules skips events without schedule_time."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_datetime.today.return_value.today.return_value.weekday.return_value = 0
+        mock_datetime.today.return_value.strftime.return_value = "12:00"
+
+        mock_wg_instance = MagicMock()
+        mock_wg_instance.get_worker_event_schedules.return_value = [
+            {"schedule_time": None, "repetition": "daily", "schedule_task": "pause"}  # No time
+        ]
+        mock_worker_group.get_all_worker_groups.return_value = [{"id": 1}]
+        mock_worker_group.return_value = mock_wg_instance
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        foreman.last_schedule_run = "11:59"
+
+        with patch.object(foreman, "run_task") as mock_run_task:
+            foreman.manage_event_schedules()
+            mock_run_task.assert_not_called()
+
+    @patch("unmanic.libs.foreman.datetime")
+    @patch("unmanic.libs.foreman.WorkerGroup")
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_manage_event_schedules_wrong_time(self, mock_logging, mock_link, mock_worker_group, mock_datetime):
+        """Test manage_event_schedules skips events not at current time."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_datetime.today.return_value.today.return_value.weekday.return_value = 0
+        mock_datetime.today.return_value.strftime.return_value = "12:00"
+
+        mock_wg_instance = MagicMock()
+        mock_wg_instance.get_worker_event_schedules.return_value = [
+            {"schedule_time": "14:00", "repetition": "daily", "schedule_task": "pause"}  # Wrong time
+        ]
+        mock_worker_group.get_all_worker_groups.return_value = [{"id": 1}]
+        mock_worker_group.return_value = mock_wg_instance
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        foreman.last_schedule_run = "11:59"
+
+        with patch.object(foreman, "run_task") as mock_run_task:
+            foreman.manage_event_schedules()
+            mock_run_task.assert_not_called()
+
+
+class TestForemanInitWorkerThreads(unittest.TestCase):
+    """Tests for init_worker_threads method."""
+
+    @patch("unmanic.libs.foreman.WorkerGroup")
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_init_worker_threads_creates_workers(self, mock_logging, mock_link, mock_worker_group):
+        """Test init_worker_threads creates workers as configured."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_worker_group.get_all_worker_groups.return_value = [{"id": 1, "name": "Main", "number_of_workers": 2}]
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        foreman.worker_threads = {}  # Start empty
+
+        with patch.object(foreman, "start_worker_thread") as mock_start:
+            foreman.init_worker_threads()
+            # Should try to create 2 workers
+            self.assertEqual(mock_start.call_count, 2)
+
+    @patch("unmanic.libs.foreman.WorkerGroup")
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_init_worker_threads_removes_dead_workers(self, mock_logging, mock_link, mock_worker_group):
+        """Test init_worker_threads removes dead worker threads."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_worker_group.get_all_worker_groups.return_value = []
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        # Add a dead worker
+        mock_dead_worker = MagicMock()
+        mock_dead_worker.is_alive.return_value = False
+        foreman.worker_threads = {"main-0": mock_dead_worker}
+
+        foreman.init_worker_threads()
+
+        # Dead worker should be removed
+        self.assertNotIn("main-0", foreman.worker_threads)
+
+
 if __name__ == "__main__":
     unittest.main()
