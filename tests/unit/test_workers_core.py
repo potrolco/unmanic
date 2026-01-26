@@ -2743,5 +2743,171 @@ class TestWorkerIdleState(unittest.TestCase):
         self.assertIsNone(worker.worker_log)
 
 
+class TestWorkerSubprocessMonitorTerminateProcTreeRaises(unittest.TestCase):
+    """Tests for terminate_proc when __terminate_proc_tree raises exceptions."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_terminate_proc_tree_raises_no_such_process(self, mock_logging):
+        """Test terminate_proc handles NoSuchProcess from __terminate_proc_tree."""
+        import psutil
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logger = MagicMock()
+        mock_logging.get_logger.return_value = mock_logger
+
+        mock_subprocess = MagicMock()
+        # Make __terminate_proc_tree raise NoSuchProcess
+        mock_subprocess.children.side_effect = psutil.NoSuchProcess(12345)
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess = mock_subprocess
+        monitor.subprocess_pid = 12345
+
+        # Should handle exception and unset_proc
+        monitor.terminate_proc()
+
+        # Should have logged debug and called unset_proc
+        mock_logger.debug.assert_called()
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_terminate_proc_tree_raises_access_denied(self, mock_logging):
+        """Test terminate_proc handles AccessDenied from __terminate_proc_tree."""
+        import psutil
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logger = MagicMock()
+        mock_logging.get_logger.return_value = mock_logger
+
+        mock_subprocess = MagicMock()
+        mock_subprocess.children.side_effect = psutil.AccessDenied(12345)
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess = mock_subprocess
+        monitor.subprocess_pid = 12345
+
+        # Should handle exception
+        monitor.terminate_proc()
+
+        # Should have logged warning
+        mock_logger.warning.assert_called()
+
+
+class TestWorkerSubprocessMonitorLogProcTerminatedException(unittest.TestCase):
+    """Tests for __log_proc_terminated exception handling."""
+
+    @patch("unmanic.libs.workers.psutil.wait_procs")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_log_proc_terminated_exception(self, mock_logging, mock_wait_procs):
+        """Test __log_proc_terminated handles exception and logs."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logger = MagicMock()
+        mock_logging.get_logger.return_value = mock_logger
+
+        mock_subprocess = MagicMock()
+        mock_subprocess.children.return_value = []
+
+        # Capture and call callback with a proc that raises on returncode
+        def capture_callback(procs, timeout, callback):
+            mock_proc = MagicMock()
+            type(mock_proc).returncode = property(lambda s: (_ for _ in ()).throw(Exception("Cannot get returncode")))
+            callback(mock_proc)
+            return (procs, [])
+
+        mock_wait_procs.side_effect = capture_callback
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess = mock_subprocess
+        monitor.subprocess_pid = 12345
+
+        # Should not raise, should log exception
+        monitor.terminate_proc()
+
+        # Logger.exception should have been called
+        mock_logger.exception.assert_called()
+
+
+class TestWorkerSubprocessMonitorPausedProperty(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor paused property."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_paused_default_false(self, mock_logging):
+        """Test paused defaults to False."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+
+        self.assertFalse(monitor.paused)
+
+
+class TestWorkerSubprocessMonitorResourceDefaults(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor resource attribute defaults."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_resource_attributes_default_to_zero(self, mock_logging):
+        """Test CPU/memory resource attributes default to 0."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+
+        self.assertEqual(monitor.subprocess_cpu_percent, 0)
+        self.assertEqual(monitor.subprocess_mem_percent, 0)
+        self.assertEqual(monitor.subprocess_rss_bytes, 0)
+        self.assertEqual(monitor.subprocess_vms_bytes, 0)
+
+
+class TestWorkerEventAttribute(unittest.TestCase):
+    """Tests for Worker event attribute."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_event_stored(self, mock_logging):
+        """Test event is stored on worker."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        event = threading.Event()
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=event,
+        )
+
+        self.assertEqual(worker.event, event)
+
+
 if __name__ == "__main__":
     unittest.main()
