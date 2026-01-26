@@ -1128,5 +1128,282 @@ class TestPluginsHandlerGetInstallablePluginsList(unittest.TestCase):
         self.assertEqual(len(result), 1)
 
 
+class TestPluginsHandlerGetPluginListFilteredAndSorted(unittest.TestCase):
+    """Tests for PluginsHandler.get_plugin_list_filtered_and_sorted method."""
+
+    def setUp(self):
+        """Clear singleton before each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    def tearDown(self):
+        """Clear singleton after each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    @patch("unmanic.libs.plugins.Plugins")
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_get_plugin_list_basic_query(self, mock_config, mock_logging, mock_plugins):
+        """Test get_plugin_list_filtered_and_sorted basic query."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+        mock_plugins.select.return_value.dicts.return_value = [{"id": 1, "name": "Test"}]
+
+        handler = PluginsHandler()
+        result = handler.get_plugin_list_filtered_and_sorted()
+
+        self.assertIsNotNone(result)
+
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_get_plugin_list_raises_on_enabled_param(self, mock_config, mock_logging):
+        """Test get_plugin_list_filtered_and_sorted raises on enabled param."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        handler = PluginsHandler()
+
+        with self.assertRaises(Exception) as context:
+            handler.get_plugin_list_filtered_and_sorted(enabled=True)
+
+        self.assertIn("deprecated", str(context.exception).lower())
+
+
+class TestPluginsHandlerUpdatePluginsByDbTableId(unittest.TestCase):
+    """Tests for PluginsHandler.update_plugins_by_db_table_id method."""
+
+    def setUp(self):
+        """Clear singleton before each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    def tearDown(self):
+        """Clear singleton after each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    @patch("unmanic.libs.plugins.Plugins")
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_update_plugins_success(self, mock_config, mock_logging, mock_plugins):
+        """Test update_plugins_by_db_table_id success path."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        handler = PluginsHandler()
+        handler.get_plugin_list_filtered_and_sorted = MagicMock(return_value=[{"plugin_id": "test"}])
+        handler.install_plugin_by_id = MagicMock(return_value=True)
+
+        result = handler.update_plugins_by_db_table_id([1])
+
+        self.assertTrue(result)
+        handler.install_plugin_by_id.assert_called_once_with("test")
+
+    @patch("unmanic.libs.plugins.Plugins")
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_update_plugins_failure(self, mock_config, mock_logging, mock_plugins):
+        """Test update_plugins_by_db_table_id returns False on failure."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        handler = PluginsHandler()
+        handler.get_plugin_list_filtered_and_sorted = MagicMock(return_value=[{"plugin_id": "test"}])
+        handler.install_plugin_by_id = MagicMock(return_value=False)
+
+        result = handler.update_plugins_by_db_table_id([1])
+
+        self.assertFalse(result)
+
+
+class TestPluginsHandlerExecPluginRunner(unittest.TestCase):
+    """Tests for PluginsHandler.exec_plugin_runner method."""
+
+    def setUp(self):
+        """Clear singleton before each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    def tearDown(self):
+        """Clear singleton after each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    @patch("unmanic.libs.plugins.PluginExecutor")
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_exec_plugin_runner_delegates_to_executor(self, mock_config, mock_logging, mock_executor):
+        """Test exec_plugin_runner delegates to PluginExecutor."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+        mock_executor_instance = MagicMock()
+        mock_executor_instance.execute_plugin_runner.return_value = True
+        mock_executor.return_value = mock_executor_instance
+
+        handler = PluginsHandler()
+        result = handler.exec_plugin_runner({"test": "data"}, "plugin_id", "worker.process_item")
+
+        self.assertTrue(result)
+        mock_executor_instance.execute_plugin_runner.assert_called_once()
+
+
+class TestPluginsHandlerGetSettingsOfAllInstalledPlugins(unittest.TestCase):
+    """Tests for PluginsHandler.get_settings_of_all_installed_plugins method."""
+
+    def setUp(self):
+        """Clear singleton before each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    def tearDown(self):
+        """Clear singleton after each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    @patch("unmanic.libs.plugins.PluginExecutor")
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_get_settings_fetches_from_executor(self, mock_config, mock_logging, mock_executor):
+        """Test get_settings_of_all_installed_plugins fetches settings."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+        mock_executor_instance = MagicMock()
+        mock_executor_instance.get_plugin_settings.return_value = ({"setting": "value"}, {})
+        mock_executor.return_value = mock_executor_instance
+
+        handler = PluginsHandler()
+        handler.get_plugin_list_filtered_and_sorted = MagicMock(return_value=[{"plugin_id": "test_plugin"}])
+
+        result = handler.get_settings_of_all_installed_plugins()
+
+        self.assertEqual(result, {"test_plugin": {"setting": "value"}})
+
+
+class TestPluginsHandlerReadRepoDataWithFile(unittest.TestCase):
+    """Tests for PluginsHandler.read_repo_data when file exists."""
+
+    def setUp(self):
+        """Clear singleton before each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    def tearDown(self):
+        """Clear singleton after each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    @patch("builtins.open", create=True)
+    @patch("unmanic.libs.plugins.json.load")
+    @patch("unmanic.libs.plugins.os.makedirs")
+    @patch("unmanic.libs.plugins.os.path.exists")
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_read_repo_data_reads_json_file(
+        self, mock_config, mock_logging, mock_exists, mock_makedirs, mock_json_load, mock_open
+    ):
+        """Test read_repo_data reads JSON file when it exists."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config_instance = MagicMock()
+        mock_config_instance.get_plugins_path.return_value = "/tmp/test_plugins"
+        mock_config.return_value = mock_config_instance
+        mock_exists.return_value = True
+        mock_json_load.return_value = {"repo": "data"}
+        mock_open.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_open.return_value.__exit__ = MagicMock(return_value=False)
+
+        handler = PluginsHandler()
+        result = handler.read_repo_data(12345)
+
+        self.assertEqual(result, {"repo": "data"})
+
+
+class TestPluginsHandlerGetPluginInfoWithFile(unittest.TestCase):
+    """Tests for PluginsHandler.get_plugin_info when file exists."""
+
+    def setUp(self):
+        """Clear singleton before each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    def tearDown(self):
+        """Clear singleton after each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    @patch("builtins.open", create=True)
+    @patch("unmanic.libs.plugins.json.load")
+    @patch("unmanic.libs.plugins.os.path.exists")
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_get_plugin_info_reads_json_file(self, mock_config, mock_logging, mock_exists, mock_json_load, mock_open):
+        """Test get_plugin_info reads JSON file when it exists."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config_instance = MagicMock()
+        mock_config_instance.get_plugins_path.return_value = "/tmp/test_plugins"
+        mock_config.return_value = mock_config_instance
+        mock_exists.return_value = True
+        mock_json_load.return_value = {"id": "test", "version": "1.0.0"}
+        mock_open.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_open.return_value.__exit__ = MagicMock(return_value=False)
+
+        handler = PluginsHandler()
+        result = handler.get_plugin_info("test_plugin")
+
+        self.assertEqual(result, {"id": "test", "version": "1.0.0"})
+
+
 if __name__ == "__main__":
     unittest.main()
