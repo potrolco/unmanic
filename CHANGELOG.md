@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - Phase 1 Backend Stability
+
+### Changed
+- **Centralized API error handling**: New `api_error_handler` decorator in `base_api_handler.py`
+  - Consistent exception handling across all API endpoints
+  - Proper logging with tracebacks for debugging
+  - Maps exceptions to appropriate HTTP status codes:
+    - `BaseApiError` → Logged and handled
+    - `ValidationError` → 400 Bad Request
+    - `FileNotFoundError` → 404 Not Found
+    - `PermissionError` → 403 Forbidden
+    - `ValueError` → 400 Bad Request
+    - `OSError` → 500 Internal Server Error
+    - Generic `Exception` → 500 Internal Server Error with traceback
+- Refactored 62 API handlers across 9 files to use the new decorator
+- Reduced boilerplate try/except blocks by ~60%
+- 242 tests passing (100%)
+
 ## [Unreleased] - Phase 3 Multi-GPU Support
 
 ### Added
