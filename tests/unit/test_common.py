@@ -355,6 +355,90 @@ class TestJsonDumpToFile:
             assert os.path.exists(path)
 
 
+class TestTail:
+    """Test tail function."""
+
+    def test_reads_last_lines(self):
+        """Should read last n lines from file."""
+        with tempfile.NamedTemporaryFile(mode="wb", delete=False) as f:
+            # Write multiple lines
+            for i in range(20):
+                f.write(f"Line {i}\n".encode())
+            path = f.name
+
+        try:
+            with open(path, "rb") as f:
+                lines = common.tail(f, 5)
+            assert len(lines) >= 5
+            # Last line should be "Line 19"
+            assert b"Line 19" in lines[-1]
+        finally:
+            os.unlink(path)
+
+    def test_handles_small_file(self):
+        """Should handle file with fewer lines than requested."""
+        with tempfile.NamedTemporaryFile(mode="wb", delete=False) as f:
+            f.write(b"Line 1\nLine 2\n")
+            path = f.name
+
+        try:
+            with open(path, "rb") as f:
+                lines = common.tail(f, 10)
+            # Should return all lines even if fewer than requested
+            assert len(lines) <= 10
+        finally:
+            os.unlink(path)
+
+
+class TestCleanFilesInCacheDir:
+    """Test clean_files_in_cache_dir function."""
+
+    def test_removes_unmanic_file_conversion_dirs(self):
+        """Should remove directories starting with unmanic_file_conversion-."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a directory that should be removed
+            cache_dir = os.path.join(tmpdir, "unmanic_file_conversion-12345")
+            os.makedirs(cache_dir)
+            # Create a file inside
+            test_file = os.path.join(cache_dir, "test.txt")
+            with open(test_file, "w") as f:
+                f.write("test")
+
+            common.clean_files_in_cache_dir(tmpdir)
+
+            # Directory should be removed
+            assert not os.path.exists(cache_dir)
+
+    def test_removes_remote_pending_library_dirs(self):
+        """Should remove directories starting with unmanic_remote_pending_library-."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a directory that should be removed
+            cache_dir = os.path.join(tmpdir, "unmanic_remote_pending_library-67890")
+            os.makedirs(cache_dir)
+
+            common.clean_files_in_cache_dir(tmpdir)
+
+            # Directory should be removed
+            assert not os.path.exists(cache_dir)
+
+    def test_preserves_other_directories(self):
+        """Should not remove directories with different names."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a directory that should NOT be removed
+            keep_dir = os.path.join(tmpdir, "other_directory")
+            os.makedirs(keep_dir)
+
+            common.clean_files_in_cache_dir(tmpdir)
+
+            # Directory should still exist
+            assert os.path.exists(keep_dir)
+
+    def test_handles_nonexistent_directory(self):
+        """Should handle non-existent cache directory."""
+        # Should not raise exception
+        common.clean_files_in_cache_dir("/nonexistent/path/12345")
+
+
 class TestTouch:
     """Test touch function."""
 
