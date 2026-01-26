@@ -1267,5 +1267,88 @@ class TestForemanInitWorkerThreads(unittest.TestCase):
         self.assertNotIn("main-0", foreman.worker_threads)
 
 
+class TestForemanRemoveStoppedRemoteManagers(unittest.TestCase):
+    """Tests for remove_stopped_remote_task_manager_threads method."""
+
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_remove_stopped_removes_dead_threads(self, mock_logging, mock_link):
+        """Test remove_stopped removes dead remote task manager threads."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        mock_dead_manager = MagicMock()
+        mock_dead_manager.is_alive.return_value = False
+
+        mock_alive_manager = MagicMock()
+        mock_alive_manager.is_alive.return_value = True
+
+        foreman.remote_task_manager_threads = {
+            "dead-0": mock_dead_manager,
+            "alive-0": mock_alive_manager,
+        }
+
+        foreman.remove_stopped_remote_task_manager_threads()
+
+        self.assertNotIn("dead-0", foreman.remote_task_manager_threads)
+        self.assertIn("alive-0", foreman.remote_task_manager_threads)
+
+
+class TestForemanTerminateUnlinkedRemoteManagers(unittest.TestCase):
+    """Tests for terminate_unlinked_remote_task_manager_threads method."""
+
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_terminate_unlinked_marks_removed_uuid(self, mock_logging, mock_link):
+        """Test terminates managers for removed installation UUIDs."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_settings = MagicMock()
+        mock_settings.get_remote_installations.return_value = []  # No configured installations
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, mock_settings, MagicMock(), threading.Event())
+
+        mock_manager = MagicMock()
+        mock_manager.get_info.return_value = {"installation_info": {"uuid": "removed-uuid", "address": "http://removed:5000"}}
+        mock_manager.redundant_flag = threading.Event()
+
+        foreman.remote_task_manager_threads = {"remote-0": mock_manager}
+
+        foreman.terminate_unlinked_remote_task_manager_threads()
+
+        # Manager should be marked redundant since UUID not in config
+        self.assertTrue(mock_manager.redundant_flag.is_set())
+
+
+class TestForemanStartWorkerThread(unittest.TestCase):
+    """Tests for start_worker_thread method."""
+
+    @patch("unmanic.libs.foreman.Worker")
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_start_worker_thread_creates_worker(self, mock_logging, mock_link, mock_worker_class):
+        """Test start_worker_thread creates and starts a worker."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_worker_instance = MagicMock()
+        mock_worker_class.return_value = mock_worker_instance
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        foreman.start_worker_thread("main-0", "Worker-1", 1)
+
+        mock_worker_instance.start.assert_called_once()
+        self.assertIn("main-0", foreman.worker_threads)
+
+
 if __name__ == "__main__":
     unittest.main()
