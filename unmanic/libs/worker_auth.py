@@ -254,7 +254,7 @@ class WorkerAuthManager(metaclass=SingletonType):
                     self._workers[worker.worker_id] = worker
                 self._revoked_tokens = set(data.get("revoked_tokens", []))
             self.logger.info("Loaded %d registered workers", len(self._workers))
-        except (OSError, IOError, json.JSONDecodeError) as e:
+        except (OSError, json.JSONDecodeError) as e:
             self.logger.error("Failed to load workers: %s", e)
 
     def _save_workers(self) -> None:
