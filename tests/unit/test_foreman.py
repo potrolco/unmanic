@@ -602,5 +602,381 @@ class TestForemanRemoveStaleManagers(unittest.TestCase):
         self.assertNotIn("stale", foreman.available_remote_managers)
 
 
+class TestForemanResumeWorkerThread(unittest.TestCase):
+    """Tests for resume_worker_thread method."""
+
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_resume_worker_thread_success(self, mock_logging, mock_link):
+        """Test resume_worker_thread successfully resumes a worker."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        mock_worker = MagicMock()
+        mock_worker.paused_flag = threading.Event()
+        mock_worker.paused_flag.set()  # Worker is paused
+        foreman.worker_threads = {"main-0": mock_worker}
+        foreman.paused_worker_threads = ["main-0"]
+
+        result = foreman.resume_worker_thread("main-0")
+
+        self.assertTrue(result)
+        self.assertFalse(mock_worker.paused_flag.is_set())
+        self.assertNotIn("main-0", foreman.paused_worker_threads)
+
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_resume_worker_thread_not_found(self, mock_logging, mock_link):
+        """Test resume_worker_thread returns False for unknown worker."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        foreman.worker_threads = {}
+
+        result = foreman.resume_worker_thread("nonexistent")
+
+        self.assertFalse(result)
+
+
+class TestForemanResumeAllWorkerThreads(unittest.TestCase):
+    """Tests for resume_all_worker_threads method."""
+
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_resume_all_worker_threads(self, mock_logging, mock_link):
+        """Test resume_all_worker_threads resumes all workers."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        mock_worker1 = MagicMock()
+        mock_worker1.paused_flag = threading.Event()
+        mock_worker1.paused_flag.set()
+        mock_worker1.worker_group_id = 1
+
+        mock_worker2 = MagicMock()
+        mock_worker2.paused_flag = threading.Event()
+        mock_worker2.paused_flag.set()
+        mock_worker2.worker_group_id = 1
+
+        foreman.worker_threads = {"main-0": mock_worker1, "main-1": mock_worker2}
+        foreman.paused_worker_threads = ["main-0", "main-1"]
+
+        result = foreman.resume_all_worker_threads()
+
+        self.assertTrue(result)
+        self.assertFalse(mock_worker1.paused_flag.is_set())
+        self.assertFalse(mock_worker2.paused_flag.is_set())
+
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_resume_all_worker_threads_by_group(self, mock_logging, mock_link):
+        """Test resume_all_worker_threads filters by worker group."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        mock_worker1 = MagicMock()
+        mock_worker1.paused_flag = threading.Event()
+        mock_worker1.paused_flag.set()
+        mock_worker1.worker_group_id = 1
+
+        mock_worker2 = MagicMock()
+        mock_worker2.paused_flag = threading.Event()
+        mock_worker2.paused_flag.set()
+        mock_worker2.worker_group_id = 2
+
+        foreman.worker_threads = {"main-0": mock_worker1, "main-1": mock_worker2}
+        foreman.paused_worker_threads = ["main-0", "main-1"]
+
+        result = foreman.resume_all_worker_threads(worker_group_id=1)
+
+        self.assertTrue(result)
+        self.assertFalse(mock_worker1.paused_flag.is_set())  # Group 1 - resumed
+        self.assertTrue(mock_worker2.paused_flag.is_set())  # Group 2 - still paused
+
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_resume_all_worker_threads_recorded_only(self, mock_logging, mock_link):
+        """Test resume_all_worker_threads with recorded_paused_only flag."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        mock_worker1 = MagicMock()
+        mock_worker1.paused_flag = threading.Event()
+        mock_worker1.paused_flag.set()
+        mock_worker1.worker_group_id = 1
+
+        mock_worker2 = MagicMock()
+        mock_worker2.paused_flag = threading.Event()
+        mock_worker2.paused_flag.set()
+        mock_worker2.worker_group_id = 1
+
+        foreman.worker_threads = {"main-0": mock_worker1, "main-1": mock_worker2}
+        foreman.paused_worker_threads = ["main-0"]  # Only main-0 recorded as paused
+
+        result = foreman.resume_all_worker_threads(recorded_paused_only=True)
+
+        self.assertTrue(result)
+        self.assertFalse(mock_worker1.paused_flag.is_set())  # Recorded - resumed
+        self.assertTrue(mock_worker2.paused_flag.is_set())  # Not recorded - still paused
+
+
+class TestForemanTerminateWorkerThread(unittest.TestCase):
+    """Tests for terminate_worker_thread method."""
+
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_terminate_worker_thread_success(self, mock_logging, mock_link):
+        """Test terminate_worker_thread successfully terminates worker."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        mock_worker = MagicMock()
+        foreman.worker_threads = {"main-0": mock_worker}
+
+        with patch.object(foreman, "mark_worker_thread_as_redundant") as mock_mark:
+            result = foreman.terminate_worker_thread("main-0")
+
+            self.assertTrue(result)
+            mock_mark.assert_called_once_with("main-0")
+
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_terminate_worker_thread_not_found(self, mock_logging, mock_link):
+        """Test terminate_worker_thread returns False for unknown worker."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        foreman.worker_threads = {}
+
+        result = foreman.terminate_worker_thread("nonexistent")
+
+        self.assertFalse(result)
+
+
+class TestForemanTerminateAllWorkerThreads(unittest.TestCase):
+    """Tests for terminate_all_worker_threads method."""
+
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_terminate_all_worker_threads(self, mock_logging, mock_link):
+        """Test terminate_all_worker_threads terminates all workers."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        mock_worker1 = MagicMock()
+        mock_worker2 = MagicMock()
+        foreman.worker_threads = {"main-0": mock_worker1, "main-1": mock_worker2}
+
+        with patch.object(foreman, "mark_worker_thread_as_redundant") as mock_mark:
+            result = foreman.terminate_all_worker_threads()
+
+            self.assertTrue(result)
+            self.assertEqual(mock_mark.call_count, 2)
+
+
+class TestForemanValidateWorkerConfig(unittest.TestCase):
+    """Tests for validate_worker_config method."""
+
+    @patch("unmanic.libs.foreman.Library")
+    @patch("unmanic.libs.foreman.PluginsHandler")
+    @patch("unmanic.libs.foreman.FrontendPushMessages")
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_validate_worker_config_valid(self, mock_logging, mock_link, mock_messages, mock_plugins_handler, mock_library):
+        """Test validate_worker_config returns True when all validations pass."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_plugins_handler.return_value.get_incompatible_enabled_plugins.return_value = []
+        mock_link.Links.return_value.within_enabled_link_limits.return_value = True
+        mock_library.within_library_count_limits.return_value = True
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        with patch.object(foreman, "configuration_changed", return_value=False):
+            result = foreman.validate_worker_config()
+
+        self.assertTrue(result)
+
+    @patch("unmanic.libs.foreman.Library")
+    @patch("unmanic.libs.foreman.PluginsHandler")
+    @patch("unmanic.libs.foreman.FrontendPushMessages")
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_validate_worker_config_incompatible_plugins(
+        self, mock_logging, mock_link, mock_messages, mock_plugins_handler, mock_library
+    ):
+        """Test validate_worker_config returns False for incompatible plugins."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_plugins_handler.return_value.get_incompatible_enabled_plugins.return_value = ["bad_plugin"]
+        mock_link.Links.return_value.within_enabled_link_limits.return_value = True
+        mock_library.within_library_count_limits.return_value = True
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        with patch.object(foreman, "configuration_changed", return_value=False):
+            result = foreman.validate_worker_config()
+
+        self.assertFalse(result)
+
+    @patch("unmanic.libs.foreman.Library")
+    @patch("unmanic.libs.foreman.PluginsHandler")
+    @patch("unmanic.libs.foreman.FrontendPushMessages")
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_validate_worker_config_link_limits_exceeded(
+        self, mock_logging, mock_link, mock_messages, mock_plugins_handler, mock_library
+    ):
+        """Test validate_worker_config returns False when link limits exceeded."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_plugins_handler.return_value.get_incompatible_enabled_plugins.return_value = []
+        mock_link.Links.return_value.within_enabled_link_limits.return_value = False
+        mock_library.within_library_count_limits.return_value = True
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        with patch.object(foreman, "configuration_changed", return_value=False):
+            result = foreman.validate_worker_config()
+
+        self.assertFalse(result)
+
+    @patch("unmanic.libs.foreman.Library")
+    @patch("unmanic.libs.foreman.PluginsHandler")
+    @patch("unmanic.libs.foreman.FrontendPushMessages")
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_validate_worker_config_configuration_changed(
+        self, mock_logging, mock_link, mock_messages, mock_plugins_handler, mock_library
+    ):
+        """Test validate_worker_config returns False when configuration changed."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_plugins_handler.return_value.get_incompatible_enabled_plugins.return_value = []
+        mock_link.Links.return_value.within_enabled_link_limits.return_value = True
+        mock_library.within_library_count_limits.return_value = True
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        with patch.object(foreman, "configuration_changed", return_value=True):
+            result = foreman.validate_worker_config()
+
+        self.assertFalse(result)
+
+    @patch("unmanic.libs.foreman.Library")
+    @patch("unmanic.libs.foreman.PluginsHandler")
+    @patch("unmanic.libs.foreman.FrontendPushMessages")
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_validate_worker_config_library_limits_exceeded(
+        self, mock_logging, mock_link, mock_messages, mock_plugins_handler, mock_library
+    ):
+        """Test validate_worker_config returns False when library limits exceeded."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_plugins_handler.return_value.get_incompatible_enabled_plugins.return_value = []
+        mock_link.Links.return_value.within_enabled_link_limits.return_value = True
+        mock_library.within_library_count_limits.return_value = False
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        with patch.object(foreman, "configuration_changed", return_value=False):
+            result = foreman.validate_worker_config()
+
+        self.assertFalse(result)
+
+
+class TestForemanGetCurrentLibraryConfiguration(unittest.TestCase):
+    """Tests for get_current_library_configuration method."""
+
+    @patch("unmanic.libs.foreman.Library")
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_get_current_library_configuration_empty(self, mock_logging, mock_link, mock_library):
+        """Test get_current_library_configuration with no libraries."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_library.get_all_libraries.return_value = []
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        result = foreman.get_current_library_configuration()
+
+        self.assertEqual(result, {})
+
+    @patch("unmanic.libs.foreman.Library")
+    @patch("unmanic.libs.foreman.installation_link")
+    @patch("unmanic.libs.foreman.UnmanicLogging")
+    def test_get_current_library_configuration_with_library(self, mock_logging, mock_link, mock_library):
+        """Test get_current_library_configuration with a library."""
+        from unmanic.libs.foreman import Foreman
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_library.get_all_libraries.return_value = [{"id": 1}]
+
+        mock_lib_instance = MagicMock()
+        mock_lib_instance.get_enabled_plugins.return_value = [{"plugin_id": "video_encoder", "settings": {"codec": "h265"}}]
+        mock_lib_instance.get_plugin_flow.return_value = [{"plugin_id": "video_encoder", "order": 1}]
+        mock_library.side_effect = [mock_lib_instance]
+
+        with patch.object(Foreman, "configuration_changed", return_value=False):
+            foreman = Foreman({}, MagicMock(), MagicMock(), threading.Event())
+
+        # Need to reset mock after __init__
+        mock_library.get_all_libraries.return_value = [{"id": 1}]
+        mock_library.side_effect = None
+        mock_library.return_value = mock_lib_instance
+
+        result = foreman.get_current_library_configuration()
+
+        self.assertIn(1, result)
+        self.assertEqual(len(result[1]["enabled_plugins"]), 1)
+        self.assertEqual(result[1]["enabled_plugins"][0]["plugin_id"], "video_encoder")
+
+
 if __name__ == "__main__":
     unittest.main()
