@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - Phase 1 Backend Stability
 
+### Added
+- **Structured logging with BoundLogger**: New context-binding logging class in `unmanic/libs/logs.py`
+  - Structlog-like immutable context binding (`bind()`, `unbind()`)
+  - Automatic injection of context fields into all log messages
+  - Supported context keys: worker_id, task_id, task_label, plugin_id, library_id, gpu_id, component
+  - Factory method: `UnmanicLogging.get_bound_logger(name, **context)`
+  - 17 unit tests in `tests/unit/test_bound_logger.py`
+
 ### Changed
 - **Centralized API error handling**: New `api_error_handler` decorator in `base_api_handler.py`
   - Consistent exception handling across all API endpoints

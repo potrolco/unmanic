@@ -45,6 +45,105 @@ from unmanic.libs.notifications import Notifications
 from unmanic.libs.frontend_push_messages import FrontendPushMessages
 
 
+class BoundLogger:
+    """
+    A logger wrapper that injects context fields into every log message.
+
+    Similar to structlog's bound loggers, this allows binding context once
+    and having it automatically included in all subsequent log calls.
+
+    Example:
+        logger = BoundLogger(logging.getLogger("Unmanic.Worker"))
+        logger = logger.bind(worker_id="main-0", task_id=123)
+        logger.info("Processing started")  # Includes worker_id and task_id
+    """
+
+    def __init__(self, logger: logging.Logger, context: dict = None):
+        """
+        Initialize a BoundLogger.
+
+        Args:
+            logger: The underlying Python logger instance.
+            context: Initial context dictionary to bind.
+        """
+        self._logger = logger
+        self._context = context or {}
+
+    def bind(self, **kwargs) -> "BoundLogger":
+        """
+        Create a new BoundLogger with additional context.
+
+        This returns a NEW logger instance - the original is unchanged.
+        This is immutable binding (like structlog).
+
+        Args:
+            **kwargs: Key-value pairs to add to the context.
+
+        Returns:
+            A new BoundLogger with the merged context.
+        """
+        new_context = {**self._context, **kwargs}
+        return BoundLogger(self._logger, new_context)
+
+    def unbind(self, *keys) -> "BoundLogger":
+        """
+        Create a new BoundLogger without specified context keys.
+
+        Args:
+            *keys: Keys to remove from the context.
+
+        Returns:
+            A new BoundLogger with the specified keys removed.
+        """
+        new_context = {k: v for k, v in self._context.items() if k not in keys}
+        return BoundLogger(self._logger, new_context)
+
+    def _log(self, level: int, msg: str, *args, exc_info=None, **kwargs):
+        """Internal log method that injects context."""
+        # Merge context into extra dict
+        extra = kwargs.pop("extra", {})
+        extra.update(self._context)
+        self._logger.log(level, msg, *args, extra=extra, exc_info=exc_info, **kwargs)
+
+    def debug(self, msg: str, *args, **kwargs):
+        """Log a DEBUG level message with bound context."""
+        self._log(logging.DEBUG, msg, *args, **kwargs)
+
+    def info(self, msg: str, *args, **kwargs):
+        """Log an INFO level message with bound context."""
+        self._log(logging.INFO, msg, *args, **kwargs)
+
+    def warning(self, msg: str, *args, **kwargs):
+        """Log a WARNING level message with bound context."""
+        self._log(logging.WARNING, msg, *args, **kwargs)
+
+    def error(self, msg: str, *args, **kwargs):
+        """Log an ERROR level message with bound context."""
+        self._log(logging.ERROR, msg, *args, **kwargs)
+
+    def exception(self, msg: str, *args, **kwargs):
+        """Log an ERROR level message with exception info and bound context."""
+        kwargs["exc_info"] = True
+        self._log(logging.ERROR, msg, *args, **kwargs)
+
+    def critical(self, msg: str, *args, **kwargs):
+        """Log a CRITICAL level message with bound context."""
+        self._log(logging.CRITICAL, msg, *args, **kwargs)
+
+    @property
+    def name(self) -> str:
+        """Return the underlying logger name."""
+        return self._logger.name
+
+    def getEffectiveLevel(self) -> int:
+        """Return the effective log level."""
+        return self._logger.getEffectiveLevel()
+
+    def isEnabledFor(self, level: int) -> bool:
+        """Check if the logger is enabled for the given level."""
+        return self._logger.isEnabledFor(level)
+
+
 class ForwardJSONFormatter(JSONFormatter):
     """
     JSON log formatter which adds log record attributes if debugging is enabled.
@@ -55,6 +154,12 @@ class ForwardJSONFormatter(JSONFormatter):
         logger = logging.getLogger(record.name)
         # Always include levelname used for labels
         extra["levelname"] = record.levelname
+
+        # Include bound context fields from BoundLogger
+        for key in ["worker_id", "task_id", "task_label", "plugin_id", "library_id", "gpu_id", "component"]:
+            if hasattr(record, key) and getattr(record, key) is not None:
+                extra[key] = getattr(record, key)
+
         # If the logger's effective level is DEBUG, add more context
         if logger.getEffectiveLevel() == logging.DEBUG:
             extra["filename"] = record.filename
@@ -779,6 +884,35 @@ class UnmanicLogging:
         if name:
             return logging.getLogger(f"Unmanic.{name}")
         return logger_instance._logger
+
+    @staticmethod
+    def get_bound_logger(name: str, settings=None, **initial_context) -> BoundLogger:
+        """
+        Get a BoundLogger with optional initial context.
+
+        This provides structlog-like context binding functionality.
+        Use bind() on the returned logger to add more context.
+
+        Args:
+            name: Logger name (will be prefixed with "Unmanic.")
+            settings: Optional Config instance to configure root logger.
+            **initial_context: Initial context fields to bind.
+
+        Returns:
+            A BoundLogger instance with the specified context.
+
+        Example:
+            logger = UnmanicLogging.get_bound_logger(
+                "Worker",
+                worker_id="main-0",
+                component="transcoder"
+            )
+            # Later, bind more context:
+            task_logger = logger.bind(task_id=123)
+            task_logger.info("Processing file")  # Includes worker_id, component, task_id
+        """
+        base_logger = UnmanicLogging.get_logger(name, settings)
+        return BoundLogger(base_logger, initial_context)
 
     def configure(self, settings):
         """
