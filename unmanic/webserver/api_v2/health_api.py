@@ -25,11 +25,12 @@ import tornado.log
 
 from unmanic import config
 from unmanic.libs import session
+from unmanic.libs.gpu_manager import get_gpu_manager
 from unmanic.libs.health_check import check_file_integrity, get_file_checksum
 from unmanic.libs.settings import UnmanicSettings
 from unmanic.libs.uiserver import UnmanicDataQueues
 from unmanic.webserver.api_v2.base_api_handler import BaseApiError, BaseApiHandler
-from unmanic.webserver.api_v2.schema.schemas import FileHealthCheckSchema, HealthCheckSchema
+from unmanic.webserver.api_v2.schema.schemas import FileHealthCheckSchema, GPUStatusSchema, HealthCheckSchema
 
 
 # Track application start time for uptime calculation
@@ -64,6 +65,11 @@ class ApiHealthHandler(BaseApiHandler):
             "path_pattern": r"/health/file",
             "supported_methods": ["POST"],
             "call_method": "check_file_health",
+        },
+        {
+            "path_pattern": r"/health/gpu",
+            "supported_methods": ["GET"],
+            "call_method": "get_gpu_status",
         },
     ]
 
@@ -294,6 +300,67 @@ class ApiHealthHandler(BaseApiHandler):
             response = self.build_response(
                 FileHealthCheckSchema(),
                 result.to_dict(),
+            )
+            self.write_success(response)
+            return
+
+        except BaseApiError as bae:
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
+            return
+        except Exception as e:
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+            self.write_error()
+
+    async def get_gpu_status(self):
+        """
+        Health - GPU status
+        ---
+        description: Get GPU manager status including available GPUs and current allocations.
+        responses:
+            200:
+                description: 'GPU status retrieved'
+                content:
+                    application/json:
+                        schema:
+                            GPUStatusSchema
+            503:
+                description: 'GPU manager unavailable'
+        """
+        try:
+            settings = UnmanicSettings()
+
+            if not settings.gpu_enabled:
+                response = self.build_response(
+                    GPUStatusSchema(),
+                    {
+                        "enabled": False,
+                        "total_devices": 0,
+                        "available_devices": 0,
+                        "active_allocations": 0,
+                        "max_workers_per_gpu": settings.max_workers_per_gpu,
+                        "strategy": settings.gpu_assignment_strategy,
+                        "devices": [],
+                        "allocations": [],
+                    },
+                )
+                self.write_success(response)
+                return
+
+            gpu_manager = get_gpu_manager()
+            status = gpu_manager.get_status()
+
+            response = self.build_response(
+                GPUStatusSchema(),
+                {
+                    "enabled": True,
+                    "total_devices": status["total_devices"],
+                    "available_devices": status["available_devices"],
+                    "active_allocations": status["active_allocations"],
+                    "max_workers_per_gpu": status["max_workers_per_gpu"],
+                    "strategy": status["strategy"],
+                    "devices": status["devices"],
+                    "allocations": status["allocations"],
+                },
             )
             self.write_success(response)
             return

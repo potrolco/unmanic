@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - Phase 3 Multi-GPU Support
+
+### Added
+- **GPU Manager module**: New `unmanic/libs/gpu_manager.py` with:
+  - `GPUType` enum (CUDA, VAAPI, UNKNOWN)
+  - `AllocationStrategy` enum (round_robin, least_used, manual)
+  - `GPUDevice` dataclass with serialization support
+  - `GPUAllocation` dataclass for tracking allocations
+  - `GPUManager` singleton class with thread-safe allocation/release
+- **GPU settings**: Added to Pydantic settings:
+  - `gpu_enabled` - Enable/disable GPU acceleration
+  - `gpu_assignment_strategy` - round_robin, least_used, or manual
+  - `max_workers_per_gpu` - Concurrent workers per GPU (1-10)
+  - `gpu_allowlist` - Comma-separated GPU device IDs to use
+  - `gpu_blocklist` - Comma-separated GPU device IDs to exclude
+- **Worker GPU integration**: GPU acquisition/release in worker pipeline:
+  - Workers acquire GPU before transcoding starts
+  - GPU released in finally block for cleanup
+  - GPU info included in worker status
+  - `get_current_gpu()` method for GPU access
+- **GPU status API endpoint**: GET `/api/v2/health/gpu`
+  - Returns GPU manager status
+  - Lists available GPUs and current allocations
+  - Shows allocation strategy and worker limits
+- **Unit tests**: 240 tests (up from 222)
+  - `tests/unit/test_gpu_manager.py` - GPU manager tests
+  - `tests/unit/test_workers_gpu.py` - Worker GPU integration tests
+  - `tests/unit/test_gpu_api.py` - GPU status API tests
+  - Additional settings tests for GPU configuration
+
 ## [Unreleased] - Phase 2 Video Health Checking
 
 ### Added

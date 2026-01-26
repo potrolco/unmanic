@@ -41,6 +41,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 import psutil
 
 from unmanic.libs import common
+from unmanic.libs.gpu_manager import GPUDevice, GPUManager, get_gpu_manager
 from unmanic.libs.health_check import HealthStatus, check_file_integrity, get_file_checksum
 from unmanic.libs.logs import UnmanicLogging
 from unmanic.libs.plugins import PluginsHandler
@@ -465,6 +466,9 @@ class Worker(threading.Thread):
 
     worker_runners_info: Dict[str, Dict[str, Any]] = {}
 
+    # GPU allocation (Phase 3)
+    current_gpu: Optional[GPUDevice] = None
+
     def __init__(
         self,
         thread_id: int,
@@ -566,6 +570,11 @@ class Worker(threading.Thread):
         subprocess_stats = None
         if self.worker_subprocess_monitor:
             subprocess_stats = self.worker_subprocess_monitor.get_subprocess_stats()
+        # Get GPU info (Phase 3)
+        gpu_info = None
+        if self.current_gpu:
+            gpu_info = self.current_gpu.to_dict()
+
         status = {
             "id": str(self.thread_id),
             "name": self.name,
@@ -578,6 +587,7 @@ class Worker(threading.Thread):
             "worker_log_tail": [],
             "runners_info": {},
             "subprocess": subprocess_stats,
+            "gpu": gpu_info,
         }
         if self.current_task:
             # Fetch the current file
@@ -621,6 +631,7 @@ class Worker(threading.Thread):
         self.current_task = None
         self.worker_runners_info = {}
         self.worker_log = []
+        self.current_gpu = None  # Phase 3: Clear GPU reference
 
     def __process_task_queue_item(self) -> None:
         """Process the set task."""
@@ -649,21 +660,29 @@ class Worker(threading.Thread):
             self.__unset_current_task()
             return
 
-        # Process the file. Will return true if success, otherwise false
-        success = self.__exec_worker_runners_on_set_task()
+        # Acquire GPU for transcoding (Phase 3)
+        self.__acquire_gpu()
 
-        # Run post-transcode health check if processing succeeded (Phase 2)
-        if success:
-            output_path = self.current_task.get_cache_path()
-            if output_path and os.path.exists(output_path):
-                post_check_passed = self.__run_post_transcode_health_check(output_path)
-                if not post_check_passed:
-                    # Output file failed health check
-                    self.logger.error("Post-transcode health check failed - %s", output_path)
-                    success = False
+        try:
+            # Process the file. Will return true if success, otherwise false
+            success = self.__exec_worker_runners_on_set_task()
 
-        # Mark the task as either success or not
-        self.current_task.set_success(success)
+            # Run post-transcode health check if processing succeeded (Phase 2)
+            if success:
+                output_path = self.current_task.get_cache_path()
+                if output_path and os.path.exists(output_path):
+                    post_check_passed = self.__run_post_transcode_health_check(output_path)
+                    if not post_check_passed:
+                        # Output file failed health check
+                        self.logger.error("Post-transcode health check failed - %s", output_path)
+                        success = False
+
+            # Mark the task as either success or not
+            self.current_task.set_success(success)
+
+        finally:
+            # Release GPU allocation (Phase 3)
+            self.__release_gpu()
 
         # Mark task completion statistics
         self.__set_finish_task_stats()
@@ -792,6 +811,79 @@ class Worker(threading.Thread):
         except Exception as e:
             self._log("Error during post-transcode health check", message2=str(e), level="exception")
             return True  # Don't block on health check failures
+
+    def __acquire_gpu(self) -> None:
+        """
+        Acquire a GPU for this worker's transcoding task (Phase 3).
+
+        Uses the GPU Manager singleton to allocate a GPU based on configured strategy.
+        The allocated GPU is stored in self.current_gpu for use during transcoding.
+        """
+        try:
+            settings = UnmanicSettings()
+            if not settings.gpu_enabled:
+                self._log("GPU acceleration disabled in settings", level="debug")
+                return
+
+            gpu_manager = get_gpu_manager()
+
+            # Apply settings to GPU manager
+            gpu_manager.set_max_workers_per_gpu(settings.max_workers_per_gpu)
+
+            # Get strategy from settings
+            from unmanic.libs.gpu_manager import AllocationStrategy
+
+            strategy_map = {
+                "round_robin": AllocationStrategy.ROUND_ROBIN,
+                "least_used": AllocationStrategy.LEAST_USED,
+                "manual": AllocationStrategy.MANUAL,
+            }
+            strategy = strategy_map.get(settings.gpu_assignment_strategy, AllocationStrategy.ROUND_ROBIN)
+            gpu_manager.set_strategy(strategy)
+
+            # Allocate GPU
+            self.current_gpu = gpu_manager.allocate(self.name)
+
+            if self.current_gpu:
+                self._log(
+                    f"GPU allocated for worker {self.name}: {self.current_gpu.display_name} ({self.current_gpu.device_id})",
+                    level="info",
+                )
+            else:
+                self._log(f"No GPU available for worker {self.name}, proceeding with CPU encoding", level="debug")
+
+        except Exception as e:
+            self._log("Error acquiring GPU", message2=str(e), level="warning")
+            self.current_gpu = None
+
+    def __release_gpu(self) -> None:
+        """
+        Release the GPU allocated to this worker (Phase 3).
+
+        This should be called in a finally block to ensure cleanup.
+        """
+        try:
+            if self.current_gpu:
+                gpu_manager = get_gpu_manager()
+                released = gpu_manager.release(self.name)
+                if released:
+                    self._log(
+                        f"GPU released for worker {self.name}: {self.current_gpu.display_name}",
+                        level="debug",
+                    )
+                self.current_gpu = None
+        except Exception as e:
+            self._log("Error releasing GPU", message2=str(e), level="warning")
+            self.current_gpu = None
+
+    def get_current_gpu(self) -> Optional[GPUDevice]:
+        """
+        Get the currently allocated GPU for this worker.
+
+        Returns:
+            GPUDevice if allocated, None otherwise
+        """
+        return self.current_gpu
 
     def __exec_worker_runners_on_set_task(self) -> bool:
         """

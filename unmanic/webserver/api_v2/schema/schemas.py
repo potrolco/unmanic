@@ -1552,6 +1552,111 @@ class FileHealthCheckSchema(BaseSchema):
     )
 
 
+class GPUDeviceSchema(BaseSchema):
+    """Schema for a single GPU device"""
+
+    device_id = fields.Str(
+        required=True,
+        description="Unique device identifier",
+        example="cuda:0",
+    )
+    gpu_type = fields.Str(
+        required=True,
+        description="GPU type (cuda, vaapi, unknown)",
+        example="cuda",
+    )
+    hwaccel_device = fields.Str(
+        required=True,
+        description="Hardware acceleration device path",
+        example="0",
+    )
+    display_name = fields.Str(
+        required=True,
+        description="Human-readable GPU name",
+        example="NVIDIA GPU 0",
+    )
+    current_workers = fields.Int(
+        required=True,
+        description="Number of workers currently using this GPU",
+        example=1,
+    )
+    total_allocations = fields.Int(
+        required=True,
+        description="Total number of times this GPU has been allocated",
+        example=42,
+    )
+    is_available = fields.Boolean(
+        required=True,
+        description="Whether the GPU can accept more workers",
+        example=True,
+    )
+
+
+class GPUAllocationSchema(BaseSchema):
+    """Schema for a GPU allocation"""
+
+    device_id = fields.Str(
+        required=True,
+        description="ID of the allocated GPU",
+        example="cuda:0",
+    )
+    worker_id = fields.Str(
+        required=True,
+        description="ID of the worker using this GPU",
+        example="W0",
+    )
+    allocated_at = fields.Float(
+        required=True,
+        description="Unix timestamp when allocation was made",
+        example=1706288400.0,
+    )
+
+
+class GPUStatusSchema(BaseSchema):
+    """Schema for GPU manager status response"""
+
+    enabled = fields.Boolean(
+        required=True,
+        description="Whether GPU acceleration is enabled",
+        example=True,
+    )
+    total_devices = fields.Int(
+        required=True,
+        description="Total number of discovered GPU devices",
+        example=2,
+    )
+    available_devices = fields.Int(
+        required=True,
+        description="Number of GPUs that can accept more workers",
+        example=1,
+    )
+    active_allocations = fields.Int(
+        required=True,
+        description="Number of active GPU allocations",
+        example=3,
+    )
+    max_workers_per_gpu = fields.Int(
+        required=True,
+        description="Maximum concurrent workers per GPU",
+        example=2,
+    )
+    strategy = fields.Str(
+        required=True,
+        description="GPU allocation strategy (round_robin, least_used, manual)",
+        example="round_robin",
+    )
+    devices = fields.List(
+        fields.Nested(GPUDeviceSchema),
+        required=True,
+        description="List of GPU devices",
+    )
+    allocations = fields.List(
+        fields.Nested(GPUAllocationSchema),
+        required=True,
+        description="List of current GPU allocations",
+    )
+
+
 # WORKERS
 # =======
 
