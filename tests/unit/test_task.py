@@ -525,3 +525,221 @@ class TestTaskClass:
 
         assert name == "Movies"
         mock_library.assert_called_once_with(1)
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_task_id_no_task_raises(self, mock_logging, mock_config):
+        """Test Task.get_task_id raises when no task set."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+
+        with pytest.raises(Exception, match="Task has not been set"):
+            task.get_task_id()
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_task_type_no_task_raises(self, mock_logging, mock_config):
+        """Test Task.get_task_type raises when no task set."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+
+        with pytest.raises(Exception, match="Task has not been set"):
+            task.get_task_type()
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_task_library_id_no_task_raises(self, mock_logging, mock_config):
+        """Test Task.get_task_library_id raises when no task set."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+
+        with pytest.raises(Exception, match="Task has not been set"):
+            task.get_task_library_id()
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_cache_path_no_task_raises(self, mock_logging, mock_config):
+        """Test Task.get_cache_path raises when no task set."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+
+        with pytest.raises(Exception, match="Task has not been set"):
+            task.get_cache_path()
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_cache_path_empty_raises(self, mock_logging, mock_config):
+        """Test Task.get_cache_path raises when cache_path is empty."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+        task.task.cache_path = ""
+
+        with pytest.raises(Exception, match="cache path has not been set"):
+            task.get_cache_path()
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_destination_data_no_task_raises(self, mock_logging, mock_config):
+        """Test Task.get_destination_data raises when no task set."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+
+        with pytest.raises(Exception, match="Task has not been set"):
+            task.get_destination_data()
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_task_data_no_task_raises(self, mock_logging, mock_config):
+        """Test Task.get_task_data raises when no task set."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+
+        with pytest.raises(Exception, match="Task has not been set"):
+            task.get_task_data()
+
+    @patch("unmanic.libs.task.Library")
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_task_library_name_no_task_raises(self, mock_logging, mock_config, mock_library):
+        """Test Task.get_task_library_name raises when no task set."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+
+        with pytest.raises(Exception, match="Task has not been set"):
+            task.get_task_library_name()
+
+    @patch("unmanic.libs.task.Library")
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_task_library_priority_score(self, mock_logging, mock_config, mock_library):
+        """Test Task.get_task_library_priority_score returns priority score."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+        mock_lib_instance = MagicMock()
+        mock_lib_instance.get_priority_score.return_value = 100
+        mock_library.return_value = mock_lib_instance
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+        task.task.library_id = 1
+
+        score = task.get_task_library_priority_score()
+
+        assert score == 100
+
+    @patch("unmanic.libs.task.Library")
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_task_library_priority_score_no_task_raises(self, mock_logging, mock_config, mock_library):
+        """Test Task.get_task_library_priority_score raises when no task set."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+
+        with pytest.raises(Exception, match="Task has not been set"):
+            task.get_task_library_priority_score()
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_set_cache_path_no_task_raises(self, mock_logging, mock_config):
+        """Test Task.set_cache_path raises when no task set."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+
+        with pytest.raises(Exception, match="Task has not been set"):
+            task.set_cache_path()
+
+    @patch("unmanic.libs.task.common.random_string")
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_set_cache_path_with_extension(self, mock_logging, mock_config, mock_random):
+        """Test Task.set_cache_path with custom extension."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config_instance = MagicMock()
+        mock_config_instance.get_cache_path.return_value = "/tmp/cache"
+        mock_config.return_value = mock_config_instance
+        mock_random.return_value = "abc123"
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+        task.task.abspath = "/media/movies/test.mkv"
+
+        task.set_cache_path(file_extension="mp4")
+
+        assert task.task.cache_path.endswith(".mp4")
+        assert "test-" in task.task.cache_path
+
+    @patch("unmanic.libs.task.common.random_string")
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_set_cache_path_with_directory(self, mock_logging, mock_config, mock_random):
+        """Test Task.set_cache_path with custom cache directory."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config_instance = MagicMock()
+        mock_config.return_value = mock_config_instance
+        mock_random.return_value = "xyz789"
+
+        task = Task()
+        task.task = self.create_mock_task_model()
+        task.task.abspath = "/media/movies/test.mkv"
+
+        task.set_cache_path(cache_directory="/custom/cache")
+
+        assert task.task.cache_path.startswith("/custom/cache/")
+        assert "test-" in task.task.cache_path
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_source_abspath_no_task_raises(self, mock_logging, mock_config):
+        """Test Task.get_source_abspath raises when no task set."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+
+        with pytest.raises(Exception, match="Task has not been set"):
+            task.get_source_abspath()
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_source_basename_no_task_raises(self, mock_logging, mock_config):
+        """Test Task.get_source_basename raises when no task set."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+
+        with pytest.raises(Exception, match="Task has not been set"):
+            task.get_source_basename()
+
+    @patch("unmanic.libs.task.config.Config")
+    @patch("unmanic.libs.task.UnmanicLogging")
+    def test_task_get_source_data_no_task_raises(self, mock_logging, mock_config):
+        """Test Task.get_source_data raises when no task set."""
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        task = Task()
+
+        with pytest.raises(Exception, match="Task has not been set"):
+            task.get_source_data()
