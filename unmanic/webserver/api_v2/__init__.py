@@ -35,6 +35,7 @@ import warnings
 
 from .docs_api import ApiDocsHandler
 from .filebrowser_api import ApiFilebrowserHandler
+from .health_api import ApiHealthHandler
 from .history_api import ApiHistoryHandler
 from .notifications_api import ApiNotificationsHandler
 from .pending_api import ApiPendingHandler
@@ -50,6 +51,7 @@ __author__ = "Josh.5 (jsunnex@gmail.com)"
 __all__ = (
     "ApiDocsHandler",
     "ApiFilebrowserHandler",
+    "ApiHealthHandler",
     "ApiHistoryHandler",
     "ApiNotificationsHandler",
     "ApiPendingHandler",

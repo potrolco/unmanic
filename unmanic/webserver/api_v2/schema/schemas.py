@@ -1462,6 +1462,51 @@ class VersionReadSuccessSchema(BaseSchema):
     )
 
 
+# HEALTH
+# ======
+
+
+class HealthCheckComponentSchema(BaseSchema):
+    """Schema for individual health check component"""
+
+    status = fields.Str(
+        required=True,
+        description="Component status: healthy, degraded, or unhealthy",
+        example="healthy",
+    )
+    message = fields.Str(
+        required=False,
+        description="Optional status message",
+        example="OK",
+    )
+
+
+class HealthCheckSchema(BaseSchema):
+    """Schema for health check response"""
+
+    status = fields.Str(
+        required=True,
+        description="Overall health status: healthy, degraded, or unhealthy",
+        example="healthy",
+    )
+    version = fields.Str(
+        required=True,
+        description="Application version",
+        example="1.1.0",
+    )
+    uptime_seconds = fields.Int(
+        required=True,
+        description="Application uptime in seconds",
+        example=3600,
+    )
+    components = fields.Dict(
+        keys=fields.Str(),
+        values=fields.Nested(HealthCheckComponentSchema),
+        required=True,
+        description="Health status of individual components",
+    )
+
+
 # WORKERS
 # =======
 
