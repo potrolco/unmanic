@@ -2331,5 +2331,211 @@ class TestWorkerTimeAttributes(unittest.TestCase):
         self.assertEqual(status["start_time"], "1234567890.0")
 
 
+class TestWorkerSubprocessMonitorTerminateProcExceptions(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor terminate_proc exception paths."""
+
+    @patch("unmanic.libs.workers.psutil.wait_procs")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_terminate_proc_no_such_process(self, mock_logging, mock_wait_procs):
+        """Test terminate_proc handles NoSuchProcess on main subprocess."""
+        import psutil
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_wait_procs.return_value = ([], [])
+
+        mock_subprocess = MagicMock()
+        mock_subprocess.children.side_effect = psutil.NoSuchProcess(12345)
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess = mock_subprocess
+        monitor.subprocess_pid = 12345
+
+        # Should not raise, should log and unset
+        monitor.terminate_proc()
+
+    @patch("unmanic.libs.workers.psutil.wait_procs")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_terminate_proc_zombie_process(self, mock_logging, mock_wait_procs):
+        """Test terminate_proc handles ZombieProcess exception."""
+        import psutil
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_wait_procs.return_value = ([], [])
+
+        mock_subprocess = MagicMock()
+        mock_subprocess.children.side_effect = psutil.ZombieProcess(12345)
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess = mock_subprocess
+        monitor.subprocess_pid = 12345
+
+        # Should not raise
+        monitor.terminate_proc()
+
+    @patch("unmanic.libs.workers.psutil.wait_procs")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_terminate_proc_general_exception(self, mock_logging, mock_wait_procs):
+        """Test terminate_proc handles general exception."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logger = MagicMock()
+        mock_logging.get_logger.return_value = mock_logger
+
+        mock_subprocess = MagicMock()
+        mock_subprocess.children.side_effect = Exception("General error")
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess = mock_subprocess
+        monitor.subprocess_pid = 12345
+
+        # Should not raise, should log exception
+        monitor.terminate_proc()
+        mock_logger.exception.assert_called()
+
+
+class TestWorkerSubprocessMonitorTerminateProcTree(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor __terminate_proc_tree paths."""
+
+    @patch("unmanic.libs.workers.psutil.wait_procs")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_terminate_proc_tree_resume_not_implemented(self, mock_logging, mock_wait_procs):
+        """Test __terminate_proc_tree handles NotImplementedError on resume."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_wait_procs.return_value = ([], [])
+
+        mock_subprocess = MagicMock()
+        mock_child = MagicMock()
+        mock_child.resume.side_effect = NotImplementedError()
+        mock_subprocess.children.return_value = [mock_child]
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess = mock_subprocess
+        monitor.subprocess_pid = 12345
+
+        # Should not raise
+        monitor.terminate_proc()
+
+    @patch("unmanic.libs.workers.psutil.wait_procs")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_terminate_proc_tree_access_denied_on_tree(self, mock_logging, mock_wait_procs):
+        """Test __terminate_proc_tree handles AccessDenied."""
+        import psutil
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_subprocess = MagicMock()
+        mock_subprocess.children.side_effect = psutil.AccessDenied(12345)
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess = mock_subprocess
+        monitor.subprocess_pid = 12345
+
+        # Should not raise
+        monitor.terminate_proc()
+
+
+class TestWorkerGetSubprocessElapsedException(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor get_subprocess_elapsed exception path."""
+
+    @patch("unmanic.libs.workers.time.time")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_get_subprocess_elapsed_exception(self, mock_logging, mock_time):
+        """Test get_subprocess_elapsed returns 0 on exception."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logger = MagicMock()
+        mock_logging.get_logger.return_value = mock_logger
+        mock_time.side_effect = Exception("Time error")
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess = MagicMock()  # Has subprocess
+
+        result = monitor.get_subprocess_elapsed()
+
+        self.assertEqual(result, 0)
+        mock_logger.exception.assert_called()
+
+
+class TestWorkerSubprocessMonitorSetProcExceptions(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor set_proc exception paths."""
+
+    @patch("unmanic.libs.workers.psutil.Process")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_set_proc_zombie_process(self, mock_logging, mock_psutil_process):
+        """Test set_proc handles ZombieProcess exception."""
+        import psutil
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_psutil_process.side_effect = psutil.ZombieProcess(12345)
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+
+        # Should not raise
+        monitor.set_proc(12345)
+        self.assertIsNone(monitor.subprocess)
+
+    @patch("unmanic.libs.workers.psutil.Process")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_set_proc_general_exception(self, mock_logging, mock_psutil_process):
+        """Test set_proc handles general exception."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logger = MagicMock()
+        mock_logging.get_logger.return_value = mock_logger
+        mock_psutil_process.side_effect = Exception("General error")
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+
+        # Should not raise, should log exception
+        monitor.set_proc(12345)
+        mock_logger.exception.assert_called()
+
+
 if __name__ == "__main__":
     unittest.main()
