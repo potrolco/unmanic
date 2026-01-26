@@ -2537,5 +2537,211 @@ class TestWorkerSubprocessMonitorSetProcExceptions(unittest.TestCase):
         mock_logger.exception.assert_called()
 
 
+class TestWorkerSubprocessMonitorKillException(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor __terminate_proc_tree kill exception."""
+
+    @patch("unmanic.libs.workers.psutil.wait_procs")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_terminate_proc_tree_kill_no_such_process(self, mock_logging, mock_wait_procs):
+        """Test __terminate_proc_tree handles NoSuchProcess on kill."""
+        import psutil
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_subprocess = MagicMock()
+        mock_child = MagicMock()
+        mock_subprocess.children.return_value = [mock_child]
+
+        # Subprocess that won't die with terminate, needs kill
+        still_alive = MagicMock()
+        still_alive.kill.side_effect = psutil.NoSuchProcess(12346)
+
+        mock_wait_procs.side_effect = [
+            ([], [still_alive]),  # First: still alive
+            ([still_alive], []),  # Second: gone
+        ]
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess = mock_subprocess
+        monitor.subprocess_pid = 12345
+
+        # Should not raise
+        monitor.terminate_proc()
+
+
+class TestWorkerSubprocessMonitorLogProcTerminated(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor __log_proc_terminated."""
+
+    @patch("unmanic.libs.workers.psutil.wait_procs")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_log_proc_terminated_called(self, mock_logging, mock_wait_procs):
+        """Test __log_proc_terminated is called as callback."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logger = MagicMock()
+        mock_logging.get_logger.return_value = mock_logger
+
+        mock_subprocess = MagicMock()
+        mock_subprocess.children.return_value = []
+
+        # Capture the callback
+        def capture_callback(procs, timeout, callback):
+            # Simulate calling the callback
+            mock_proc = MagicMock()
+            mock_proc.returncode = 0
+            callback(mock_proc)
+            return (procs, [])
+
+        mock_wait_procs.side_effect = capture_callback
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess = mock_subprocess
+        monitor.subprocess_pid = 12345
+
+        monitor.terminate_proc()
+
+        # Logger.info should have been called for the terminated process
+        mock_logger.info.assert_called()
+
+
+class TestWorkerDefaultProgressParserKilled(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor default_progress_parser killed state."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_default_progress_parser_killed_true(self, mock_logging):
+        """Test default_progress_parser returns killed=True when redundant flag set."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.redundant_flag.set()  # Set redundant flag
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+
+        result = monitor.default_progress_parser("50")
+
+        self.assertTrue(result["killed"])
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_default_progress_parser_paused_true(self, mock_logging):
+        """Test default_progress_parser returns paused state."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.paused = True  # Set paused state
+
+        result = monitor.default_progress_parser("50")
+
+        self.assertTrue(result["paused"])
+
+
+class TestWorkerGetStatusStartTimeNone(unittest.TestCase):
+    """Tests for Worker get_status start_time handling."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_get_status_start_time_none_returns_none(self, mock_logging):
+        """Test get_status returns None for start_time when not set."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+        worker.worker_subprocess_monitor = None
+        worker.start_time = None
+
+        status = worker.get_status()
+
+        self.assertIsNone(status["start_time"])
+
+
+class TestWorkerSubprocessMonitorPauseTime(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor pause time handling."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_subprocess_pause_time_default(self, mock_logging):
+        """Test subprocess_pause_time defaults to 0."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+
+        self.assertEqual(monitor.subprocess_pause_time, 0)
+
+
+class TestWorkerIdleState(unittest.TestCase):
+    """Tests for Worker idle state management."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_worker_starts_idle(self, mock_logging):
+        """Test Worker starts in idle state."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        self.assertTrue(worker.idle)
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_worker_log_default_none(self, mock_logging):
+        """Test worker_log defaults to None."""
+        from unmanic.libs.workers import Worker
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        self.assertIsNone(worker.worker_log)
+
+
 if __name__ == "__main__":
     unittest.main()
