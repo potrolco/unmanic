@@ -1507,6 +1507,51 @@ class HealthCheckSchema(BaseSchema):
     )
 
 
+class FileHealthCheckSchema(BaseSchema):
+    """Schema for video file health check response"""
+
+    status = fields.Str(
+        required=True,
+        description="File health status: healthy, corrupted, warning, or error",
+        example="healthy",
+    )
+    path = fields.Str(
+        required=True,
+        description="Path to the checked file",
+        example="/media/video.mkv",
+    )
+    errors = fields.List(
+        fields.Str(),
+        required=True,
+        description="List of errors found during check",
+    )
+    warnings = fields.List(
+        fields.Str(),
+        required=True,
+        description="List of warnings found during check",
+    )
+    checksum = fields.Str(
+        allow_none=True,
+        description="File checksum (if requested)",
+        example="d41d8cd98f00b204e9800998ecf8427e",
+    )
+    duration_seconds = fields.Float(
+        required=True,
+        description="Time taken to perform health check",
+        example=12.5,
+    )
+    file_size_bytes = fields.Int(
+        required=True,
+        description="Size of the file in bytes",
+        example=1073741824,
+    )
+    checked_at = fields.Float(
+        required=True,
+        description="Unix timestamp when check was performed",
+        example=1706288400.0,
+    )
+
+
 # WORKERS
 # =======
 

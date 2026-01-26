@@ -25,9 +25,11 @@ import tornado.log
 
 from unmanic import config
 from unmanic.libs import session
+from unmanic.libs.health_check import check_file_integrity, get_file_checksum
+from unmanic.libs.settings import UnmanicSettings
 from unmanic.libs.uiserver import UnmanicDataQueues
 from unmanic.webserver.api_v2.base_api_handler import BaseApiError, BaseApiHandler
-from unmanic.webserver.api_v2.schema.schemas import HealthCheckSchema
+from unmanic.webserver.api_v2.schema.schemas import FileHealthCheckSchema, HealthCheckSchema
 
 
 # Track application start time for uptime calculation
@@ -57,6 +59,11 @@ class ApiHealthHandler(BaseApiHandler):
             "path_pattern": r"/health/ready",
             "supported_methods": ["GET"],
             "call_method": "get_readiness",
+        },
+        {
+            "path_pattern": r"/health/file",
+            "supported_methods": ["POST"],
+            "call_method": "check_file_health",
         },
     ]
 
@@ -213,3 +220,87 @@ class ApiHealthHandler(BaseApiHandler):
             return {"status": "healthy", "message": "OK"}
         except Exception as e:
             return {"status": "degraded", "message": str(e)}
+
+    async def check_file_health(self):
+        """
+        Health - check video file integrity
+        ---
+        description: Check the health/integrity of a video file using FFmpeg.
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        required:
+                            - file_path
+                        properties:
+                            file_path:
+                                type: string
+                                description: Absolute path to the video file
+                            include_checksum:
+                                type: boolean
+                                description: Include file checksum in response
+                                default: false
+        responses:
+            200:
+                description: 'Health check completed'
+                content:
+                    application/json:
+                        schema:
+                            FileHealthCheckSchema
+            400:
+                description: 'Invalid request (missing file_path)'
+            404:
+                description: 'File not found'
+        """
+        try:
+            # Get request body
+            request_body = self.get_body_arguments()
+            if not request_body:
+                self.set_status(400)
+                self.write({"error": "Request body required"})
+                return
+
+            file_path = request_body.get("file_path")
+            if not file_path:
+                self.set_status(400)
+                self.write({"error": "file_path is required"})
+                return
+
+            # Check if file exists
+            if not os.path.exists(file_path):
+                self.set_status(404)
+                self.write({"error": f"File not found: {file_path}"})
+                return
+
+            # Get settings for timeout
+            settings = UnmanicSettings()
+
+            # Run health check
+            result = check_file_integrity(
+                file_path,
+                timeout_seconds=settings.health_check_timeout_seconds,
+            )
+
+            # Optionally include checksum
+            include_checksum = request_body.get("include_checksum", False)
+            if include_checksum:
+                result.checksum = get_file_checksum(
+                    file_path,
+                    algorithm=settings.health_check_algorithm,
+                )
+
+            response = self.build_response(
+                FileHealthCheckSchema(),
+                result.to_dict(),
+            )
+            self.write_success(response)
+            return
+
+        except BaseApiError as bae:
+            tornado.log.app_log.error("BaseApiError.{}: {}".format(self.route.get("call_method"), str(bae)))
+            return
+        except Exception as e:
+            self.set_status(self.STATUS_ERROR_INTERNAL, reason=str(e))
+            self.write_error()
