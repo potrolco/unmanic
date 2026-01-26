@@ -1023,6 +1023,52 @@ class TestSessionResetInstallationData(unittest.TestCase):
         self.assertEqual(session.level, 100)  # TARS always 100
 
 
+class TestSessionGetSupporterLevelFetch(unittest.TestCase):
+    """Tests for Session.get_supporter_level when fetching data."""
+
+    def setUp(self):
+        """Clear singleton before each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.session import Session
+
+        if Session in SingletonType._instances:
+            del SingletonType._instances[Session]
+
+    def tearDown(self):
+        """Clear singleton after each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.session import Session
+
+        if Session in SingletonType._instances:
+            del SingletonType._instances[Session]
+
+    @patch("unmanic.libs.session.Installation")
+    @patch("unmanic.libs.session.UnmanicLogging")
+    @patch("unmanic.libs.session.requests.Session")
+    def test_fetches_data_when_level_none(self, mock_requests, mock_logging, mock_installation):
+        """Test get_supporter_level fetches installation data when level is None."""
+        from unmanic.libs.session import Session
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_requests.return_value = MagicMock()
+
+        mock_install = MagicMock()
+        mock_install.uuid = "test-uuid"
+        mock_install.level = 100
+        mock_installation.get_or_none.return_value = mock_install
+        mock_installation.return_value.select.return_value.order_by.return_value.limit.return_value.get.return_value = (
+            mock_install
+        )
+
+        session = Session()
+        session.level = None
+
+        result = session.get_supporter_level()
+
+        # Should have fetched level (TARS always 100)
+        self.assertEqual(result, 100)
+
+
 class TestSessionCheckSessionValidEdgeCases(unittest.TestCase):
     """Tests for Session.__check_session_valid edge cases."""
 
