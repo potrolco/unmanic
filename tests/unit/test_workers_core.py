@@ -484,5 +484,262 @@ class TestWorkerRedundantFlag(unittest.TestCase):
         self.assertTrue(worker.redundant_flag.is_set())
 
 
+class TestWorkerSubprocessMonitorProgress(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor progress parsing."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_default_progress_parser_with_percent(self, mock_logging):
+        """Test default_progress_parser parses percentage from line text."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess_percent = 0
+
+        result = monitor.default_progress_parser("75.5")
+
+        self.assertEqual(monitor.subprocess_percent, 75)
+        self.assertFalse(result["killed"])
+        self.assertFalse(result["paused"])
+        self.assertEqual(result["percent"], "75")
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_default_progress_parser_with_pid(self, mock_logging):
+        """Test default_progress_parser sets process when pid provided."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+
+        with patch.object(monitor, "set_proc") as mock_set_proc:
+            monitor.default_progress_parser("50", pid=12345)
+            mock_set_proc.assert_called_once_with(12345)
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_default_progress_parser_with_start_time(self, mock_logging):
+        """Test default_progress_parser sets start time when provided."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+
+        result = monitor.default_progress_parser("50", proc_start_time=1234567890.0)
+
+        self.assertEqual(monitor.subprocess_start_time, 1234567890.0)
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_default_progress_parser_invalid_text(self, mock_logging):
+        """Test default_progress_parser handles non-numeric text."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess_percent = 25  # Pre-set value
+
+        result = monitor.default_progress_parser("not a number")
+
+        # Percent should remain unchanged
+        self.assertEqual(monitor.subprocess_percent, 25)
+        self.assertEqual(result["percent"], "25")
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_default_progress_parser_unset(self, mock_logging):
+        """Test default_progress_parser with unset=True unsets the process."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess_percent = 100
+
+        with patch.object(monitor, "unset_proc") as mock_unset:
+            result = monitor.default_progress_parser("", unset=True)
+            mock_unset.assert_called_once()
+
+        self.assertEqual(result["percent"], "100")
+
+
+class TestWorkerLog(unittest.TestCase):
+    """Tests for Worker _log method."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_log_info(self, mock_logging):
+        """Test _log calls logger.info by default."""
+        from unmanic.libs.workers import Worker
+
+        mock_logger = MagicMock()
+        mock_logging.get_logger.return_value = mock_logger
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        worker._log("Test message")
+
+        mock_logger.info.assert_called()
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_log_with_level(self, mock_logging):
+        """Test _log calls specified log level."""
+        from unmanic.libs.workers import Worker
+
+        mock_logger = MagicMock()
+        mock_logging.get_logger.return_value = mock_logger
+
+        worker = Worker(
+            thread_id="main-0",
+            name="Worker-1",
+            worker_group_id=1,
+            pending_queue=queue.Queue(),
+            complete_queue=queue.Queue(),
+            event=threading.Event(),
+        )
+
+        worker._log("Error message", level="error")
+
+        mock_logger.error.assert_called()
+
+
+class TestWorkerSubprocessMonitorUnset(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor unset_proc method."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_unset_proc_clears_state(self, mock_logging):
+        """Test unset_proc clears subprocess state."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess_pid = 12345
+        monitor.subprocess = MagicMock()
+        monitor.subprocess_percent = 50
+        monitor.subprocess_elapsed = 100
+        monitor.subprocess_cpu_percent = 25.0
+        monitor.subprocess_mem_percent = 10.0
+        monitor.subprocess_rss_bytes = 1024
+        monitor.subprocess_vms_bytes = 2048
+
+        monitor.unset_proc()
+
+        self.assertIsNone(monitor.subprocess_pid)
+        self.assertIsNone(monitor.subprocess)
+        self.assertEqual(monitor.subprocess_percent, 0)
+        self.assertEqual(monitor.subprocess_elapsed, 0)
+        self.assertEqual(monitor.subprocess_cpu_percent, 0)
+        self.assertEqual(monitor.subprocess_mem_percent, 0)
+        self.assertEqual(monitor.subprocess_rss_bytes, 0)
+        self.assertEqual(monitor.subprocess_vms_bytes, 0)
+
+
+class TestWorkerSubprocessMonitorStop(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor stop method."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_stop_sets_event(self, mock_logging):
+        """Test stop sets the stop event."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+
+        self.assertFalse(monitor._stop_event.is_set())
+
+        monitor.stop()
+
+        self.assertTrue(monitor._stop_event.is_set())
+
+
+class TestWorkerSubprocessMonitorGetElapsed(unittest.TestCase):
+    """Tests for WorkerSubprocessMonitor get_subprocess_elapsed method."""
+
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_get_subprocess_elapsed_no_subprocess(self, mock_logging):
+        """Test get_subprocess_elapsed returns 0 when no subprocess."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess = None  # No subprocess
+
+        result = monitor.get_subprocess_elapsed()
+
+        self.assertEqual(result, 0)  # Returns int, not string
+
+    @patch("unmanic.libs.workers.time.time")
+    @patch("unmanic.libs.workers.UnmanicLogging")
+    def test_get_subprocess_elapsed_with_subprocess(self, mock_logging, mock_time):
+        """Test get_subprocess_elapsed calculates elapsed time."""
+        from unmanic.libs.workers import WorkerSubprocessMonitor
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_time.return_value = 1000
+
+        mock_parent = MagicMock()
+        mock_parent.event = threading.Event()
+        mock_parent.redundant_flag = threading.Event()
+        mock_parent.paused_flag = threading.Event()
+
+        monitor = WorkerSubprocessMonitor(mock_parent)
+        monitor.subprocess = MagicMock()  # Has subprocess
+        monitor.subprocess_start_time = 900  # Started at 900
+        monitor.subprocess_pause_time = 0  # No pause time
+
+        result = monitor.get_subprocess_elapsed()
+
+        self.assertEqual(result, 100)  # 1000 - 900 = 100 seconds
+
+
 if __name__ == "__main__":
     unittest.main()
