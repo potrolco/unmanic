@@ -323,5 +323,435 @@ class TestPluginsHandlerSingleton(unittest.TestCase):
         self.assertIs(handler1, handler2)
 
 
+class TestPluginsHandlerGetPluginRepos(unittest.TestCase):
+    """Tests for PluginsHandler.get_plugin_repos method."""
+
+    def setUp(self):
+        """Clear singleton before each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    def tearDown(self):
+        """Clear singleton after each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    @patch("unmanic.libs.plugins.PluginRepos")
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_get_plugin_repos_returns_default(self, mock_config, mock_logging, mock_plugin_repos):
+        """Test get_plugin_repos includes default repo."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+        mock_plugin_repos.select.return_value.order_by.return_value = []
+
+        handler = PluginsHandler()
+        result = handler.get_plugin_repos()
+
+        self.assertIn({"path": "default"}, result)
+
+    @patch("unmanic.libs.plugins.PluginRepos")
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_get_plugin_repos_includes_custom_repos(self, mock_config, mock_logging, mock_plugin_repos):
+        """Test get_plugin_repos includes custom repos from database."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        mock_repo = MagicMock()
+        mock_repo.model_to_dict.return_value = {"path": "custom/repo"}
+        mock_plugin_repos.select.return_value.order_by.return_value = [mock_repo]
+
+        handler = PluginsHandler()
+        result = handler.get_plugin_repos()
+
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[1], {"path": "custom/repo"})
+
+
+class TestPluginsHandlerReadRepoData(unittest.TestCase):
+    """Tests for PluginsHandler.read_repo_data method."""
+
+    def setUp(self):
+        """Clear singleton before each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    def tearDown(self):
+        """Clear singleton after each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    @patch("unmanic.libs.plugins.os.path.exists")
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_read_repo_data_returns_empty_dict_if_not_exists(self, mock_config, mock_logging, mock_exists):
+        """Test read_repo_data returns empty dict if cache file doesn't exist."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config_instance = MagicMock()
+        mock_config_instance.get_plugins_path.return_value = "/tmp/plugins"
+        mock_config.return_value = mock_config_instance
+        mock_exists.return_value = False
+
+        handler = PluginsHandler()
+        result = handler.read_repo_data(12345)
+
+        self.assertEqual(result, {})
+
+
+class TestPluginsHandlerGetPluginInfo(unittest.TestCase):
+    """Tests for PluginsHandler.get_plugin_info method."""
+
+    def setUp(self):
+        """Clear singleton before each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    def tearDown(self):
+        """Clear singleton after each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    @patch("unmanic.libs.plugins.os.path.exists")
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_get_plugin_info_returns_empty_dict_if_no_info_file(self, mock_config, mock_logging, mock_exists):
+        """Test get_plugin_info returns empty dict if info.json doesn't exist."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config_instance = MagicMock()
+        mock_config_instance.get_plugins_path.return_value = "/tmp/plugins"
+        mock_config.return_value = mock_config_instance
+        mock_exists.return_value = False
+
+        handler = PluginsHandler()
+        result = handler.get_plugin_info("test_plugin")
+
+        self.assertEqual(result, {})
+
+
+class TestPluginsHandlerGetPluginsInRepoData(unittest.TestCase):
+    """Tests for PluginsHandler.get_plugins_in_repo_data method."""
+
+    def setUp(self):
+        """Clear singleton before each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    def tearDown(self):
+        """Clear singleton after each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_get_plugins_in_repo_data_empty_if_no_repo_key(self, mock_config, mock_logging):
+        """Test get_plugins_in_repo_data returns empty list if no 'repo' key."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        handler = PluginsHandler()
+        result = handler.get_plugins_in_repo_data({"plugins": []})
+
+        self.assertEqual(result, [])
+
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_get_plugins_in_repo_data_empty_if_no_plugins_key(self, mock_config, mock_logging):
+        """Test get_plugins_in_repo_data returns empty list if no 'plugins' key."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        handler = PluginsHandler()
+        result = handler.get_plugins_in_repo_data({"repo": {}})
+
+        self.assertEqual(result, [])
+
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_get_plugins_in_repo_data_empty_if_no_repo_data_directory(self, mock_config, mock_logging):
+        """Test returns empty list if no repo_data_directory."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+
+        handler = PluginsHandler()
+        result = handler.get_plugins_in_repo_data({"repo": {}, "plugins": []})
+
+        self.assertEqual(result, [])
+
+
+class TestPluginsHandlerReadRemoteChangelog(unittest.TestCase):
+    """Tests for PluginsHandler.read_remote_changelog_file method."""
+
+    def setUp(self):
+        """Clear singleton before each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    def tearDown(self):
+        """Clear singleton after each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    @patch("unmanic.libs.plugins.requests.get")
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_read_remote_changelog_success(self, mock_config, mock_logging, mock_get):
+        """Test read_remote_changelog_file returns content on success."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.text = "# Changelog\n- v1.0.0"
+        mock_get.return_value = mock_response
+
+        handler = PluginsHandler()
+        result = handler.read_remote_changelog_file("https://example.com/changelog.md")
+
+        self.assertEqual(result, "# Changelog\n- v1.0.0")
+
+    @patch("unmanic.libs.plugins.requests.get")
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_read_remote_changelog_returns_empty_on_failure(self, mock_config, mock_logging, mock_get):
+        """Test read_remote_changelog_file returns empty string on failure."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+        mock_get.return_value = mock_response
+
+        handler = PluginsHandler()
+        result = handler.read_remote_changelog_file("https://example.com/changelog.md")
+
+        self.assertEqual(result, "")
+
+
+class TestPluginsHandlerWritePluginDataToDb(unittest.TestCase):
+    """Tests for PluginsHandler.write_plugin_data_to_db static method."""
+
+    @patch("unmanic.libs.plugins.Plugins")
+    def test_write_plugin_data_inserts_new_plugin(self, mock_plugins):
+        """Test write_plugin_data_to_db inserts new plugin."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_plugins.get_or_none.return_value = None
+        mock_plugins.insert.return_value.execute.return_value = True
+
+        plugin = {
+            "plugin_id": "test_plugin",
+            "name": "Test Plugin",
+            "author": "Test Author",
+            "version": "1.0.0",
+            "tags": "test",
+            "description": "Test description",
+            "icon": "icon.png",
+        }
+
+        result = PluginsHandler.write_plugin_data_to_db(plugin, "/tmp/plugins/test_plugin")
+
+        self.assertTrue(result)
+        mock_plugins.insert.assert_called_once()
+
+    @patch("unmanic.libs.plugins.Plugins")
+    def test_write_plugin_data_updates_existing_plugin(self, mock_plugins):
+        """Test write_plugin_data_to_db updates existing plugin."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_plugins.get_or_none.return_value = MagicMock()
+        mock_plugins.update.return_value.where.return_value.execute.return_value = True
+
+        plugin = {
+            "plugin_id": "test_plugin",
+            "name": "Test Plugin",
+            "author": "Test Author",
+            "version": "1.0.0",
+            "tags": "test",
+            "description": "Test description",
+            "icon": "icon.png",
+        }
+
+        result = PluginsHandler.write_plugin_data_to_db(plugin, "/tmp/plugins/test_plugin")
+
+        self.assertTrue(result)
+        mock_plugins.update.assert_called_once()
+
+
+class TestPluginsHandlerGetTotalPluginCount(unittest.TestCase):
+    """Tests for PluginsHandler.get_total_plugin_list_count method."""
+
+    def setUp(self):
+        """Clear singleton before each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    def tearDown(self):
+        """Clear singleton after each test."""
+        from unmanic.libs.singleton import SingletonType
+        from unmanic.libs.plugins import PluginsHandler
+
+        if PluginsHandler in SingletonType._instances:
+            del SingletonType._instances[PluginsHandler]
+
+    @patch("unmanic.libs.plugins.Plugins")
+    @patch("unmanic.libs.plugins.UnmanicLogging")
+    @patch("unmanic.libs.plugins.config.Config")
+    def test_get_total_plugin_list_count(self, mock_config, mock_logging, mock_plugins):
+        """Test get_total_plugin_list_count returns count."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_logging.get_logger.return_value = MagicMock()
+        mock_config.return_value = MagicMock()
+        mock_plugins.select.return_value.order_by.return_value.count.return_value = 5
+
+        handler = PluginsHandler()
+        result = handler.get_total_plugin_list_count()
+
+        self.assertEqual(result, 5)
+
+
+class TestPluginsHandlerGetPluginTypesWithFlows(unittest.TestCase):
+    """Tests for PluginsHandler.get_plugin_types_with_flows static method."""
+
+    @patch("unmanic.libs.plugins.PluginExecutor")
+    def test_get_plugin_types_with_flows_filters_by_has_flow(self, mock_executor):
+        """Test get_plugin_types_with_flows filters by has_flow."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_executor_instance = MagicMock()
+        mock_executor_instance.get_all_plugin_types.return_value = [
+            {"id": "type1", "has_flow": True},
+            {"id": "type2", "has_flow": False},
+            {"id": "type3", "has_flow": True},
+        ]
+        mock_executor.return_value = mock_executor_instance
+
+        result = PluginsHandler.get_plugin_types_with_flows()
+
+        self.assertEqual(result, ["type1", "type3"])
+
+    @patch("unmanic.libs.plugins.PluginExecutor")
+    def test_get_plugin_types_with_flows_returns_empty_if_none(self, mock_executor):
+        """Test get_plugin_types_with_flows returns empty list if no flows."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_executor_instance = MagicMock()
+        mock_executor_instance.get_all_plugin_types.return_value = [
+            {"id": "type1", "has_flow": False},
+            {"id": "type2", "has_flow": False},
+        ]
+        mock_executor.return_value = mock_executor_instance
+
+        result = PluginsHandler.get_plugin_types_with_flows()
+
+        self.assertEqual(result, [])
+
+
+class TestPluginsHandlerInstallPluginRequirements(unittest.TestCase):
+    """Tests for PluginsHandler.install_plugin_requirements static method."""
+
+    @patch("unmanic.libs.plugins.os.path.exists")
+    def test_install_plugin_requirements_skips_if_no_requirements(self, mock_exists):
+        """Test install_plugin_requirements skips if requirements.txt doesn't exist."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_exists.return_value = False
+
+        result = PluginsHandler.install_plugin_requirements("/tmp/plugin")
+
+        self.assertIsNone(result)
+
+    @patch("unmanic.libs.plugins.subprocess.call")
+    @patch("unmanic.libs.plugins.os.makedirs")
+    @patch("unmanic.libs.plugins.shutil.rmtree")
+    @patch("unmanic.libs.plugins.os.path.exists")
+    def test_install_plugin_requirements_runs_pip(self, mock_exists, mock_rmtree, mock_makedirs, mock_call):
+        """Test install_plugin_requirements runs pip install."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_exists.return_value = True
+
+        PluginsHandler.install_plugin_requirements("/tmp/plugin")
+
+        mock_call.assert_called_once()
+
+
+class TestPluginsHandlerInstallNpmModules(unittest.TestCase):
+    """Tests for PluginsHandler.install_npm_modules static method."""
+
+    @patch("unmanic.libs.plugins.os.path.exists")
+    def test_install_npm_modules_skips_if_no_package_json(self, mock_exists):
+        """Test install_npm_modules skips if package.json doesn't exist."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_exists.return_value = False
+
+        result = PluginsHandler.install_npm_modules("/tmp/plugin")
+
+        self.assertIsNone(result)
+
+    @patch("unmanic.libs.plugins.subprocess.call")
+    @patch("unmanic.libs.plugins.os.path.exists")
+    def test_install_npm_modules_runs_npm_install_and_build(self, mock_exists, mock_call):
+        """Test install_npm_modules runs npm install and build."""
+        from unmanic.libs.plugins import PluginsHandler
+
+        mock_exists.return_value = True
+
+        PluginsHandler.install_npm_modules("/tmp/plugin")
+
+        self.assertEqual(mock_call.call_count, 2)
+
+
 if __name__ == "__main__":
     unittest.main()
