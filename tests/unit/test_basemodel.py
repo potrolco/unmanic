@@ -223,5 +223,300 @@ class TestDatabaseClass(unittest.TestCase):
         self.assertTrue(hasattr(Database, "select_database"))
 
 
+class TestBaseModelGetFields(unittest.TestCase):
+    """Tests for BaseModel.get_fields method."""
+
+    def test_get_fields_returns_dict(self):
+        """Test get_fields returns field metadata dictionary."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel
+
+        # Create a mock model instance
+        mock_model = MagicMock(spec=BaseModel)
+        mock_model._meta = MagicMock()
+        mock_fields = {"id": MagicMock(), "name": MagicMock()}
+        mock_model._meta.fields = mock_fields
+
+        # Call the real method
+        result = BaseModel.get_fields(mock_model)
+
+        self.assertEqual(result, mock_fields)
+
+
+class TestBaseModelGetCurrentFieldValuesDict(unittest.TestCase):
+    """Tests for BaseModel.get_current_field_values_dict method."""
+
+    def test_get_current_field_values_dict_returns_data(self):
+        """Test get_current_field_values_dict returns field values."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel
+
+        mock_model = MagicMock(spec=BaseModel)
+        mock_model.__data__ = {"id": 1, "name": "test"}
+
+        result = BaseModel.get_current_field_values_dict(mock_model)
+
+        self.assertEqual(result, {"id": 1, "name": "test"})
+
+
+class TestBaseModelParseFieldValueByType(unittest.TestCase):
+    """Tests for BaseModel.parse_field_value_by_type method."""
+
+    def test_parse_field_raises_no_such_field_error(self):
+        """Test parse_field_value_by_type raises NoSuchFieldError for invalid field."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel, NoSuchFieldError
+
+        mock_model = MagicMock(spec=BaseModel)
+        mock_model._meta = MagicMock()
+        mock_model._meta.fields = {}
+
+        # Bind the method properly
+        mock_model.get_fields = lambda: {}
+
+        with self.assertRaises(NoSuchFieldError):
+            BaseModel.parse_field_value_by_type(mock_model, "invalid_field", "value")
+
+    def test_parse_field_raises_null_error_for_non_nullable(self):
+        """Test parse_field_value_by_type raises NullError for non-nullable field with None value."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel, NullError
+        from peewee import TextField
+
+        mock_model = MagicMock(spec=BaseModel)
+        mock_field = MagicMock(spec=TextField)
+        mock_field.null = False
+        mock_model._meta = MagicMock()
+        mock_model._meta.fields = {"name": mock_field}
+
+        mock_model.get_fields = lambda: {"name": mock_field}
+
+        with self.assertRaises(NullError):
+            BaseModel.parse_field_value_by_type(mock_model, "name", None)
+
+    def test_parse_field_returns_none_for_nullable(self):
+        """Test parse_field_value_by_type returns None for nullable field."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel
+        from peewee import TextField
+
+        mock_model = MagicMock(spec=BaseModel)
+        mock_field = MagicMock(spec=TextField)
+        mock_field.null = True
+        mock_model._meta = MagicMock()
+        mock_model._meta.fields = {"name": mock_field}
+
+        mock_model.get_fields = lambda: {"name": mock_field}
+
+        result = BaseModel.parse_field_value_by_type(mock_model, "name", None)
+
+        self.assertIsNone(result)
+
+    def test_parse_boolean_field_true_string(self):
+        """Test parse_field_value_by_type converts true string to boolean."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel
+        from peewee import BooleanField
+
+        mock_model = MagicMock(spec=BaseModel)
+        mock_field = BooleanField()
+        mock_model._meta = MagicMock()
+        mock_model._meta.fields = {"enabled": mock_field}
+
+        mock_model.get_fields = lambda: {"enabled": mock_field}
+
+        result = BaseModel.parse_field_value_by_type(mock_model, "enabled", "true")
+
+        self.assertTrue(result)
+
+    def test_parse_boolean_field_false_string(self):
+        """Test parse_field_value_by_type converts false string to boolean."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel
+        from peewee import BooleanField
+
+        mock_model = MagicMock(spec=BaseModel)
+        mock_field = BooleanField()
+        mock_model._meta = MagicMock()
+        mock_model._meta.fields = {"enabled": mock_field}
+
+        mock_model.get_fields = lambda: {"enabled": mock_field}
+
+        result = BaseModel.parse_field_value_by_type(mock_model, "enabled", "false")
+
+        self.assertFalse(result)
+
+    def test_parse_boolean_field_int_value(self):
+        """Test parse_field_value_by_type converts int to boolean."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel
+        from peewee import BooleanField
+
+        mock_model = MagicMock(spec=BaseModel)
+        mock_field = BooleanField()
+        mock_model._meta = MagicMock()
+        mock_model._meta.fields = {"enabled": mock_field}
+
+        mock_model.get_fields = lambda: {"enabled": mock_field}
+
+        result = BaseModel.parse_field_value_by_type(mock_model, "enabled", 1)
+
+        self.assertTrue(result)
+
+    def test_parse_boolean_field_invalid_string(self):
+        """Test parse_field_value_by_type returns False for invalid boolean string."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel
+        from peewee import BooleanField
+
+        mock_model = MagicMock(spec=BaseModel)
+        mock_field = BooleanField()
+        mock_model._meta = MagicMock()
+        mock_model._meta.fields = {"enabled": mock_field}
+
+        mock_model.get_fields = lambda: {"enabled": mock_field}
+
+        result = BaseModel.parse_field_value_by_type(mock_model, "enabled", "invalid")
+
+        self.assertFalse(result)
+
+    def test_parse_integer_field(self):
+        """Test parse_field_value_by_type converts string to int."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel
+        from peewee import IntegerField
+
+        mock_model = MagicMock(spec=BaseModel)
+        mock_field = IntegerField()
+        mock_model._meta = MagicMock()
+        mock_model._meta.fields = {"count": mock_field}
+
+        mock_model.get_fields = lambda: {"count": mock_field}
+
+        result = BaseModel.parse_field_value_by_type(mock_model, "count", "42")
+
+        self.assertEqual(result, 42)
+
+    def test_parse_float_field(self):
+        """Test parse_field_value_by_type converts string to float."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel
+        from peewee import FloatField
+
+        mock_model = MagicMock(spec=BaseModel)
+        mock_field = FloatField()
+        mock_model._meta = MagicMock()
+        mock_model._meta.fields = {"ratio": mock_field}
+
+        mock_model.get_fields = lambda: {"ratio": mock_field}
+
+        result = BaseModel.parse_field_value_by_type(mock_model, "ratio", "3.14")
+
+        self.assertAlmostEqual(result, 3.14)
+
+    def test_parse_decimal_field(self):
+        """Test parse_field_value_by_type converts string to decimal (float)."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel
+        from peewee import DecimalField
+
+        mock_model = MagicMock(spec=BaseModel)
+        mock_field = DecimalField()
+        mock_model._meta = MagicMock()
+        mock_model._meta.fields = {"price": mock_field}
+
+        mock_model.get_fields = lambda: {"price": mock_field}
+
+        result = BaseModel.parse_field_value_by_type(mock_model, "price", "99.99")
+
+        self.assertAlmostEqual(result, 99.99)
+
+    def test_parse_datetime_field(self):
+        """Test parse_field_value_by_type converts string to datetime."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel
+        from peewee import DateTimeField
+
+        mock_model = MagicMock(spec=BaseModel)
+        mock_field = DateTimeField()
+        mock_model._meta = MagicMock()
+        mock_model._meta.fields = {"created": mock_field}
+
+        mock_model.get_fields = lambda: {"created": mock_field}
+
+        result = BaseModel.parse_field_value_by_type(mock_model, "created", "2024-01-15T10:30:45")
+
+        self.assertEqual(result, datetime(2024, 1, 15, 10, 30, 45))
+
+    def test_parse_date_field(self):
+        """Test parse_field_value_by_type converts string to date."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel
+        from peewee import DateField
+
+        mock_model = MagicMock(spec=BaseModel)
+        mock_field = DateField()
+        mock_model._meta = MagicMock()
+        mock_model._meta.fields = {"birth_date": mock_field}
+
+        mock_model.get_fields = lambda: {"birth_date": mock_field}
+
+        result = BaseModel.parse_field_value_by_type(mock_model, "birth_date", "2024-01-15")
+
+        self.assertEqual(result, date(2024, 1, 15))
+
+    def test_parse_time_field(self):
+        """Test parse_field_value_by_type converts string to time."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel
+        from peewee import TimeField
+
+        mock_model = MagicMock(spec=BaseModel)
+        mock_field = TimeField()
+        mock_model._meta = MagicMock()
+        mock_model._meta.fields = {"start_time": mock_field}
+
+        mock_model.get_fields = lambda: {"start_time": mock_field}
+
+        result = BaseModel.parse_field_value_by_type(mock_model, "start_time", "10:30:45")
+
+        self.assertEqual(result, time(10, 30, 45))
+
+    def test_parse_blob_field(self):
+        """Test parse_field_value_by_type converts base64 to bytes."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel
+        from peewee import BlobField
+
+        mock_model = MagicMock(spec=BaseModel)
+        mock_field = BlobField()
+        mock_model._meta = MagicMock()
+        mock_model._meta.fields = {"data": mock_field}
+
+        mock_model.get_fields = lambda: {"data": mock_field}
+
+        # "dGVzdA==" is base64 for "test"
+        result = BaseModel.parse_field_value_by_type(mock_model, "data", "dGVzdA==")
+
+        self.assertEqual(result, b"test")
+
+    def test_parse_text_field_returns_string(self):
+        """Test parse_field_value_by_type returns string for text field."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel
+        from peewee import TextField
+
+        mock_model = MagicMock(spec=BaseModel)
+        mock_field = TextField()
+        mock_model._meta = MagicMock()
+        mock_model._meta.fields = {"description": mock_field}
+
+        mock_model.get_fields = lambda: {"description": mock_field}
+
+        result = BaseModel.parse_field_value_by_type(mock_model, "description", "test value")
+
+        self.assertEqual(result, "test value")
+
+
+class TestBaseModelModelToDict(unittest.TestCase):
+    """Tests for BaseModel.model_to_dict method."""
+
+    @patch("unmanic.libs.unmodels.lib.basemodel.model_to_dict")
+    def test_model_to_dict_calls_peewee_helper(self, mock_model_to_dict):
+        """Test model_to_dict uses playhouse.shortcuts.model_to_dict."""
+        from unmanic.libs.unmodels.lib.basemodel import BaseModel
+
+        mock_model = MagicMock(spec=BaseModel)
+        mock_model_to_dict.return_value = {"id": 1, "name": "test"}
+
+        result = BaseModel.model_to_dict(mock_model)
+
+        mock_model_to_dict.assert_called_once_with(mock_model, backrefs=True)
+        self.assertEqual(result, {"id": 1, "name": "test"})
+
+
 if __name__ == "__main__":
     unittest.main()
