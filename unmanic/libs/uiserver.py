@@ -220,6 +220,22 @@ class UIServer(threading.Thread):
             ],
         )
 
+        # Add distributed worker API routes (specific routes outside dynamic router)
+        from unmanic.webserver.api_v2.distributed_worker_api import (
+            DistributedTaskClaimHandler,
+            DistributedTaskStatusHandler,
+            DistributedWorkerHeartbeatHandler,
+        )
+
+        app.add_handlers(
+            r".*",
+            [
+                (r"/api/v2/tasks/claim", DistributedTaskClaimHandler),
+                (r"/api/v2/tasks/([0-9]+)/status", DistributedTaskStatusHandler),
+                (r"/api/v2/workers/heartbeat", DistributedWorkerHeartbeatHandler),
+            ],
+        )
+
         # Add frontend routes
         from unmanic.webserver.main import MainUIRequestHandler
 

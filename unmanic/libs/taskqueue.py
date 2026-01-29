@@ -256,6 +256,20 @@ class TaskQueue(object):
         task_item = fetch_next_task_filtered("processed", sort_by=self.sort_by, sort_order=self.sort_order)
         return task_item
 
+    def get_task_by_id(self, task_id: int):
+        """
+        Retrieve a task by its ID.
+        Used by distributed workers to update task status.
+
+        :param task_id: Task ID to retrieve
+        :return: Task object or None if not found
+        """
+        try:
+            task = Tasks.get(Tasks.id == task_id)
+            return task
+        except Tasks.DoesNotExist:
+            return None
+
     def requeue_tasks_at_bottom(self, task_id):
         task_handler = task.Task()
         return task_handler.reorder_tasks([task_id], "bottom")
