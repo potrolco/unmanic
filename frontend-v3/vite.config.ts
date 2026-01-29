@@ -25,7 +25,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: '../unmanic/webserver/frontend/dist',
+    outDir: '../unmanic/webserver/public',
     emptyOutDir: true,
     sourcemap: false,
     rollupOptions: {

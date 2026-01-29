@@ -106,31 +106,39 @@ class BuildFrontendCommand(setuptools.command.build_py.build_py):
         setuptools.command.build_py.build_py.run(self)
 
         public_asset_path = os.path.abspath(os.path.join(".", "build", "lib", src_dir, "webserver", "public"))
-        frontend_path = os.path.abspath(os.path.join(".", "build", "lib", src_dir, "webserver", "frontend"))
+        source_public_path = os.path.abspath(os.path.join(".", src_dir, "webserver", "public"))
 
         # Start by clearing out anything if this was pulled from a dirty tree
         shutil.rmtree(public_asset_path, ignore_errors=True)
-        shutil.rmtree(os.path.join(frontend_path, "node_modules"), ignore_errors=True)
 
-        # Install all modules
-        subprocess.run(
-            "npm ci",
-            check=True,
-            shell=True,
-            cwd=frontend_path,
-        )
-        # Build the frontend
-        subprocess.run(
-            "npm run build:publish",
-            check=True,
-            shell=True,
-            cwd=frontend_path,
-        )
+        # Check if Vue 3 frontend is already built (public/ directory exists with index.html)
+        if os.path.exists(source_public_path) and os.path.exists(os.path.join(source_public_path, "index.html")):
+            print(f"Vue 3 frontend already built, copying from {source_public_path}")
+            shutil.copytree(source_public_path, public_asset_path)
+        else:
+            # Legacy Quasar frontend build process
+            frontend_path = os.path.abspath(os.path.join(".", "build", "lib", src_dir, "webserver", "frontend"))
+            shutil.rmtree(os.path.join(frontend_path, "node_modules"), ignore_errors=True)
 
-        # Move built dist to templates directory
-        shutil.move(os.path.join(frontend_path, "dist", "spa"), public_asset_path)
-        # Remove the frontend source from the package (we will not distribute these)
-        shutil.rmtree(frontend_path, ignore_errors=True)
+            # Install all modules
+            subprocess.run(
+                "npm ci",
+                check=True,
+                shell=True,
+                cwd=frontend_path,
+            )
+            # Build the frontend
+            subprocess.run(
+                "npm run build:publish",
+                check=True,
+                shell=True,
+                cwd=frontend_path,
+            )
+
+            # Move built dist to templates directory
+            shutil.move(os.path.join(frontend_path, "dist", "spa"), public_asset_path)
+            # Remove the frontend source from the package (we will not distribute these)
+            shutil.rmtree(frontend_path, ignore_errors=True)
 
 
 class CleanCommand(Command):

@@ -49,7 +49,7 @@ def read_version_string(version_type="long"):
         return "UNKNOWN.VERSION"
 
 
-__name = "tars"
+__name = "unmanic"
 __author = "TARS Fork (Original: Josh.5)"
 __email = "jsunnex@gmail.com"
 
