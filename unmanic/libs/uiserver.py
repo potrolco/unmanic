@@ -243,7 +243,11 @@ class UIServer(threading.Thread):
             r".*",
             [
                 # Vue 3 frontend assets
-                (r"/assets/(.*)", tornado.web.StaticFileHandler, dict(path=os.path.join(public_directory, "assets"))),
+                (
+                    r"/unmanic/ui/assets/(.*)",
+                    tornado.web.StaticFileHandler,
+                    dict(path=os.path.join(public_directory, "assets")),
+                ),
                 # Legacy Quasar frontend paths (for backward compatibility)
                 (r"/unmanic/css/(.*)", tornado.web.StaticFileHandler, dict(path=tornado_settings["static_css"])),
                 (r"/unmanic/fonts/(.*)", tornado.web.StaticFileHandler, dict(path=tornado_settings["static_fonts"])),
