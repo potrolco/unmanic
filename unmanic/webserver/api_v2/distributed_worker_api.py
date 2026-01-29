@@ -114,8 +114,10 @@ class DistributedTaskClaimHandler(BaseApiHandler):
                 "claimed_by": worker_id,
             }
 
-            # Update task status to processing
+            # Update task status to processing and assign to worker
             task.status = "processing"
+            task.processed_by_worker = worker_id
+            task.start_time = time.time()
             task.save()
 
             self.logger.info(f"Task {task.id} claimed by distributed worker {worker_id}")
