@@ -68,11 +68,11 @@ class ApiClient {
 
   // Settings API
   async getSettings() {
-    return this.client.get('/v2/settings')
+    return this.client.get('/v2/settings/read')
   }
 
   async updateSettings(settings: Record<string, any>) {
-    return this.client.post('/v2/settings', settings)
+    return this.client.post('/v2/settings/write', settings)
   }
 
   // GPU API (Phase 3)
