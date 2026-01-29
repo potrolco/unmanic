@@ -29,8 +29,8 @@ class WebSocketClient {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const host = import.meta.env.DEV
       ? window.location.hostname + ':8888'
-      : '192.168.1.220:8888'
-    this.url = `${protocol}//${host}/ws`
+      : window.location.host
+    this.url = `${protocol}//${host}/unmanic/websocket`
   }
 
   connect() {

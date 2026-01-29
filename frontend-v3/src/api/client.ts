@@ -9,7 +9,7 @@ class ApiClient {
 
   constructor() {
     this.client = axios.create({
-      baseURL: import.meta.env.DEV ? '/api' : 'http://192.168.1.220:8888/api',
+      baseURL: import.meta.env.DEV ? '/unmanic/api' : '/unmanic/api',
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json'
