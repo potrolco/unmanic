@@ -11,6 +11,16 @@ export interface Worker {
   current_file?: string
   current_task?: number
   start_time?: string
+  subprocess?: {
+    pid?: string | number
+    percent?: string | number
+    elapsed?: string | number
+    cpu_percent?: string
+    mem_percent?: string
+    rss_bytes?: string
+    vms_bytes?: string
+  }
+  worker_log_tail?: string[] | string
 }
 
 export const useWorkersStore = defineStore('workers', () => {
@@ -31,7 +41,7 @@ export const useWorkersStore = defineStore('workers', () => {
     error.value = null
     try {
       const response = await apiClient.getWorkers()
-      workers.value = response.data.workers || []
+      workers.value = response.data.workers_status || []
     } catch (err) {
       error.value = 'Failed to fetch workers'
       console.error(err)

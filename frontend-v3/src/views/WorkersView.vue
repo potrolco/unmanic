@@ -54,6 +54,24 @@
                 No active task
               </div>
 
+              <!-- Progress Details (Active workers only) -->
+              <div v-if="!worker.idle && !worker.paused && worker.subprocess" class="mb-3">
+                <div class="flex gap-6 text-sm">
+                  <div v-if="worker.subprocess.percent && worker.subprocess.percent !== '0'" class="flex items-center gap-2">
+                    <span class="font-medium text-gray-600 dark:text-gray-400">Progress:</span>
+                    <span class="text-green-600 dark:text-green-400 font-semibold">{{ worker.subprocess.percent }}%</span>
+                  </div>
+                  <div v-if="worker.subprocess.elapsed && worker.subprocess.elapsed !== 0 && worker.subprocess.elapsed !== '0'" class="flex items-center gap-2">
+                    <span class="font-medium text-gray-600 dark:text-gray-400">Elapsed:</span>
+                    <span class="text-blue-600 dark:text-blue-400">{{ formatElapsed(worker.subprocess.elapsed) }}</span>
+                  </div>
+                  <div v-if="getTranscodeSpeed(worker)" class="flex items-center gap-2">
+                    <span class="font-medium text-gray-600 dark:text-gray-400">Speed:</span>
+                    <span class="text-purple-600 dark:text-purple-400">{{ getTranscodeSpeed(worker) }}</span>
+                  </div>
+                </div>
+              </div>
+
               <!-- Worker Details -->
               <div class="flex gap-6 text-sm text-gray-600 dark:text-gray-400">
                 <div v-if="worker.start_time">
@@ -133,6 +151,32 @@ function formatDate(dateString: string): string {
   } catch {
     return dateString
   }
+}
+
+function getTranscodeSpeed(worker: Worker): string | null {
+  // Extract speed from worker_log_tail (e.g., "speed=2.38x")
+  if (!worker.worker_log_tail) return null
+
+  // Handle both string and array formats
+  const logText = Array.isArray(worker.worker_log_tail)
+    ? worker.worker_log_tail.join('\n')
+    : worker.worker_log_tail
+
+  const speedMatch = logText.match(/speed=\s*(\d+\.?\d*x)/i)
+  return speedMatch ? speedMatch[1] : null
+}
+
+function formatElapsed(elapsed: string | number): string {
+  const seconds = typeof elapsed === 'string' ? parseInt(elapsed) : elapsed
+  if (isNaN(seconds) || seconds === 0) return '0s'
+
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
+
+  if (hours > 0) return `${hours}h ${minutes}m ${secs}s`
+  if (minutes > 0) return `${minutes}m ${secs}s`
+  return `${secs}s`
 }
 
 onMounted(async () => {

@@ -59,7 +59,7 @@ class ApiClient {
 
   // Plugins API
   async getPlugins() {
-    return this.client.get('/v2/plugins/installed')
+    return this.client.post('/v2/plugins/installed', {})
   }
 
   async installPlugin(pluginId: string) {

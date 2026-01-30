@@ -28,7 +28,7 @@ export const useQueueStore = defineStore('queue', () => {
     error.value = null
     try {
       const response = await apiClient.getQueue(start, length)
-      tasks.value = response.data.data || []
+      tasks.value = response.data.results || []
       totalTasks.value = response.data.recordsTotal || 0
     } catch (err) {
       error.value = 'Failed to fetch queue'

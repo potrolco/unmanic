@@ -1749,6 +1749,12 @@ class WorkerStatusResultsSchema(BaseSchema):
         description="The status of the process currently being executed",
         example={"pid": 140408939493120, "percent": "None", "elapsed": "None"},
     )
+    gpu = fields.Dict(
+        required=False,
+        description="GPU allocation info (optional, for workers with GPU assignment)",
+        example={"device_id": 0, "device_name": "Intel UHD Graphics 770"},
+        allow_none=True,
+    )
 
 
 class WorkerStatusSuccessSchema(BaseSchema):

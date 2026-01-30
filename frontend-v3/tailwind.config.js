@@ -4,23 +4,42 @@ export default {
     "./index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
   ],
-  darkMode: 'class', // Enable dark mode via class strategy
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        // TARS brand colors
-        primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
+        // Retro CRT Terminal Palette
+        crt: {
+          black: '#0a0e14',
+          'dark-gray': '#1a1f26',
+          'phosphor': '#33ff33',
+          'phosphor-dim': '#1a8a1a',
+          'amber': '#ff9500',
+          'amber-dim': '#8a5000',
+          'red': '#ff3333',
+          'red-dim': '#8a1a1a',
+          'cyan': '#00ffff',
+          'cyan-dim': '#008a8a',
         },
+        // WinAmp LED Palette
+        led: {
+          'orange': '#ff6600',
+          'orange-glow': 'rgba(255, 102, 0, 0.3)',
+          'green': '#00ff00',
+          'green-glow': 'rgba(0, 255, 0, 0.3)',
+          'red': '#ff0000',
+          'red-glow': 'rgba(255, 0, 0, 0.3)',
+        },
+      },
+      fontFamily: {
+        'terminal': ['"VT323"', 'monospace'],
+        'mono': ['ui-monospace', 'monospace'],
+      },
+      boxShadow: {
+        'phosphor-glow': '0 0 10px rgba(51, 255, 51, 0.5)',
+        'amber-glow': '0 0 10px rgba(255, 149, 0, 0.5)',
+        'led-orange': '0 0 15px rgba(255, 102, 0, 0.6)',
+        'inset-bevel': 'inset 2px 2px 4px rgba(255,255,255,0.1), inset -2px -2px 4px rgba(0,0,0,0.3)',
       },
     },
   },
