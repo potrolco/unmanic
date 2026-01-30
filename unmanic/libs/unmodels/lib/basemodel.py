@@ -31,7 +31,7 @@
 """
 
 from peewee import *
-from playhouse.sqliteq import SqliteQueueDatabase
+from peewee import SqliteDatabase  # Use regular SqliteDatabase instead of SqliteQueueDatabase
 from datetime import datetime
 from base64 import b64decode
 from playhouse.shortcuts import model_to_dict, dict_to_model
@@ -112,17 +112,15 @@ class Database:
     def select_database(config):
         # Based on configuration, use a different database.
         if config["TYPE"] == "SQLITE":
-            # use SqliteQueueDatabase
-            database = SqliteQueueDatabase(
+            # Use regular SqliteDatabase (SqliteQueueDatabase required WAL mode which caused unbounded -wal file growth)
+            database = SqliteDatabase(
                 config["FILE"],
-                use_gevent=False,
-                autostart=True,
-                queue_max_size=None,
-                results_timeout=15.0,
-                pragmas=(
-                    ("foreign_keys", 1),
-                    ("journal_mode", "delete"),  # Changed from WAL to prevent unbounded -wal file growth
-                ),
+                pragmas={
+                    "foreign_keys": 1,
+                    "journal_mode": "delete",  # DELETE mode prevents -wal file bloat
+                    "cache_size": -64000,  # 64MB cache for performance
+                    "synchronous": "NORMAL",  # Balance between safety and speed
+                },
             )
 
             db.initialize(database)
