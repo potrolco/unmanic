@@ -121,7 +121,7 @@ class Database:
                 results_timeout=15.0,
                 pragmas=(
                     ("foreign_keys", 1),
-                    ("journal_mode", "wal"),
+                    ("journal_mode", "delete"),  # Changed from WAL to prevent unbounded -wal file growth
                 ),
             )
 
