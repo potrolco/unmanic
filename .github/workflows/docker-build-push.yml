@@ -16,7 +16,62 @@ env:
   IMAGE_NAME: ${{ github.repository_owner }}/tars-transcoder
 
 jobs:
-  build-and-push:
+  build-wheel:
+    name: Build Python Wheel
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.build_data.outputs.version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Fetch tags
+        run: |
+          git fetch --prune --tags
+          git tag --list | tail -5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Set up Node.js (for frontend build)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel setuptools
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+
+      - name: Build wheel package
+        run: |
+          python -m build --no-isolation --skip-dependency-check --wheel
+          ls -la dist/
+
+      - name: Save build data
+        id: build_data
+        run: |
+          PY_VERSION=$(python ./setup.py --quiet --version)
+          echo "version=${PY_VERSION}" >> $GITHUB_OUTPUT
+          echo ${PY_VERSION} > dist/VERSION.txt
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-dist
+          path: dist/
+
+  build-docker:
+    name: Build and Push Docker Image
+    needs: build-wheel
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -25,23 +80,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Download wheel artifact
+        uses: actions/download-artifact@v4
         with:
-          fetch-depth: 0  # Fetch all history for git describe
+          name: wheel-dist
+          path: dist/
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install build dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install build wheel setuptools
-
-      - name: Build wheel package
-        run: |
-          python setup.py bdist_wheel
-          ls -la dist/
+      - name: Verify wheel exists
+        run: ls -la dist/
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -62,6 +109,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=${{ inputs.version }},enable=${{ github.event_name == 'workflow_dispatch' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
             type=sha,prefix=
 
       - name: Build and push Docker image
@@ -76,7 +124,8 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64
 
-      - name: Output image digest
+      - name: Output image info
         run: |
           echo "Image pushed to: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
           echo "Tags: ${{ steps.meta.outputs.tags }}"
+          echo "Version: ${{ needs.build-wheel.outputs.version }}"
