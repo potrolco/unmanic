@@ -25,85 +25,13 @@
         </div>
       </div>
 
-      <!-- Workers List -->
+      <!-- Workers List - Retro CRT Style -->
       <div class="space-y-4">
-        <div
+        <WorkerCard
           v-for="worker in workersStore.workers"
           :key="worker.id"
-          class="card"
-        >
-          <div class="flex items-start justify-between">
-            <div class="flex-1">
-              <!-- Worker Name and Status -->
-              <div class="flex items-center gap-3 mb-2">
-                <h3 class="text-lg font-semibold">{{ worker.name }}</h3>
-                <span
-                  :class="getStatusBadgeClass(worker)"
-                  class="px-2 py-1 text-xs font-medium rounded-full"
-                >
-                  {{ getStatusText(worker) }}
-                </span>
-              </div>
-
-              <!-- Current Task -->
-              <div v-if="worker.current_file" class="mb-2">
-                <div class="text-sm text-gray-600 dark:text-gray-400">Current Task:</div>
-                <div class="text-sm font-mono truncate">{{ worker.current_file }}</div>
-              </div>
-              <div v-else class="text-sm text-gray-500 italic mb-2">
-                No active task
-              </div>
-
-              <!-- Progress Details (Active workers only) -->
-              <div v-if="!worker.idle && !worker.paused && worker.subprocess" class="mb-3">
-                <div class="flex gap-6 text-sm">
-                  <div v-if="worker.subprocess.percent && worker.subprocess.percent !== '0'" class="flex items-center gap-2">
-                    <span class="font-medium text-gray-600 dark:text-gray-400">Progress:</span>
-                    <span class="text-green-600 dark:text-green-400 font-semibold">{{ worker.subprocess.percent }}%</span>
-                  </div>
-                  <div v-if="worker.subprocess.elapsed && worker.subprocess.elapsed !== 0 && worker.subprocess.elapsed !== '0'" class="flex items-center gap-2">
-                    <span class="font-medium text-gray-600 dark:text-gray-400">Elapsed:</span>
-                    <span class="text-blue-600 dark:text-blue-400">{{ formatElapsed(worker.subprocess.elapsed) }}</span>
-                  </div>
-                  <div v-if="getTranscodeSpeed(worker)" class="flex items-center gap-2">
-                    <span class="font-medium text-gray-600 dark:text-gray-400">Speed:</span>
-                    <span class="text-purple-600 dark:text-purple-400">{{ getTranscodeSpeed(worker) }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Worker Details -->
-              <div class="flex gap-6 text-sm text-gray-600 dark:text-gray-400">
-                <div v-if="worker.start_time">
-                  <span class="font-medium">Started:</span> {{ formatDate(worker.start_time) }}
-                </div>
-                <div v-if="worker.current_task">
-                  <span class="font-medium">Task ID:</span> #{{ worker.current_task }}
-                </div>
-              </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="flex gap-2 ml-4">
-              <button
-                v-if="!worker.paused && !worker.idle"
-                @click="handlePauseWorker(worker.id)"
-                class="btn btn-secondary text-sm px-3 py-1"
-                :disabled="workersStore.loading"
-              >
-                Pause
-              </button>
-              <button
-                v-if="worker.paused"
-                @click="handleResumeWorker(worker.id)"
-                class="btn btn-primary text-sm px-3 py-1"
-                :disabled="workersStore.loading"
-              >
-                Resume
-              </button>
-            </div>
-          </div>
-        </div>
+          :worker="worker"
+        />
 
         <!-- Empty State -->
         <div v-if="workersStore.workerCount === 0" class="card text-center py-12">
@@ -118,66 +46,9 @@
 import { onMounted } from 'vue'
 import { useWorkersStore } from '@/stores/workers'
 import { wsClient } from '@/api/websocket'
-import type { Worker } from '@/stores/workers'
+import WorkerCard from '@/components/WorkerCard.vue'
 
 const workersStore = useWorkersStore()
-
-// Worker control handlers
-async function handlePauseWorker(workerId: string) {
-  await workersStore.pauseWorker(workerId)
-}
-
-async function handleResumeWorker(workerId: string) {
-  await workersStore.resumeWorker(workerId)
-}
-
-// Status helpers
-function getStatusText(worker: Worker): string {
-  if (worker.paused) return 'Paused'
-  if (worker.idle) return 'Idle'
-  return 'Active'
-}
-
-function getStatusBadgeClass(worker: Worker): string {
-  if (worker.paused) return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
-  if (worker.idle) return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-  return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-}
-
-function formatDate(dateString: string): string {
-  try {
-    const date = new Date(dateString)
-    return date.toLocaleString()
-  } catch {
-    return dateString
-  }
-}
-
-function getTranscodeSpeed(worker: Worker): string | null {
-  // Extract speed from worker_log_tail (e.g., "speed=2.38x")
-  if (!worker.worker_log_tail) return null
-
-  // Handle both string and array formats
-  const logText = Array.isArray(worker.worker_log_tail)
-    ? worker.worker_log_tail.join('\n')
-    : worker.worker_log_tail
-
-  const speedMatch = logText.match(/speed=\s*(\d+\.?\d*x)/i)
-  return speedMatch ? speedMatch[1] : null
-}
-
-function formatElapsed(elapsed: string | number): string {
-  const seconds = typeof elapsed === 'string' ? parseInt(elapsed) : elapsed
-  if (isNaN(seconds) || seconds === 0) return '0s'
-
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const secs = seconds % 60
-
-  if (hours > 0) return `${hours}h ${minutes}m ${secs}s`
-  if (minutes > 0) return `${minutes}m ${secs}s`
-  return `${secs}s`
-}
 
 onMounted(async () => {
   // Fetch initial data
