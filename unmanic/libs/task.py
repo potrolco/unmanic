@@ -89,9 +89,19 @@ class Task:
         self.errors: List[str] = []
 
     def set_cache_path(self, cache_directory: Optional[str] = None, file_extension: Optional[str] = None) -> None:
-        """Set the cache path for task output."""
+        """Set the cache path for task output.
+
+        IMPORTANT: If cache_path already exists and cache_directory is provided,
+        this preserves the existing random suffix to prevent filename mismatch bugs.
+        Only the file extension will be updated in that case.
+
+        Bug fix: Previously, calling set_cache_path() after transcode completion would
+        regenerate the random suffix, causing the post-processor to look for a different
+        filename than what ffmpeg actually created, resulting in infinite retry loops.
+        """
         if not self.task:
             raise Exception("Unable to set cache path. Task has not been set!")
+
         # Fetch the file's name without the file extension (this is going to be reset)
         split_file_name = os.path.splitext(self.get_source_basename())
         file_name_without_extension = split_file_name[0]
@@ -100,7 +110,19 @@ class Task:
             # Get file extension
             file_extension = split_file_name[1].lstrip(".")
 
-        # Parse an output cache path
+        # FIX: If cache_path already exists and we're just updating the extension,
+        # preserve the existing random suffix instead of generating a new one.
+        # This prevents filename mismatch between worker output and post-processor expectation.
+        if self.task.cache_path and cache_directory:
+            # Extract existing filename and preserve its random suffix
+            existing_basename = os.path.basename(self.task.cache_path)
+            existing_name_without_ext = os.path.splitext(existing_basename)[0]
+            # Update only the extension, keep the same name with random suffix
+            out_file = "{}.{}".format(existing_name_without_ext, file_extension)
+            self.task.cache_path = os.path.join(cache_directory, out_file)
+            return
+
+        # Generate new random string only for fresh cache paths (initial task creation)
         random_string = "{}-{}".format(common.random_string(), int(time.time()))
         out_file = "{}-{}.{}".format(file_name_without_extension, random_string, file_extension)
         if not cache_directory:
