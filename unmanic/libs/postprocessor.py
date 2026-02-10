@@ -2,33 +2,34 @@
 # -*- coding: utf-8 -*-
 
 """
-    unmanic.postprocessor.py
+unmanic.postprocessor.py
 
-    Written by:               Josh.5 <jsunnex@gmail.com>
-    Date:                     23 Apr 2019, (7:33 PM)
+Written by:               Josh.5 <jsunnex@gmail.com>
+Date:                     23 Apr 2019, (7:33 PM)
 
-    Copyright:
-           Copyright (C) Josh Sunnex - All Rights Reserved
+Copyright:
+       Copyright (C) Josh Sunnex - All Rights Reserved
 
-           Permission is hereby granted, free of charge, to any person obtaining a copy
-           of this software and associated documentation files (the "Software"), to deal
-           in the Software without restriction, including without limitation the rights
-           to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-           copies of the Software, and to permit persons to whom the Software is
-           furnished to do so, subject to the following conditions:
+       Permission is hereby granted, free of charge, to any person obtaining a copy
+       of this software and associated documentation files (the "Software"), to deal
+       in the Software without restriction, including without limitation the rights
+       to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+       copies of the Software, and to permit persons to whom the Software is
+       furnished to do so, subject to the following conditions:
 
-           The above copyright notice and this permission notice shall be included in all
-           copies or substantial portions of the Software.
+       The above copyright notice and this permission notice shall be included in all
+       copies or substantial portions of the Software.
 
-           THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-           EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-           MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-           IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-           DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-           OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
-           OR OTHER DEALINGS IN THE SOFTWARE.
+       THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+       EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+       MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+       IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+       DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+       OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+       OR OTHER DEALINGS IN THE SOFTWARE.
 
 """
+
 import os
 import shutil
 import threading
@@ -80,6 +81,12 @@ class PostProcessor(threading.Thread):
         self.current_task = None
         self.ffmpeg = None
         self.abort_flag.clear()
+
+        # Retry tracking: {task_abspath: retry_count}
+        # Prevents infinite retry loops when file movement fails permanently
+        self._task_retry_counts = {}
+        self.MAX_RETRIES = 3
+        self.BACKOFF_BASE_SECONDS = 2  # Exponential: 2s, 4s, 8s
 
     def _log(self, message, message2="", level="info"):
         message = common.format_message(message, message2)
@@ -141,13 +148,59 @@ class PostProcessor(threading.Thread):
                             except Exception as e:
                                 self._log("Exception in removing task from task list", message2=str(e), level="exception")
                         else:
-                            # File movement failed - mark task as failed but keep in queue
-                            self._log("File movement failed - task will remain in queue for retry", level="warning")
-                            try:
-                                self.current_task.task.success = False
-                                self.write_history_log()
-                            except Exception as e:
-                                self._log("Exception in writing failure history log", message2=str(e), level="exception")
+                            # File movement failed — apply retry logic with backoff
+                            task_key = self.current_task.get_source_abspath()
+                            retry_count = self._task_retry_counts.get(task_key, 0) + 1
+                            self._task_retry_counts[task_key] = retry_count
+
+                            # Check if source cache file exists — if not, fail immediately (no retries)
+                            cache_path = self.current_task.get_cache_path()
+                            cache_missing = cache_path and not os.path.exists(cache_path)
+
+                            if cache_missing:
+                                self._log(
+                                    "File movement failed and cache file is missing: '{}'. "
+                                    "Marking task as permanently failed "
+                                    "(no retry — file unrecoverable).".format(cache_path),
+                                    level="error",
+                                )
+                                retry_count = self.MAX_RETRIES  # Force immediate expiry
+
+                            if retry_count >= self.MAX_RETRIES:
+                                # Max retries exceeded — mark failed, write history, delete task
+                                self._log(
+                                    "File movement failed after {} retries for '{}'. "
+                                    "Marking task as failed and removing from queue.".format(retry_count, task_key),
+                                    level="error",
+                                )
+                                try:
+                                    self.current_task.task.success = False
+                                    self.write_history_log()
+                                except Exception as e:
+                                    self._log(
+                                        "Exception in writing failure history log",
+                                        message2=str(e),
+                                        level="exception",
+                                    )
+                                try:
+                                    self.current_task.delete()
+                                except Exception as e:
+                                    self._log(
+                                        "Exception in removing failed task from queue",
+                                        message2=str(e),
+                                        level="exception",
+                                    )
+                                # Clean up retry counter
+                                self._task_retry_counts.pop(task_key, None)
+                            else:
+                                # Exponential backoff before retry
+                                backoff = self.BACKOFF_BASE_SECONDS**retry_count
+                                self._log(
+                                    "File movement failed for '{}' (attempt {}/{}). "
+                                    "Retrying in {}s.".format(task_key, retry_count, self.MAX_RETRIES, backoff),
+                                    level="warning",
+                                )
+                                self.event.wait(backoff)
                     else:
                         try:
                             # Post processes the remote converted file (return it to original directory etc.)
@@ -433,10 +486,15 @@ class PostProcessor(threading.Thread):
                 )
                 return False
 
-            # Get a checksum prior to copy
+            # Fail immediately if source file does not exist (e.g., temp files cleaned on restart)
             if not os.path.exists(file_in):
-                self._log("The file_in path does not exist! '{}'".format(file_in), level="warning")
-                self.event.wait(1)
+                self._log(
+                    "Source file does not exist, cannot copy: '{}'. "
+                    "This typically happens when temp files are cleaned after a container restart.".format(file_in),
+                    level="error",
+                )
+                return False
+
             self._log("Fetching checksum of source file '{}'.".format(file_in), level="debug")
 
             # Use a '.part' suffix for the file movement, then rename it after
