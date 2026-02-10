@@ -2,31 +2,31 @@
 # -*- coding: utf-8 -*-
 
 """
-    unmanic.basemodel.py
+unmanic.basemodel.py
 
-    Written by:               Josh.5 <jsunnex@gmail.com>
-    Date:                     22 Jun 2019, (1:58 PM)
+Written by:               Josh.5 <jsunnex@gmail.com>
+Date:                     22 Jun 2019, (1:58 PM)
 
-    Copyright:
-           Copyright (C) Josh Sunnex - All Rights Reserved
+Copyright:
+       Copyright (C) Josh Sunnex - All Rights Reserved
 
-           Permission is hereby granted, free of charge, to any person obtaining a copy
-           of this software and associated documentation files (the "Software"), to deal
-           in the Software without restriction, including without limitation the rights
-           to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-           copies of the Software, and to permit persons to whom the Software is
-           furnished to do so, subject to the following conditions:
+       Permission is hereby granted, free of charge, to any person obtaining a copy
+       of this software and associated documentation files (the "Software"), to deal
+       in the Software without restriction, including without limitation the rights
+       to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+       copies of the Software, and to permit persons to whom the Software is
+       furnished to do so, subject to the following conditions:
 
-           The above copyright notice and this permission notice shall be included in all
-           copies or substantial portions of the Software.
+       The above copyright notice and this permission notice shall be included in all
+       copies or substantial portions of the Software.
 
-           THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-           EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-           MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-           IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-           DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-           OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
-           OR OTHER DEALINGS IN THE SOFTWARE.
+       THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+       EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+       MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+       IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+       DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+       OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+       OR OTHER DEALINGS IN THE SOFTWARE.
 
 """
 
@@ -112,12 +112,16 @@ class Database:
     def select_database(config):
         # Based on configuration, use a different database.
         if config["TYPE"] == "SQLITE":
-            # Use regular SqliteDatabase (SqliteQueueDatabase required WAL mode which caused unbounded -wal file growth)
+            # WAL mode enables concurrent reads+writes (prevents 'database is locked' crashes).
+            # WAL bloat is controlled by wal_autocheckpoint + external cron TRUNCATE checkpoint.
+            # busy_timeout gives threads 30s to wait for locks before failing.
             database = SqliteDatabase(
                 config["FILE"],
                 pragmas={
                     "foreign_keys": 1,
-                    "journal_mode": "delete",  # DELETE mode prevents -wal file bloat
+                    "journal_mode": "wal",
+                    "wal_autocheckpoint": 1000,  # Checkpoint every 1000 pages (~4MB)
+                    "busy_timeout": 30000,  # Wait up to 30s for locks (covers long library scans)
                     "cache_size": -64000,  # 64MB cache for performance
                     "synchronous": "NORMAL",  # Balance between safety and speed
                 },
