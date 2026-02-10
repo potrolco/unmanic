@@ -143,6 +143,17 @@ class TaskQueueInterface(ABC):
     # ──────────────────────────────────────────────
 
     @abstractmethod
+    def get_task_by_id(self, task_id: int) -> Any:
+        """
+        Retrieve a task by its database ID.
+
+        Used by distributed workers to update task status.
+
+        :param task_id: The task's database ID.
+        :return: Task record or None if not found.
+        """
+
+    @abstractmethod
     def requeue_tasks_at_bottom(self, task_id: int) -> bool:
         """
         Move a task to the bottom of the priority queue.

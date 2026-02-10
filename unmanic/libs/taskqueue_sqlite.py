@@ -213,6 +213,12 @@ class SQLiteTaskQueue(TaskQueueInterface):
     def task_list_processed_is_empty(self) -> bool:
         return self._build_tasks_count_query('processed') == 0
 
+    def get_task_by_id(self, task_id: int) -> Any:
+        try:
+            return Tasks.get(Tasks.id == task_id)
+        except Tasks.DoesNotExist:
+            return None
+
     def requeue_tasks_at_bottom(self, task_id: int) -> bool:
         task_handler = task.Task()
         return task_handler.reorder_tasks([task_id], 'bottom')

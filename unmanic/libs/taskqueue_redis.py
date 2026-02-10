@@ -474,6 +474,18 @@ class RedisTaskQueue(TaskQueueInterface):
     def task_list_processed_is_empty(self) -> bool:
         return self.client.zcard(self.PROCESSED_KEY) == 0
 
+    def get_task_by_id(self, task_id: int) -> Any:
+        """Retrieve task from Redis hash. Falls back to SQLite in hybrid mode."""
+        task_data = self.client.hgetall(self._task_key(str(task_id)))
+        if task_data:
+            return self._deserialize_task(task_data)
+        # Hybrid fallback: check SQLite
+        from unmanic.libs.unmodels.tasks import Tasks
+        try:
+            return Tasks.get(Tasks.id == task_id)
+        except Tasks.DoesNotExist:
+            return None
+
     def requeue_tasks_at_bottom(self, task_id: int) -> bool:
         """
         Move task to bottom of pending queue (lowest priority).
