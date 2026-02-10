@@ -2,21 +2,21 @@
 # -*- coding: utf-8 -*-
 
 """
-    unmanic.taskqueue_interface.py
+unmanic.taskqueue_interface.py
 
-    Abstract Base Class defining the contract for all task queue backends.
-    Implementations must handle task lifecycle: pending → in_progress → processed.
+Abstract Base Class defining the contract for all task queue backends.
+Implementations must handle task lifecycle: pending → in_progress → processed.
 
-    The interface is intentionally backend-agnostic — no ORM types, no Redis types.
-    All methods accept and return plain Python objects (dicts, lists, booleans).
+The interface is intentionally backend-agnostic — no ORM types, no Redis types.
+All methods accept and return plain Python objects (dicts, lists, booleans).
 
-    Implementations:
-        - SQLiteTaskQueue  (taskqueue_sqlite.py) — default, uses Peewee ORM
-        - RedisTaskQueue   (taskqueue_redis.py)  — optional, uses redis-py
+Implementations:
+    - SQLiteTaskQueue  (taskqueue_sqlite.py) — default, uses Peewee ORM
+    - RedisTaskQueue   (taskqueue_redis.py)  — optional, uses redis-py
 
-    Version: 1.0.0
-    Author:  JARVIS (Session 212, 2026-02-10)
-    Review:  GPT-5 Adapter Pattern recommendation
+Version: 1.0.0
+Author:  JARVIS (Session 212, 2026-02-10)
+Review:  GPT-5 Adapter Pattern recommendation
 """
 
 from abc import ABC, abstractmethod

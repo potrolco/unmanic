@@ -18,10 +18,10 @@ import unittest
 from abc import ABC
 from unittest.mock import MagicMock, patch
 
-
 # ──────────────────────────────────────────────────
 # 1. Interface contract tests
 # ──────────────────────────────────────────────────
+
 
 class TestTaskQueueInterface(unittest.TestCase):
     """Tests for TaskQueueInterface ABC."""
@@ -38,18 +38,18 @@ class TestTaskQueueInterface(unittest.TestCase):
         from unmanic.libs.taskqueue_interface import TaskQueueInterface
 
         expected_methods = {
-            'list_pending_tasks',
-            'list_in_progress_tasks',
-            'list_processed_tasks',
-            'get_next_pending_tasks',
-            'get_next_processed_tasks',
-            'get_task_by_id',
-            'mark_item_in_progress',
-            'mark_item_as_processed',
-            'task_list_pending_is_empty',
-            'task_list_in_progress_is_empty',
-            'task_list_processed_is_empty',
-            'requeue_tasks_at_bottom',
+            "list_pending_tasks",
+            "list_in_progress_tasks",
+            "list_processed_tasks",
+            "get_next_pending_tasks",
+            "get_next_processed_tasks",
+            "get_task_by_id",
+            "mark_item_in_progress",
+            "mark_item_as_processed",
+            "task_list_pending_is_empty",
+            "task_list_in_progress_is_empty",
+            "task_list_processed_is_empty",
+            "requeue_tasks_at_bottom",
         }
         abstract_methods = TaskQueueInterface.__abstractmethods__
         self.assertEqual(abstract_methods, expected_methods)
@@ -64,6 +64,7 @@ class TestTaskQueueInterface(unittest.TestCase):
 # ──────────────────────────────────────────────────
 # 2. SQLiteTaskQueue tests
 # ──────────────────────────────────────────────────
+
 
 class TestSQLiteTaskQueueInit(unittest.TestCase):
     """Tests for SQLiteTaskQueue initialization."""
@@ -151,9 +152,7 @@ class TestSQLiteTaskQueueListMethods(unittest.TestCase):
 
         mock_logging.get_logger.return_value = MagicMock()
         mock_tasks.priority = MagicMock()
-        mock_tasks.select.return_value.where.return_value.order_by.return_value.dicts.return_value = [
-            {"id": 1}, {"id": 2}
-        ]
+        mock_tasks.select.return_value.where.return_value.order_by.return_value.dicts.return_value = [{"id": 1}, {"id": 2}]
 
         queue = SQLiteTaskQueue({})
         result = queue.list_pending_tasks()
@@ -183,9 +182,7 @@ class TestSQLiteTaskQueueListMethods(unittest.TestCase):
 
         mock_logging.get_logger.return_value = MagicMock()
         mock_tasks.priority = MagicMock()
-        mock_tasks.select.return_value.where.return_value.order_by.return_value.dicts.return_value = [
-            {"id": 3}
-        ]
+        mock_tasks.select.return_value.where.return_value.order_by.return_value.dicts.return_value = [{"id": 3}]
 
         queue = SQLiteTaskQueue({})
         result = queue.list_in_progress_tasks()
@@ -200,9 +197,7 @@ class TestSQLiteTaskQueueListMethods(unittest.TestCase):
 
         mock_logging.get_logger.return_value = MagicMock()
         mock_tasks.priority = MagicMock()
-        mock_tasks.select.return_value.where.return_value.order_by.return_value.dicts.return_value = [
-            {"id": 4}
-        ]
+        mock_tasks.select.return_value.where.return_value.order_by.return_value.dicts.return_value = [{"id": 4}]
 
         queue = SQLiteTaskQueue({})
         result = queue.list_processed_tasks()
@@ -310,7 +305,8 @@ class TestSQLiteTaskQueueGetNext(unittest.TestCase):
 
         mock_task_item = MagicMock()
         mock_task_item.abspath = "/test/file.mkv"
-        mock_tasks.select.return_value.where.return_value.join.return_value.limit.return_value.order_by.return_value.first.return_value = mock_task_item
+        query_chain = mock_tasks.select.return_value.where.return_value.join.return_value
+        query_chain.limit.return_value.order_by.return_value.first.return_value = mock_task_item
 
         mock_task_instance = MagicMock()
         mock_task_class.return_value = mock_task_instance
@@ -329,7 +325,8 @@ class TestSQLiteTaskQueueGetNext(unittest.TestCase):
 
         mock_logging.get_logger.return_value = MagicMock()
         mock_tasks.priority = MagicMock()
-        mock_tasks.select.return_value.where.return_value.join.return_value.limit.return_value.order_by.return_value.first.return_value = None
+        query_chain = mock_tasks.select.return_value.where.return_value.join.return_value
+        query_chain.limit.return_value.order_by.return_value.first.return_value = None
 
         queue = SQLiteTaskQueue({})
         result = queue.get_next_pending_tasks()
@@ -417,6 +414,7 @@ class TestSQLiteTaskQueueLog(unittest.TestCase):
 # 3. Backward compatibility tests
 # ──────────────────────────────────────────────────
 
+
 class TestBackwardCompatibility(unittest.TestCase):
     """Verify taskqueue.py still exports TaskQueue alias."""
 
@@ -430,17 +428,20 @@ class TestBackwardCompatibility(unittest.TestCase):
     def test_interface_import(self):
         """Test interface can be imported from taskqueue module."""
         from unmanic.libs.taskqueue import TaskQueueInterface
-        self.assertTrue(hasattr(TaskQueueInterface, '__abstractmethods__'))
+
+        self.assertTrue(hasattr(TaskQueueInterface, "__abstractmethods__"))
 
     def test_factory_import(self):
         """Test factory can be imported from taskqueue module."""
         from unmanic.libs.taskqueue import create_task_queue
+
         self.assertTrue(callable(create_task_queue))
 
 
 # ──────────────────────────────────────────────────
 # 4. Factory tests
 # ──────────────────────────────────────────────────
+
 
 class TestTaskQueueFactory(unittest.TestCase):
     """Tests for TaskQueueFactory."""
@@ -450,14 +451,15 @@ class TestTaskQueueFactory(unittest.TestCase):
         """Test factory creates SQLiteTaskQueue for 'sqlite' backend."""
         mock_logging.get_logger.return_value = MagicMock()
 
-        with patch("unmanic.libs.taskqueue_sqlite.UnmanicLogging") as mock_sqlite_log, \
-             patch("unmanic.libs.taskqueue_sqlite.Tasks"):
+        with patch("unmanic.libs.taskqueue_sqlite.UnmanicLogging") as mock_sqlite_log, patch(
+            "unmanic.libs.taskqueue_sqlite.Tasks"
+        ):
             mock_sqlite_log.get_logger.return_value = MagicMock()
 
             from unmanic.libs.taskqueue_factory import create_task_queue
             from unmanic.libs.taskqueue_sqlite import SQLiteTaskQueue
 
-            queue = create_task_queue({}, backend='sqlite')
+            queue = create_task_queue({}, backend="sqlite")
             self.assertIsInstance(queue, SQLiteTaskQueue)
 
     @patch("unmanic.libs.taskqueue_factory.UnmanicLogging")
@@ -468,7 +470,7 @@ class TestTaskQueueFactory(unittest.TestCase):
         from unmanic.libs.taskqueue_factory import create_task_queue
 
         with self.assertRaises(ValueError) as ctx:
-            create_task_queue({}, backend='unknown')
+            create_task_queue({}, backend="unknown")
 
         self.assertIn("unknown", str(ctx.exception).lower())
 
@@ -477,8 +479,9 @@ class TestTaskQueueFactory(unittest.TestCase):
         """Test factory defaults to SQLite backend."""
         mock_logging.get_logger.return_value = MagicMock()
 
-        with patch("unmanic.libs.taskqueue_sqlite.UnmanicLogging") as mock_sqlite_log, \
-             patch("unmanic.libs.taskqueue_sqlite.Tasks"):
+        with patch("unmanic.libs.taskqueue_sqlite.UnmanicLogging") as mock_sqlite_log, patch(
+            "unmanic.libs.taskqueue_sqlite.Tasks"
+        ):
             mock_sqlite_log.get_logger.return_value = MagicMock()
 
             from unmanic.libs.taskqueue_factory import create_task_queue
@@ -491,6 +494,7 @@ class TestTaskQueueFactory(unittest.TestCase):
 # ──────────────────────────────────────────────────
 # 5. RedisTaskQueue tests (mocked)
 # ──────────────────────────────────────────────────
+
 
 class TestRedisTaskQueueSerialization(unittest.TestCase):
     """Tests for RedisTaskQueue serialization/deserialization."""
@@ -507,23 +511,23 @@ class TestRedisTaskQueueSerialization(unittest.TestCase):
 
         from unmanic.libs.taskqueue_redis import RedisTaskQueue
 
-        queue = RedisTaskQueue({}, redis_host='localhost')
+        queue = RedisTaskQueue({}, redis_host="localhost")
 
         task_data = {
-            'id': 42,
-            'abspath': '/test/file.mkv',
-            'priority': 100,
-            'success': True,
-            'cache_path': None,
+            "id": 42,
+            "abspath": "/test/file.mkv",
+            "priority": 100,
+            "success": True,
+            "cache_path": None,
         }
 
         result = queue._serialize_task(task_data)
 
-        self.assertEqual(result['id'], '42')
-        self.assertEqual(result['abspath'], '/test/file.mkv')
-        self.assertEqual(result['priority'], '100')
-        self.assertEqual(result['success'], '1')
-        self.assertEqual(result['cache_path'], '')
+        self.assertEqual(result["id"], "42")
+        self.assertEqual(result["abspath"], "/test/file.mkv")
+        self.assertEqual(result["priority"], "100")
+        self.assertEqual(result["success"], "1")
+        self.assertEqual(result["cache_path"], "")
 
     @patch("unmanic.libs.taskqueue_redis.redis")
     @patch("unmanic.libs.taskqueue_redis.UnmanicLogging")
@@ -537,27 +541,27 @@ class TestRedisTaskQueueSerialization(unittest.TestCase):
 
         from unmanic.libs.taskqueue_redis import RedisTaskQueue
 
-        queue = RedisTaskQueue({}, redis_host='localhost')
+        queue = RedisTaskQueue({}, redis_host="localhost")
 
         task_hash = {
-            'id': '42',
-            'abspath': '/test/file.mkv',
-            'priority': '100',
-            'success': '1',
-            'library_id': '3',
-            'cache_path': '',
-            'start_time': '1707580800.0',
+            "id": "42",
+            "abspath": "/test/file.mkv",
+            "priority": "100",
+            "success": "1",
+            "library_id": "3",
+            "cache_path": "",
+            "start_time": "1707580800.0",
         }
 
         result = queue._deserialize_task(task_hash)
 
-        self.assertEqual(result['id'], 42)
-        self.assertEqual(result['abspath'], '/test/file.mkv')
-        self.assertEqual(result['priority'], 100)
-        self.assertTrue(result['success'])
-        self.assertEqual(result['library_id'], 3)
-        self.assertIsNone(result['cache_path'])
-        self.assertAlmostEqual(result['start_time'], 1707580800.0)
+        self.assertEqual(result["id"], 42)
+        self.assertEqual(result["abspath"], "/test/file.mkv")
+        self.assertEqual(result["priority"], 100)
+        self.assertTrue(result["success"])
+        self.assertEqual(result["library_id"], 3)
+        self.assertIsNone(result["cache_path"])
+        self.assertAlmostEqual(result["start_time"], 1707580800.0)
 
     @patch("unmanic.libs.taskqueue_redis.redis")
     @patch("unmanic.libs.taskqueue_redis.UnmanicLogging")
@@ -571,7 +575,7 @@ class TestRedisTaskQueueSerialization(unittest.TestCase):
 
         from unmanic.libs.taskqueue_redis import RedisTaskQueue
 
-        queue = RedisTaskQueue({}, redis_host='localhost')
+        queue = RedisTaskQueue({}, redis_host="localhost")
 
         self.assertEqual(queue._deserialize_task({}), {})
 
@@ -592,9 +596,9 @@ class TestRedisTaskQueueEmptyChecks(unittest.TestCase):
 
         from unmanic.libs.taskqueue_redis import RedisTaskQueue
 
-        queue = RedisTaskQueue({}, redis_host='localhost')
+        queue = RedisTaskQueue({}, redis_host="localhost")
         self.assertTrue(queue.task_list_pending_is_empty())
-        mock_client.zcard.assert_called_with('tars:tasks:pending')
+        mock_client.zcard.assert_called_with("tars:tasks:pending")
 
     @patch("unmanic.libs.taskqueue_redis.redis")
     @patch("unmanic.libs.taskqueue_redis.UnmanicLogging")
@@ -609,7 +613,7 @@ class TestRedisTaskQueueEmptyChecks(unittest.TestCase):
 
         from unmanic.libs.taskqueue_redis import RedisTaskQueue
 
-        queue = RedisTaskQueue({}, redis_host='localhost')
+        queue = RedisTaskQueue({}, redis_host="localhost")
         self.assertFalse(queue.task_list_pending_is_empty())
 
 
@@ -629,13 +633,13 @@ class TestRedisTaskQueueHealthCheck(unittest.TestCase):
 
         from unmanic.libs.taskqueue_redis import RedisTaskQueue
 
-        queue = RedisTaskQueue({}, redis_host='localhost')
+        queue = RedisTaskQueue({}, redis_host="localhost")
         health = queue.health_check()
 
-        self.assertTrue(health['connected'])
-        self.assertEqual(health['pending'], 10)
-        self.assertEqual(health['in_progress'], 2)
-        self.assertEqual(health['processed'], 50)
+        self.assertTrue(health["connected"])
+        self.assertEqual(health["pending"], 10)
+        self.assertEqual(health["in_progress"], 2)
+        self.assertEqual(health["processed"], 50)
 
     @patch("unmanic.libs.taskqueue_redis.redis")
     @patch("unmanic.libs.taskqueue_redis.UnmanicLogging")
@@ -651,11 +655,11 @@ class TestRedisTaskQueueHealthCheck(unittest.TestCase):
 
         from unmanic.libs.taskqueue_redis import RedisTaskQueue
 
-        queue = RedisTaskQueue({}, redis_host='localhost')
+        queue = RedisTaskQueue({}, redis_host="localhost")
         health = queue.health_check()
 
-        self.assertFalse(health['connected'])
-        self.assertIn('error', health)
+        self.assertFalse(health["connected"])
+        self.assertIn("error", health)
 
 
 class TestRedisTaskQueueInterface(unittest.TestCase):
@@ -674,7 +678,7 @@ class TestRedisTaskQueueInterface(unittest.TestCase):
         from unmanic.libs.taskqueue_interface import TaskQueueInterface
         from unmanic.libs.taskqueue_redis import RedisTaskQueue
 
-        queue = RedisTaskQueue({}, redis_host='localhost')
+        queue = RedisTaskQueue({}, redis_host="localhost")
         self.assertIsInstance(queue, TaskQueueInterface)
 
 

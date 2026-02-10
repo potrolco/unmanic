@@ -2,25 +2,25 @@
 # -*- coding: utf-8 -*-
 
 """
-    unmanic.taskqueue_redis.py
+unmanic.taskqueue_redis.py
 
-    Redis-backed implementation of TaskQueueInterface.
-    Uses sorted sets for priority queues, hashes for task data,
-    and Lua scripts for atomic operations.
+Redis-backed implementation of TaskQueueInterface.
+Uses sorted sets for priority queues, hashes for task data,
+and Lua scripts for atomic operations.
 
-    Redis Data Structures:
-        tars:tasks:pending       → Sorted Set (score = priority)
-        tars:tasks:in_progress   → Sorted Set (score = start_time)
-        tars:tasks:processed     → Sorted Set (score = finish_time)
-        tars:task:{id}           → Hash (task fields)
-        tars:task:next_id        → String (auto-increment counter)
+Redis Data Structures:
+    tars:tasks:pending       → Sorted Set (score = priority)
+    tars:tasks:in_progress   → Sorted Set (score = start_time)
+    tars:tasks:processed     → Sorted Set (score = finish_time)
+    tars:task:{id}           → Hash (task fields)
+    tars:task:next_id        → String (auto-increment counter)
 
-    Dependencies:
-        redis>=5.0.0 (optional — install with: pip install redis>=5.0.0)
+Dependencies:
+    redis>=5.0.0 (optional — install with: pip install redis>=5.0.0)
 
-    Version: 1.0.0
-    Author:  JARVIS (Session 212, 2026-02-10)
-    Review:  GPT-5 recommended Lua scripts over MULTI/EXEC for atomic claim
+Version: 1.0.0
+Author:  JARVIS (Session 212, 2026-02-10)
+Review:  GPT-5 recommended Lua scripts over MULTI/EXEC for atomic claim
 """
 
 import json
@@ -118,16 +118,16 @@ class RedisTaskQueue(TaskQueueInterface):
     avoid collisions with other Redis users on the same instance.
     """
 
-    KEY_PREFIX = 'tars:'
-    PENDING_KEY = 'tars:tasks:pending'
-    IN_PROGRESS_KEY = 'tars:tasks:in_progress'
-    PROCESSED_KEY = 'tars:tasks:processed'
-    NEXT_ID_KEY = 'tars:task:next_id'
+    KEY_PREFIX = "tars:"
+    PENDING_KEY = "tars:tasks:pending"
+    IN_PROGRESS_KEY = "tars:tasks:in_progress"
+    PROCESSED_KEY = "tars:tasks:processed"
+    NEXT_ID_KEY = "tars:task:next_id"
 
     def __init__(
         self,
         data_queues,
-        redis_host: str = 'localhost',
+        redis_host: str = "localhost",
         redis_port: int = 6379,
         redis_db: int = 0,
         redis_password: Optional[str] = None,
@@ -136,10 +136,7 @@ class RedisTaskQueue(TaskQueueInterface):
         **kwargs,
     ):
         if redis is None:
-            raise ImportError(
-                "Redis task queue requires the 'redis' package. "
-                "Install with: pip install redis>=5.0.0"
-            )
+            raise ImportError("Redis task queue requires the 'redis' package. " "Install with: pip install redis>=5.0.0")
 
         self.data_queues = data_queues
         self.logger = UnmanicLogging.get_logger(name=self.__class__.__name__)
@@ -170,7 +167,7 @@ class RedisTaskQueue(TaskQueueInterface):
             self.logger.error("Failed to connect to Redis: %s", e)
             raise
 
-    def _log(self, message, message2='', level="info"):
+    def _log(self, message, message2="", level="info"):
         message = common.format_message(message, message2)
         getattr(self.logger, level)(message)
 
@@ -187,9 +184,9 @@ class RedisTaskQueue(TaskQueueInterface):
         serialized = {}
         for key, value in task_data.items():
             if value is None:
-                serialized[key] = ''
+                serialized[key] = ""
             elif isinstance(value, bool):
-                serialized[key] = '1' if value else '0'
+                serialized[key] = "1" if value else "0"
             else:
                 serialized[key] = str(value)
         return serialized
@@ -200,12 +197,12 @@ class RedisTaskQueue(TaskQueueInterface):
             return {}
 
         result = {}
-        int_fields = {'id', 'priority', 'library_id'}
-        bool_fields = {'success'}
-        float_fields = {'start_time', 'finish_time'}
+        int_fields = {"id", "priority", "library_id"}
+        bool_fields = {"success"}
+        float_fields = {"start_time", "finish_time"}
 
         for key, value in task_hash.items():
-            if value == '':
+            if value == "":
                 result[key] = None
             elif key in int_fields:
                 try:
@@ -213,7 +210,7 @@ class RedisTaskQueue(TaskQueueInterface):
                 except (ValueError, TypeError):
                     result[key] = value
             elif key in bool_fields:
-                result[key] = value in ('1', 'True', 'true')
+                result[key] = value in ("1", "True", "true")
             elif key in float_fields:
                 try:
                     result[key] = float(value)
@@ -277,7 +274,7 @@ class RedisTaskQueue(TaskQueueInterface):
         if not task_data:
             return False
 
-        abspath = task_data.get('abspath')
+        abspath = task_data.get("abspath")
         if not abspath:
             return False
 
@@ -304,26 +301,23 @@ class RedisTaskQueue(TaskQueueInterface):
         store library/tag relationships). For full Redis mode, secondary
         indexes would be needed.
         """
-        if local_only and task_data.get('type') != 'local':
+        if local_only and task_data.get("type") != "local":
             return False
 
         if library_names is not None or library_tags is not None:
             # Hybrid: query SQLite for library metadata
-            library_id = task_data.get('library_id')
+            library_id = task_data.get("library_id")
             if library_id:
                 try:
                     from unmanic.libs.unmodels import Libraries, LibraryTags, Tags
+
                     lib = Libraries.get_by_id(int(library_id))
 
                     if library_names is not None and lib.name not in library_names:
                         return False
 
                     if library_tags is not None:
-                        tag_query = (
-                            Tags.select(Tags.name)
-                            .join(LibraryTags)
-                            .where(LibraryTags.library_id == int(library_id))
-                        )
+                        tag_query = Tags.select(Tags.name).join(LibraryTags).where(LibraryTags.library_id == int(library_id))
                         lib_tag_names = [t.name for t in tag_query]
 
                         if library_tags:
@@ -398,10 +392,13 @@ class RedisTaskQueue(TaskQueueInterface):
                 pipe = self.client.pipeline(transaction=True)
                 pipe.zrem(self.PENDING_KEY, task_id)
                 pipe.zadd(self.IN_PROGRESS_KEY, {task_id: time.time()})
-                pipe.hset(self._task_key(task_id), mapping={
-                    'status': 'in_progress',
-                    'start_time': str(time.time()),
-                })
+                pipe.hset(
+                    self._task_key(task_id),
+                    mapping={
+                        "status": "in_progress",
+                        "start_time": str(time.time()),
+                    },
+                )
                 pipe.execute()
                 return self._create_task_handle(task_id)
 
@@ -418,7 +415,7 @@ class RedisTaskQueue(TaskQueueInterface):
         if not task_data:
             return False
 
-        abspath = task_data.get('abspath')
+        abspath = task_data.get("abspath")
         if not abspath:
             return False
 
@@ -437,14 +434,17 @@ class RedisTaskQueue(TaskQueueInterface):
         Updates both Redis state and the SQLite-backed Task object
         (hybrid mode — SQLite remains source of truth for persistence).
         """
-        task_item.set_status('in_progress')
+        task_item.set_status("in_progress")
 
         # Also update Redis state
         task_id = str(task_item.get_task_id())
-        self.client.hset(self._task_key(task_id), mapping={
-            'status': 'in_progress',
-            'start_time': str(time.time()),
-        })
+        self.client.hset(
+            self._task_key(task_id),
+            mapping={
+                "status": "in_progress",
+                "start_time": str(time.time()),
+            },
+        )
 
         return task_item
 
@@ -454,7 +454,7 @@ class RedisTaskQueue(TaskQueueInterface):
 
         Moves task from in_progress to processed in Redis and updates SQLite.
         """
-        task_item.set_status('processed')
+        task_item.set_status("processed")
 
         # Also update Redis state
         task_id = str(task_item.get_task_id())
@@ -481,6 +481,7 @@ class RedisTaskQueue(TaskQueueInterface):
             return self._deserialize_task(task_data)
         # Hybrid fallback: check SQLite
         from unmanic.libs.unmodels.tasks import Tasks
+
         try:
             return Tasks.get(Tasks.id == task_id)
         except Tasks.DoesNotExist:
@@ -500,7 +501,7 @@ class RedisTaskQueue(TaskQueueInterface):
 
         # Also update SQLite
         task_handler = task.Task()
-        return task_handler.reorder_tasks([task_id], 'bottom')
+        return task_handler.reorder_tasks([task_id], "bottom")
 
     # ──────────────────────────────────────────────
     # Redis-specific operations (not in interface)
@@ -518,9 +519,9 @@ class RedisTaskQueue(TaskQueueInterface):
         :param task_data: Task fields dict.
         :param priority: Priority score (higher = processed first).
         """
-        task_data['id'] = task_id
-        task_data['status'] = 'pending'
-        task_data['priority'] = priority
+        task_data["id"] = task_id
+        task_data["status"] = "pending"
+        task_data["priority"] = priority
 
         pipe = self.client.pipeline(transaction=True)
         pipe.hset(self._task_key(task_id), mapping=self._serialize_task(task_data))
@@ -547,22 +548,22 @@ class RedisTaskQueue(TaskQueueInterface):
 
         count = 0
         for task_row in Tasks.select().dicts():
-            task_id = str(task_row['id'])
+            task_id = str(task_row["id"])
             task_key = self._task_key(task_id)
 
             self.client.hset(task_key, mapping=self._serialize_task(task_row))
 
-            status = task_row.get('status', 'pending')
-            priority = task_row.get('priority', 0) or 0
+            status = task_row.get("status", "pending")
+            priority = task_row.get("priority", 0) or 0
 
-            if status == 'pending':
+            if status == "pending":
                 self.client.zadd(self.PENDING_KEY, {task_id: priority})
-            elif status == 'in_progress':
-                start_time = task_row.get('start_time')
+            elif status == "in_progress":
+                start_time = task_row.get("start_time")
                 score = start_time.timestamp() if start_time else time.time()
                 self.client.zadd(self.IN_PROGRESS_KEY, {task_id: score})
-            elif status == 'processed':
-                finish_time = task_row.get('finish_time')
+            elif status == "processed":
+                finish_time = task_row.get("finish_time")
                 score = finish_time.timestamp() if finish_time else time.time()
                 self.client.zadd(self.PROCESSED_KEY, {task_id: score})
 
@@ -580,13 +581,13 @@ class RedisTaskQueue(TaskQueueInterface):
         try:
             self.client.ping()
             return {
-                'connected': True,
-                'pending': self.client.zcard(self.PENDING_KEY),
-                'in_progress': self.client.zcard(self.IN_PROGRESS_KEY),
-                'processed': self.client.zcard(self.PROCESSED_KEY),
+                "connected": True,
+                "pending": self.client.zcard(self.PENDING_KEY),
+                "in_progress": self.client.zcard(self.IN_PROGRESS_KEY),
+                "processed": self.client.zcard(self.PROCESSED_KEY),
             }
         except Exception as e:
             return {
-                'connected': False,
-                'error': str(e),
+                "connected": False,
+                "error": str(e),
             }

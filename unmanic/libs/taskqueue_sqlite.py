@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 
 """
-    unmanic.taskqueue_sqlite.py
+unmanic.taskqueue_sqlite.py
 
-    SQLite-backed implementation of TaskQueueInterface.
-    This is the default backend — preserves all existing behavior from the
-    original TaskQueue class using Peewee ORM.
+SQLite-backed implementation of TaskQueueInterface.
+This is the default backend — preserves all existing behavior from the
+original TaskQueue class using Peewee ORM.
 
-    Version: 1.0.0
-    Author:  JARVIS (Session 212, 2026-02-10)
+Version: 1.0.0
+Author:  JARVIS (Session 212, 2026-02-10)
 """
 
 from typing import Any, Dict, List, Optional
@@ -31,15 +31,15 @@ class SQLiteTaskQueue(TaskQueueInterface):
     """
 
     def __init__(self, data_queues):
-        self.name = 'SQLiteTaskQueue'
+        self.name = "SQLiteTaskQueue"
         self.data_queues = data_queues
         self.logger = UnmanicLogging.get_logger(name=self.__class__.__name__)
 
         # Sort fields
         self.sort_by = Tasks.priority
-        self.sort_order = 'desc'
+        self.sort_order = "desc"
 
-    def _log(self, message, message2='', level="info"):
+    def _log(self, message, message2="", level="info"):
         message = common.format_message(message, message2)
         getattr(self.logger, level)(message)
 
@@ -59,8 +59,8 @@ class SQLiteTaskQueue(TaskQueueInterface):
     @staticmethod
     def _build_tasks_query(
         status: str,
-        sort_by='id',
-        sort_order: str = 'asc',
+        sort_by="id",
+        sort_order: str = "asc",
         local_only: bool = False,
         library_names: Optional[List[str]] = None,
         library_tags: Optional[List[str]] = None,
@@ -72,7 +72,7 @@ class SQLiteTaskQueue(TaskQueueInterface):
         query = Tasks.select().where(Tasks.status == status)
 
         if local_only:
-            query = query.where(Tasks.type == 'local')
+            query = query.where(Tasks.type == "local")
 
         query = query.join(Libraries, on=(Libraries.id == Tasks.library_id))
 
@@ -80,8 +80,8 @@ class SQLiteTaskQueue(TaskQueueInterface):
             query = query.where(Libraries.name.in_(library_names))
 
         if library_tags is not None:
-            query = query.join(LibraryTags, join_type='LEFT OUTER JOIN')
-            query = query.join(Tags, join_type='LEFT OUTER JOIN')
+            query = query.join(LibraryTags, join_type="LEFT OUTER JOIN")
+            query = query.join(Tags, join_type="LEFT OUTER JOIN")
             if library_tags:
                 query = query.where(Tags.name.in_(library_tags))
             else:
@@ -89,7 +89,7 @@ class SQLiteTaskQueue(TaskQueueInterface):
                 query = query.where(Tags.name.is_null())
 
         query = query.limit(1)
-        if sort_order == 'asc':
+        if sort_order == "asc":
             query = query.order_by(sort_by.asc())
         else:
             query = query.order_by(sort_by.desc())
@@ -99,8 +99,8 @@ class SQLiteTaskQueue(TaskQueueInterface):
     @staticmethod
     def _build_tasks_query_full_list(
         status: str,
-        sort_by='id',
-        sort_order: str = 'asc',
+        sort_by="id",
+        sort_order: str = "asc",
         limit: Optional[int] = None,
     ):
         """
@@ -109,7 +109,7 @@ class SQLiteTaskQueue(TaskQueueInterface):
         """
         query = Tasks.select(Tasks).where(Tasks.status == status)
 
-        if sort_order == 'asc':
+        if sort_order == "asc":
             query = query.order_by(sort_by.asc())
         else:
             query = query.order_by(sort_by.desc())
@@ -123,7 +123,7 @@ class SQLiteTaskQueue(TaskQueueInterface):
         self,
         status: str,
         sort_by=None,
-        sort_order: str = 'asc',
+        sort_order: str = "asc",
         local_only: bool = False,
         library_names: Optional[List[str]] = None,
         library_tags: Optional[List[str]] = None,
@@ -155,21 +155,15 @@ class SQLiteTaskQueue(TaskQueueInterface):
     # ──────────────────────────────────────────────
 
     def list_pending_tasks(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
-        results = self._build_tasks_query_full_list(
-            'pending', self.sort_by, self.sort_order, limit
-        )
+        results = self._build_tasks_query_full_list("pending", self.sort_by, self.sort_order, limit)
         return list(results) if results else []
 
     def list_in_progress_tasks(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
-        results = self._build_tasks_query_full_list(
-            'in_progress', self.sort_by, self.sort_order, limit
-        )
+        results = self._build_tasks_query_full_list("in_progress", self.sort_by, self.sort_order, limit)
         return list(results) if results else []
 
     def list_processed_tasks(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
-        results = self._build_tasks_query_full_list(
-            'processed', self.sort_by, self.sort_order, limit
-        )
+        results = self._build_tasks_query_full_list("processed", self.sort_by, self.sort_order, limit)
         return list(results) if results else []
 
     def get_next_pending_tasks(
@@ -179,7 +173,7 @@ class SQLiteTaskQueue(TaskQueueInterface):
         library_tags: Optional[List[str]] = None,
     ) -> Any:
         return self._fetch_next_task_filtered(
-            'pending',
+            "pending",
             sort_by=self.sort_by,
             sort_order=self.sort_order,
             local_only=local_only,
@@ -189,29 +183,29 @@ class SQLiteTaskQueue(TaskQueueInterface):
 
     def get_next_processed_tasks(self) -> Any:
         return self._fetch_next_task_filtered(
-            'processed',
+            "processed",
             sort_by=self.sort_by,
             sort_order=self.sort_order,
         )
 
     @staticmethod
     def mark_item_in_progress(task_item: Any) -> Any:
-        task_item.set_status('in_progress')
+        task_item.set_status("in_progress")
         return task_item
 
     @staticmethod
     def mark_item_as_processed(task_item: Any) -> Any:
-        task_item.set_status('processed')
+        task_item.set_status("processed")
         return task_item
 
     def task_list_pending_is_empty(self) -> bool:
-        return self._build_tasks_count_query('pending') == 0
+        return self._build_tasks_count_query("pending") == 0
 
     def task_list_in_progress_is_empty(self) -> bool:
-        return self._build_tasks_count_query('in_progress') == 0
+        return self._build_tasks_count_query("in_progress") == 0
 
     def task_list_processed_is_empty(self) -> bool:
-        return self._build_tasks_count_query('processed') == 0
+        return self._build_tasks_count_query("processed") == 0
 
     def get_task_by_id(self, task_id: int) -> Any:
         try:
@@ -221,4 +215,4 @@ class SQLiteTaskQueue(TaskQueueInterface):
 
     def requeue_tasks_at_bottom(self, task_id: int) -> bool:
         task_handler = task.Task()
-        return task_handler.reorder_tasks([task_id], 'bottom')
+        return task_handler.reorder_tasks([task_id], "bottom")
